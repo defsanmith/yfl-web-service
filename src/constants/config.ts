@@ -1,5 +1,6 @@
 class Config {
   nextAuth = {
+    adminEmail: process.env.ADMIN_EMAIL,
     email: {
       server: {
         host: process.env.EMAIL_SERVER_HOST,
