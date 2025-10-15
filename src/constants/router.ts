@@ -7,6 +7,8 @@ class Router {
   static ORGANIZATIONS = "/orgs";
   static CREATE_ORGANIZATION = `${Router.ORGANIZATIONS}/create`;
   static organizationDetail = (id: string) => `${Router.ORGANIZATIONS}/${id}`;
+  static organizationForecasts = (id: string) =>
+    `${Router.ORGANIZATIONS}/${id}/forecasts`;
 
   // Settings
   static SETTINGS = "/settings";

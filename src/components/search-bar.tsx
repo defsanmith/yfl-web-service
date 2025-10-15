@@ -39,7 +39,8 @@ export function SearchBar({
     }, debounceMs);
 
     return () => clearTimeout(timer);
-  }, [searchValue, debounceMs, onSearch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchValue, debounceMs]);
 
   const handleClear = useCallback(() => {
     setSearchValue("");
