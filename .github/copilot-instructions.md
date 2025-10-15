@@ -388,12 +388,180 @@ See organization creation flow:
 - View: `src/views/organizations/CreateOrganizationView.tsx`
 - Page: `src/app/(protected)/(super-admin)/orgs/create/page.tsx`
 
+## Reusable Components
+
+### PaginationControls
+
+The project has a reusable pagination component at `src/components/pagination-controls.tsx` that should be used for all list pages with pagination.
+
+**Features:**
+
+- First/Previous/Next/Last page navigation
+- Page size selector (10, 25, 50, 100)
+- Shows item range (e.g., "1-10 of 50")
+- Shows current page (e.g., "Page 1 of 5")
+- Responsive design with icon buttons
+
+**Required Props:**
+
+```typescript
+interface PaginationInfo {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+<PaginationControls
+  pagination={paginationInfo}
+  onPageChange={(page) => {
+    /* update URL with new page */
+  }}
+  onPageSizeChange={(pageSize) => {
+    /* update URL with new pageSize */
+  }}
+  pageSizeOptions={[10, 25, 50, 100]} // optional, default shown
+  showPageSizeSelector={true} // optional, default true
+/>;
+```
+
+**Service Layer Pattern:**
+Services should return pagination data in a consistent format:
+
+```typescript
+export async function getItems(params: {
+  page?: number;
+  limit?: number;
+  // ... other filters
+}) {
+  const page = params.page || 1;
+  const limit = params.limit || 10;
+  const skip = (page - 1) * limit;
+
+  const [items, total] = await Promise.all([
+    prisma.item.findMany({ skip, take: limit /* ... */ }),
+    prisma.item.count({
+      /* same where clause */
+    }),
+  ]);
+
+  return {
+    items,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
+}
+```
+
+**Page Component Pattern:**
+Convert service result to PaginationInfo:
+
+```typescript
+export default async function ItemsPage({ searchParams }: PageProps) {
+  const page = parseInt(searchParams.page || "1", 10);
+  const pageSize = parseInt(searchParams.pageSize || "10", 10);
+
+  const result = await getItems({ page, limit: pageSize });
+
+  return (
+    <ItemsView
+      items={result.items}
+      pagination={{
+        page: result.page,
+        pageSize: result.limit,
+        totalItems: result.total,
+        totalPages: result.totalPages,
+        hasNextPage: result.page < result.totalPages,
+        hasPreviousPage: result.page > 1,
+      }}
+    />
+  );
+}
+```
+
+**View Component Pattern:**
+Use PaginationControls with URL navigation:
+
+```typescript
+export default function ItemsView({
+  items,
+  pagination,
+}: {
+  items: Item[];
+  pagination: PaginationInfo;
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  return (
+    <div>
+      {/* ... table/list content ... */}
+
+      {pagination.totalPages > 1 && (
+        <PaginationControls
+          pagination={pagination}
+          onPageChange={(page) => {
+            const params = new URLSearchParams(searchParams);
+            params.set("page", String(page));
+            router.push(`/path?${params.toString()}`);
+          }}
+          onPageSizeChange={(pageSize) => {
+            const params = new URLSearchParams(searchParams);
+            params.set("pageSize", String(pageSize));
+            params.set("page", "1"); // Reset to first page
+            router.push(`/path?${params.toString()}`);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+```
+
+**DO NOT** implement custom pagination controls when this component exists. Always use `PaginationControls` for consistency.
+
+### DatePicker
+
+A reusable date picker component at `src/components/ui/date-picker.tsx` built on shadcn/ui Calendar and Popover.
+
+**Usage:**
+
+```tsx
+import { DatePicker } from "@/components/ui/date-picker";
+
+const [date, setDate] = useState<Date | undefined>();
+
+<DatePicker
+  date={date}
+  onSelect={setDate}
+  placeholder="Select date"
+  disabled={false}
+/>;
+
+{
+  /* Hidden input for form submission */
+}
+<input
+  type="hidden"
+  name="dueDate"
+  value={date ? date.toISOString().split("T")[0] : ""}
+/>;
+```
+
+**DO NOT** use native `<input type="date">` - always use the DatePicker component for better UX and consistency.
+
 ## Key Files
 
 - `prisma/schema.prisma` - Database schema with custom output path
 - `src/auth/index.ts` - NextAuth configuration and handlers
 - `src/lib/prisma.ts` - Prisma singleton instance
 - `src/lib/server-action-utils.ts` - Reusable server action utilities
+- `src/components/pagination-controls.tsx` - Reusable pagination component
+- `src/components/ui/date-picker.tsx` - Reusable date picker component
 - `src/providers/index.tsx` - Root provider composition
 - `src/schemas/` - Zod validation schemas (organized by domain)
 - `src/services/` - Data access and business logic layer

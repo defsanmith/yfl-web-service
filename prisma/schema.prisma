@@ -20,13 +20,20 @@ enum Role {
   USER
 }
 
+enum ForecastType {
+  BINARY
+  CONTINUOUS
+  CATEGORICAL
+}
+
 model Organization {
-  id          String   @id @default(cuid())
-  name        String   @unique
+  id          String     @id @default(cuid())
+  name        String     @unique
   description String?
   users       User[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  forecasts   Forecast[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }
 
 model User {
@@ -84,6 +91,24 @@ model VerificationToken {
   expires    DateTime
 
   @@id([identifier, token])
+}
+
+model Forecast {
+  id             String       @id @default(cuid())
+  title          String
+  description    String?
+  type           ForecastType
+  dueDate        DateTime
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  // For categorical forecasts, store options as JSON array
+  options        Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([type])
+  @@index([dueDate])
 }
 
 // Optional for WebAuthn support
