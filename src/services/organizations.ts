@@ -1,3 +1,10 @@
+import { Prisma } from "@/generated/prisma";
+import {
+  calculatePagination,
+  getPaginationValues,
+  PaginatedResult,
+  validatePaginationParams,
+} from "@/lib/pagination";
 import prisma from "@/lib/prisma";
 import { CreateOrganizationInput } from "@/schemas/organizations";
 
@@ -51,6 +58,120 @@ export async function getOrganizations() {
     },
   });
 }
+
+/**
+ * Search and filter options for organizations
+ */
+export interface OrganizationSearchParams {
+  query?: string; // Search by name or ID
+  page?: number;
+  pageSize?: number;
+  sortBy?: "name" | "createdAt" | "userCount";
+  sortOrder?: "asc" | "desc";
+}
+
+/**
+ * Get paginated organizations with search and filtering
+ *
+ * @param params - Search and pagination parameters
+ * @returns Paginated organization results
+ *
+ * @example
+ * ```typescript
+ * // Search by name or ID with pagination
+ * const result = await getOrganizationsPaginated({
+ *   query: "Acme",
+ *   page: 1,
+ *   pageSize: 10,
+ *   sortBy: "name",
+ *   sortOrder: "asc"
+ * });
+ * // Returns: { data: [...], pagination: { page, pageSize, totalItems, ... } }
+ * ```
+ */
+export async function getOrganizationsPaginated(
+  params: OrganizationSearchParams = {}
+): Promise<PaginatedResult<OrganizationListItem>> {
+  // Validate and normalize pagination params
+  const { page, pageSize } = validatePaginationParams(params, {
+    page: 1,
+    pageSize: 10,
+  });
+
+  const { sortBy = "createdAt", sortOrder = "desc", query } = params;
+
+  // Build where clause for search
+  const where: Prisma.OrganizationWhereInput = query
+    ? {
+        OR: [
+          {
+            name: {
+              contains: query,
+              mode: "insensitive",
+            },
+          },
+          {
+            id: {
+              contains: query,
+              mode: "insensitive",
+            },
+          },
+        ],
+      }
+    : {};
+
+  // Get total count for pagination
+  const totalItems = await prisma.organization.count({ where });
+
+  // Calculate pagination values
+  const { skip, take } = getPaginationValues(page, pageSize);
+
+  // Build orderBy clause
+  let orderBy: Prisma.OrganizationOrderByWithRelationInput;
+  if (sortBy === "userCount") {
+    orderBy = {
+      users: {
+        _count: sortOrder,
+      },
+    };
+  } else {
+    orderBy = {
+      [sortBy]: sortOrder,
+    };
+  }
+
+  // Fetch paginated data
+  const organizations = await prisma.organization.findMany({
+    where,
+    include: {
+      _count: {
+        select: { users: true },
+      },
+    },
+    orderBy,
+    skip,
+    take,
+  });
+
+  // Calculate pagination metadata
+  const pagination = calculatePagination(totalItems, page, pageSize);
+
+  return {
+    data: organizations,
+    pagination,
+  };
+}
+
+/**
+ * Organization list item type (with user count)
+ */
+export type OrganizationListItem = Prisma.OrganizationGetPayload<{
+  include: {
+    _count: {
+      select: { users: true };
+    };
+  };
+}>;
 
 /**
  * Get organization by ID with full user details

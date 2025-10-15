@@ -9,6 +9,7 @@ Schemas are organized by domain:
 - `organizations.ts` - Organization-related schemas
 - `users.ts` - User-related schemas (to be created as needed)
 - `forecasts.ts` - Forecast-related schemas (to be created as needed)
+- `common.ts` - **Reusable common schemas** (pagination, search, etc.)
 
 ## Usage Patterns
 
