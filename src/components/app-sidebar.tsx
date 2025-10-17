@@ -1,10 +1,11 @@
 "use client";
 
 import {
-  IconCirclePlusFilled,
   IconDashboard,
+  IconEaseOutControlPoint,
   IconInnerShadowTop,
   IconListDetails,
+  IconUsers,
   type Icon,
   type IconProps,
 } from "@tabler/icons-react";
@@ -26,6 +27,8 @@ import {
 import Router from "@/constants/router";
 import { Role } from "@/generated/prisma";
 import Link from "next/link";
+import SuperAdminAction from "./main-action";
+import OrgAdminAction from "./org-admin-action";
 
 const data = {
   user: {
@@ -48,6 +51,25 @@ const superAdminNavItems: NavItem[] = [
   },
 ];
 
+const orgAdminNavItems: NavItem[] = [
+  {
+    title: "Dashboard",
+    url: Router.HOME,
+    icon: IconDashboard,
+  },
+
+  {
+    title: "Forecasts",
+    url: Router.FORECASTS,
+    icon: IconEaseOutControlPoint,
+  },
+  {
+    title: "Users",
+    url: Router.ORG_ADMIN_USERS,
+    icon: IconUsers,
+  },
+];
+
 export interface NavItem {
   title: string;
   url: string;
@@ -59,7 +81,13 @@ export interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 }
 
 export function AppSidebar({ role, ...props }: AppSidebarProps) {
-  const navItems = role === Role.SUPER_ADMIN ? superAdminNavItems : [];
+  const navItems =
+    role === Role.SUPER_ADMIN
+      ? superAdminNavItems
+      : role === Role.ORG_ADMIN
+      ? orgAdminNavItems
+      : [];
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -82,16 +110,11 @@ export function AppSidebar({ role, ...props }: AppSidebarProps) {
           <SidebarGroupContent className="flex flex-col gap-2">
             <SidebarMenu>
               <SidebarMenuItem className="flex items-center gap-2">
-                <SidebarMenuButton
-                  tooltip="Quick Create"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
-                  asChild
-                >
-                  <Link href={Router.CREATE_ORGANIZATION}>
-                    <IconCirclePlusFilled />
-                    <span>Create Organization</span>
-                  </Link>
-                </SidebarMenuButton>
+                {role === Role.SUPER_ADMIN ? (
+                  <SuperAdminAction />
+                ) : role === Role.ORG_ADMIN ? (
+                  <OrgAdminAction />
+                ) : null}
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>

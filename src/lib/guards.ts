@@ -85,3 +85,29 @@ export async function requireSuperAdmin() {
 export async function requireAdmin() {
   return requireRole([Role.SUPER_ADMIN, Role.ORG_ADMIN]);
 }
+
+/**
+ * Require user to be an org admin with an organization
+ * Redirects to sign in if not authenticated, to /unauthorized if not org admin,
+ * or to /unauthorized if org admin doesn't have an organization
+ *
+ * @returns The authenticated session with verified org admin status and organizationId
+ *
+ * @example
+ * ```tsx
+ * export default async function OrgAdminPage() {
+ *   const session = await requireOrgAdmin();
+ *   const orgId = session.user.organizationId;
+ *   return <div>Org Admin Content for org {orgId}</div>;
+ * }
+ * ```
+ */
+export async function requireOrgAdmin() {
+  const session = await requireRole([Role.ORG_ADMIN]);
+
+  if (!session.user.organizationId) {
+    redirect(Router.UNAUTHORIZED);
+  }
+
+  return session;
+}

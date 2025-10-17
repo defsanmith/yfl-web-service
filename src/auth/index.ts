@@ -1,15 +1,14 @@
-import NextAuth, { AuthOptions } from "next-auth";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import prisma from "@/lib/prisma";
-import EmailProvider from "next-auth/providers/email";
 import config from "@/constants/config";
 import { Role } from "@/generated/prisma";
+import prisma from "@/lib/prisma";
+import { PrismaAdapter } from "@auth/prisma-adapter";
 import type {
   GetServerSidePropsContext,
   NextApiRequest,
   NextApiResponse,
 } from "next";
-import { getServerSession } from "next-auth";
+import NextAuth, { AuthOptions, getServerSession } from "next-auth";
+import EmailProvider from "next-auth/providers/email";
 
 const authConfig: AuthOptions = {
   // @ts-expect-error - Type mismatch between @auth/core versions in dependencies
@@ -39,17 +38,19 @@ const authConfig: AuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.organizationId = user.organizationId;
       }
 
       // Handle token refresh or update
-      // Optionally refresh role from DB on token update
+      // Optionally refresh role and organizationId from DB on token update
       if (trigger === "update") {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { role: true },
+          select: { role: true, organizationId: true },
         });
         if (dbUser) {
           token.role = dbUser.role;
+          token.organizationId = dbUser.organizationId;
         }
       }
 
@@ -62,6 +63,7 @@ const authConfig: AuthOptions = {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as Role;
+        session.user.organizationId = token.organizationId as string | null;
       }
       return session;
     },

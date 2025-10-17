@@ -14,6 +14,13 @@ class Router {
 
   // Settings
   static SETTINGS = "/settings";
+
+  // Org Admin
+  static ORG_ADMIN_USERS = "/users";
+
+  // Forecasts
+  static FORECASTS = "/forecasts";
+  static forecastDetailById = (id: string) => `${Router.FORECASTS}/${id}`;
 }
 
 export default Router;
