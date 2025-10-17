@@ -13,6 +13,7 @@ import {
 import { updateForecastSchema } from "@/schemas/forecasts";
 import {
   deleteForecast,
+  getForecastById,
   updateForecast,
   validateForecastUpdate,
 } from "@/services/forecasts";
@@ -28,15 +29,35 @@ type ForecastFormData = {
 };
 
 export async function updateForecastAction(
-  orgId: string,
   forecastId: string,
   prevState: ActionState<ForecastFormData> | undefined,
   formData: FormData
 ): Promise<ActionState<ForecastFormData>> {
-  // 1. Verify permissions
-  await requireRole([Role.SUPER_ADMIN, Role.ORG_ADMIN]);
+  // 1. Verify permissions and get org admin's organization
+  const session = await requireRole([Role.ORG_ADMIN]);
 
-  // 2. Extract form data
+  // Org admins must have an organizationId
+  if (!session.user.organizationId) {
+    return createErrorState({
+      _form: ["Organization not found for your account"],
+    });
+  }
+
+  // 2. Verify forecast belongs to org admin's organization
+  const existingForecast = await getForecastById(forecastId);
+  if (!existingForecast) {
+    return createErrorState({
+      _form: ["Forecast not found"],
+    });
+  }
+
+  if (existingForecast.organizationId !== session.user.organizationId) {
+    return createErrorState({
+      _form: ["You do not have permission to update this forecast"],
+    });
+  }
+
+  // 3. Extract form data
   const rawData = extractFormData(formData, [
     "title",
     "description",
@@ -57,7 +78,7 @@ export async function updateForecastAction(
     options,
   };
 
-  // 3. Validate schema
+  // 4. Validate schema
   const validation = validateFormData(updateForecastSchema, dataToValidate);
   if (!validation.success) {
     return createErrorState(validation.errors, {
@@ -69,7 +90,7 @@ export async function updateForecastAction(
     });
   }
 
-  // 4. Validate business rules
+  // 5. Validate business rules
   const businessValidation = await validateForecastUpdate(validation.data);
   if (!businessValidation.valid) {
     return createErrorState(businessValidation.errors, {
@@ -81,30 +102,50 @@ export async function updateForecastAction(
     });
   }
 
-  // 5. Perform operation
+  // 6. Perform operation
   await updateForecast(validation.data);
 
-  // 6. Revalidate cache
-  revalidatePath(Router.forecastDetail(orgId, forecastId));
-  revalidatePath(Router.organizationForecasts(orgId));
+  // 7. Revalidate cache
+  revalidatePath(Router.orgAdminForecastDetail(forecastId));
+  revalidatePath(Router.ORG_ADMIN_FORECASTS);
 
-  // 7. Redirect
-  redirect(Router.forecastDetail(orgId, forecastId));
+  // 8. Redirect
+  redirect(Router.orgAdminForecastDetail(forecastId));
 }
 
 export async function deleteForecastAction(
-  orgId: string,
   forecastId: string
 ): Promise<{ success: boolean; error?: string }> {
-  // 1. Verify permissions
-  await requireRole([Role.SUPER_ADMIN, Role.ORG_ADMIN]);
+  // 1. Verify permissions and get org admin's organization
+  const session = await requireRole([Role.ORG_ADMIN]);
 
-  // 2. Delete forecast
+  // Org admins must have an organizationId
+  if (!session.user.organizationId) {
+    return {
+      success: false,
+      error: "Organization not found for your account",
+    };
+  }
+
+  // 2. Verify forecast belongs to org admin's organization
+  const existingForecast = await getForecastById(forecastId);
+  if (!existingForecast) {
+    return { success: false, error: "Forecast not found" };
+  }
+
+  if (existingForecast.organizationId !== session.user.organizationId) {
+    return {
+      success: false,
+      error: "You do not have permission to delete this forecast",
+    };
+  }
+
+  // 3. Delete forecast
   await deleteForecast(forecastId);
 
-  // 3. Revalidate cache
-  revalidatePath(Router.organizationForecasts(orgId));
+  // 4. Revalidate cache
+  revalidatePath(Router.ORG_ADMIN_FORECASTS);
 
-  // 4. Redirect (throws NEXT_REDIRECT - this is normal!)
-  redirect(Router.organizationForecasts(orgId));
+  // 5. Redirect (throws NEXT_REDIRECT - this is normal!)
+  redirect(Router.ORG_ADMIN_FORECASTS);
 }

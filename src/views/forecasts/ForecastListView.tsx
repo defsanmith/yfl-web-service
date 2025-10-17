@@ -55,6 +55,12 @@ type ForecastListViewProps = {
   pagination: PaginationInfo;
   orgId: string;
   orgName: string;
+  /** Base path for this forecasts list (e.g., "/forecasts" for org admin or "/orgs/[id]/forecasts" for super admin) */
+  basePath?: string;
+  /** Whether to show breadcrumbs (default: true for super admin, false for org admin) */
+  showBreadcrumbs?: boolean;
+  /** Whether this is for org admin context */
+  isOrgAdmin?: boolean;
 };
 
 const FORECAST_TYPE_LABELS: Record<ForecastType, string> = {
@@ -77,6 +83,9 @@ export default function ForecastListView({
   pagination,
   orgId,
   orgName,
+  basePath,
+  showBreadcrumbs = true,
+  isOrgAdmin = false,
 }: ForecastListViewProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -84,6 +93,9 @@ export default function ForecastListView({
     searchParams.get("search") || ""
   );
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // Determine the base path for navigation
+  const effectiveBasePath = basePath || Router.organizationForecasts(orgId);
 
   const currentType = searchParams.get("type") || "all";
   const currentSortBy = searchParams.get("sortBy") || "createdAt";
@@ -100,7 +112,7 @@ export default function ForecastListView({
       params.delete("search");
     }
     params.set("page", "1");
-    router.push(`${Router.organizationForecasts(orgId)}?${params.toString()}`);
+    router.push(`${effectiveBasePath}?${params.toString()}`);
   };
 
   const handleTypeFilter = (value: string) => {
@@ -111,7 +123,7 @@ export default function ForecastListView({
       params.set("type", value);
     }
     params.set("page", "1");
-    router.push(`${Router.organizationForecasts(orgId)}?${params.toString()}`);
+    router.push(`${effectiveBasePath}?${params.toString()}`);
   };
 
   const handleSort = (column: string) => {
@@ -122,7 +134,7 @@ export default function ForecastListView({
       params.set("sortBy", column);
       params.set("sortOrder", "asc");
     }
-    router.push(`${Router.organizationForecasts(orgId)}?${params.toString()}`);
+    router.push(`${effectiveBasePath}?${params.toString()}`);
   };
 
   const getSortIcon = (column: string) => {
@@ -133,26 +145,28 @@ export default function ForecastListView({
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href={Router.ORGANIZATIONS}>
-              Organizations
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink href={Router.organizationDetail(orgId)}>
-              {orgName}
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Forecasts</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+      {/* Breadcrumb - only show for super admin */}
+      {showBreadcrumbs && (
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href={Router.ORGANIZATIONS}>
+                Organizations
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href={Router.organizationDetail(orgId)}>
+                {orgName}
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Forecasts</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      )}
 
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Forecasts</h1>
@@ -260,7 +274,7 @@ export default function ForecastListView({
                 <TableRow key={forecast.id}>
                   <TableCell>
                     <Link
-                      href={Router.forecastDetail(orgId, forecast.id)}
+                      href={`${effectiveBasePath}/${forecast.id}`}
                       className="font-medium hover:underline"
                     >
                       {forecast.title}
@@ -297,17 +311,13 @@ export default function ForecastListView({
             onPageChange={(page) => {
               const params = new URLSearchParams(searchParams);
               params.set("page", String(page));
-              router.push(
-                `${Router.organizationForecasts(orgId)}?${params.toString()}`
-              );
+              router.push(`${effectiveBasePath}?${params.toString()}`);
             }}
             onPageSizeChange={(pageSize) => {
               const params = new URLSearchParams(searchParams);
               params.set("pageSize", String(pageSize));
               params.set("page", "1"); // Reset to first page
-              router.push(
-                `${Router.organizationForecasts(orgId)}?${params.toString()}`
-              );
+              router.push(`${effectiveBasePath}?${params.toString()}`);
             }}
           />
         </div>
@@ -319,6 +329,7 @@ export default function ForecastListView({
         orgName={orgName}
         open={showCreateModal}
         onOpenChange={setShowCreateModal}
+        isOrgAdmin={isOrgAdmin}
       />
     </div>
   );

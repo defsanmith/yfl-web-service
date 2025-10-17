@@ -1,6 +1,7 @@
 "use client";
 
-import { createForecastAction } from "@/app/(protected)/(super-admin)/orgs/[orgId]/forecasts/actions";
+import { createForecastAction as orgAdminCreateAction } from "@/app/(protected)/(org-admin)/forecasts/actions";
+import { createForecastAction as superAdminCreateAction } from "@/app/(protected)/(super-admin)/orgs/[orgId]/forecasts/actions";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
@@ -28,6 +29,8 @@ type CreateForecastModalProps = {
   orgName: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Whether this is for org admin context (if true, orgId is ignored) */
+  isOrgAdmin?: boolean;
 };
 
 export default function CreateForecastModal({
@@ -35,9 +38,13 @@ export default function CreateForecastModal({
   orgName,
   open,
   onOpenChange,
+  isOrgAdmin = false,
 }: CreateForecastModalProps) {
+  // Use different action based on context
   const [state, formAction, isPending] = useActionState(
-    createForecastAction.bind(null, orgId),
+    isOrgAdmin
+      ? orgAdminCreateAction
+      : superAdminCreateAction.bind(null, orgId),
     undefined
   );
 
@@ -53,9 +60,23 @@ export default function CreateForecastModal({
     state?.data?.dueDate ? new Date(state.data.dueDate) : undefined
   );
 
+  // Handler to change type and clear options if switching away from CATEGORICAL
+  const handleTypeChange = (value: ForecastType) => {
+    setSelectedType(value);
+    // Clear options if switching away from CATEGORICAL
+    if (value !== ForecastType.CATEGORICAL) {
+      setOptions([]);
+      setNewOption("");
+    }
+  };
+
   const addOption = () => {
     if (newOption.trim()) {
-      setOptions([...options, newOption.trim()]);
+      const trimmedOption = newOption.trim();
+      // Check for duplicates
+      if (!options.includes(trimmedOption)) {
+        setOptions([...options, trimmedOption]);
+      }
       setNewOption("");
     }
   };
@@ -128,7 +149,7 @@ export default function CreateForecastModal({
             <Select
               name="type"
               value={selectedType}
-              onValueChange={(value) => setSelectedType(value as ForecastType)}
+              onValueChange={(value) => handleTypeChange(value as ForecastType)}
               disabled={isPending}
             >
               <SelectTrigger aria-invalid={!!state?.errors?.type}>
@@ -167,7 +188,10 @@ export default function CreateForecastModal({
               </Label>
               <div className="space-y-2">
                 {options.map((option, index) => (
-                  <div key={index} className="flex items-center gap-2">
+                  <div
+                    key={`${option}-${index}`}
+                    className="flex items-center gap-2"
+                  >
                     <Input
                       name="options"
                       value={option}

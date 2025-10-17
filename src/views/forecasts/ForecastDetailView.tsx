@@ -1,6 +1,7 @@
 "use client";
 
-import { deleteForecastAction } from "@/app/(protected)/(super-admin)/orgs/[orgId]/forecasts/[forecastId]/actions";
+import { deleteForecastAction as orgAdminDeleteAction } from "@/app/(protected)/(org-admin)/forecasts/[forecastId]/actions";
+import { deleteForecastAction as superAdminDeleteAction } from "@/app/(protected)/(super-admin)/orgs/[orgId]/forecasts/[forecastId]/actions";
 import EditForecastModal from "@/components/forecasts/EditForecastModal";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -37,6 +38,12 @@ type ForecastWithOrg = Forecast & {
 
 type ForecastDetailViewProps = {
   forecast: ForecastWithOrg;
+  /** Whether this is for org admin context */
+  isOrgAdmin?: boolean;
+  /** Base path for forecast list (used for back button) */
+  listPath?: string;
+  /** Whether to show breadcrumbs (default: true for super admin, false for org admin) */
+  showBreadcrumbs?: boolean;
 };
 
 const FORECAST_TYPE_LABELS: Record<ForecastType, string> = {
@@ -56,14 +63,25 @@ const FORECAST_TYPE_COLORS: Record<
 
 export default function ForecastDetailView({
   forecast,
+  isOrgAdmin = false,
+  listPath,
+  showBreadcrumbs = true,
 }: ForecastDetailViewProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Determine the list path for back button
+  const effectiveListPath =
+    listPath || Router.organizationForecasts(forecast.organizationId);
+
   const handleDelete = async () => {
     setIsDeleting(true);
-    await deleteForecastAction(forecast.organizationId, forecast.id);
+    if (isOrgAdmin) {
+      await orgAdminDeleteAction(forecast.id);
+    } else {
+      await superAdminDeleteAction(forecast.organizationId, forecast.id);
+    }
     // Redirect happens in the action
   };
 
@@ -75,43 +93,43 @@ export default function ForecastDetailView({
   return (
     <>
       <div className="space-y-6">
-        {/* Breadcrumb Navigation */}
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href={Router.ORGANIZATIONS}>
-                Organizations
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink
-                href={Router.organizationDetail(forecast.organizationId)}
-              >
-                {forecast.organization.name}
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink
-                href={Router.organizationForecasts(forecast.organizationId)}
-              >
-                Forecasts
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{forecast.title}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        {/* Breadcrumb Navigation - only show for super admin */}
+        {showBreadcrumbs && (
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href={Router.ORGANIZATIONS}>
+                  Organizations
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink
+                  href={Router.organizationDetail(forecast.organizationId)}
+                >
+                  {forecast.organization.name}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink
+                  href={Router.organizationForecasts(forecast.organizationId)}
+                >
+                  Forecasts
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{forecast.title}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        )}
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" asChild>
-              <Link
-                href={Router.organizationForecasts(forecast.organizationId)}
-              >
+              <Link href={effectiveListPath}>
                 <ArrowLeft className="h-4 w-4" />
               </Link>
             </Button>
@@ -301,6 +319,7 @@ export default function ForecastDetailView({
         forecast={forecast}
         open={showEditModal}
         onOpenChange={setShowEditModal}
+        isOrgAdmin={isOrgAdmin}
       />
     </>
   );

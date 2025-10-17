@@ -10,12 +10,8 @@ import {
   formDataToString,
   validateFormData,
 } from "@/lib/server-action-utils";
-import { updateForecastSchema } from "@/schemas/forecasts";
-import {
-  deleteForecast,
-  updateForecast,
-  validateForecastUpdate,
-} from "@/services/forecasts";
+import { createForecastSchema } from "@/schemas/forecasts";
+import { createForecast, validateForecastCreation } from "@/services/forecasts";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -27,14 +23,21 @@ type ForecastFormData = {
   options: string[];
 };
 
-export async function updateForecastAction(
-  orgId: string,
-  forecastId: string,
+export async function createForecastAction(
   prevState: ActionState<ForecastFormData> | undefined,
   formData: FormData
 ): Promise<ActionState<ForecastFormData>> {
-  // 1. Verify permissions
-  await requireRole([Role.SUPER_ADMIN, Role.ORG_ADMIN]);
+  // 1. Verify permissions and get org admin's organization
+  const session = await requireRole([Role.ORG_ADMIN]);
+
+  // Org admins must have an organizationId
+  if (!session.user.organizationId) {
+    return createErrorState({
+      _form: ["Organization not found for your account"],
+    });
+  }
+
+  const orgId = session.user.organizationId;
 
   // 2. Extract form data
   const rawData = extractFormData(formData, [
@@ -52,13 +55,13 @@ export async function updateForecastAction(
       : undefined;
 
   const dataToValidate = {
-    id: forecastId,
     ...rawData,
+    organizationId: orgId,
     options,
   };
 
   // 3. Validate schema
-  const validation = validateFormData(updateForecastSchema, dataToValidate);
+  const validation = validateFormData(createForecastSchema, dataToValidate);
   if (!validation.success) {
     return createErrorState(validation.errors, {
       title: formDataToString(rawData.title),
@@ -70,7 +73,7 @@ export async function updateForecastAction(
   }
 
   // 4. Validate business rules
-  const businessValidation = await validateForecastUpdate(validation.data);
+  const businessValidation = await validateForecastCreation(validation.data);
   if (!businessValidation.valid) {
     return createErrorState(businessValidation.errors, {
       title: validation.data.title,
@@ -82,29 +85,11 @@ export async function updateForecastAction(
   }
 
   // 5. Perform operation
-  await updateForecast(validation.data);
+  const forecast = await createForecast(validation.data);
 
   // 6. Revalidate cache
-  revalidatePath(Router.forecastDetail(orgId, forecastId));
-  revalidatePath(Router.organizationForecasts(orgId));
+  revalidatePath(Router.ORG_ADMIN_FORECASTS);
 
-  // 7. Redirect
-  redirect(Router.forecastDetail(orgId, forecastId));
-}
-
-export async function deleteForecastAction(
-  orgId: string,
-  forecastId: string
-): Promise<{ success: boolean; error?: string }> {
-  // 1. Verify permissions
-  await requireRole([Role.SUPER_ADMIN, Role.ORG_ADMIN]);
-
-  // 2. Delete forecast
-  await deleteForecast(forecastId);
-
-  // 3. Revalidate cache
-  revalidatePath(Router.organizationForecasts(orgId));
-
-  // 4. Redirect (throws NEXT_REDIRECT - this is normal!)
-  redirect(Router.organizationForecasts(orgId));
+  // 7. Redirect (throws NEXT_REDIRECT - this is normal!)
+  redirect(Router.orgAdminForecastDetail(forecast.id));
 }

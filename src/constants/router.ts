@@ -17,6 +17,9 @@ class Router {
 
   // Org Admin
   static ORG_ADMIN_USERS = "/users";
+  static ORG_ADMIN_FORECASTS = "/forecasts";
+  static orgAdminForecastDetail = (id: string) =>
+    `${Router.ORG_ADMIN_FORECASTS}/${id}`;
 
   // Forecasts
   static FORECASTS = "/forecasts";
