@@ -70,6 +70,19 @@ const orgAdminNavItems: NavItem[] = [
   },
 ];
 
+const userNavItems: NavItem[] = [
+  {
+    title: "Dashboard",
+    url: Router.HOME,
+    icon: IconDashboard,
+  },
+  {
+    title: "My Forecasts",
+    url: Router.USER_FORECASTS,
+    icon: IconEaseOutControlPoint,
+  },
+];
+
 export interface NavItem {
   title: string;
   url: string;
@@ -86,7 +99,7 @@ export function AppSidebar({ role, ...props }: AppSidebarProps) {
       ? superAdminNavItems
       : role === Role.ORG_ADMIN
       ? orgAdminNavItems
-      : [];
+      : userNavItems;
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
