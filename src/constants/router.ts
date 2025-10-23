@@ -28,6 +28,7 @@ class Router {
   // User
   static USER_FORECASTS = "/my-forecasts";
   static USER_FORECAST_DETAIL = (id: string) => `/f/${id}`;
+  static FORECAST_LEADERBOARD = (id: string) => `/f/${id}/leaderboard`;
 }
 
 export default Router;

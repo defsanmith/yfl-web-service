@@ -86,6 +86,35 @@ export async function getUserPredictions(userId: string) {
 }
 
 /**
+ * Get leaderboard data for a forecast
+ * Returns all predictions for a forecast with user information
+ */
+export async function getForecastLeaderboard(forecastId: string) {
+  const predictions = await prisma.prediction.findMany({
+    where: { forecastId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+    orderBy: [
+      {
+        confidence: "desc",
+      },
+      {
+        createdAt: "asc",
+      },
+    ],
+  });
+
+  return predictions;
+}
+
+/**
  * Create a new prediction
  */
 export async function createPrediction(

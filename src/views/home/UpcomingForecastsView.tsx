@@ -1,11 +1,12 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Router from "@/constants/router";
 import { Forecast, ForecastType } from "@/generated/prisma";
 import { format, formatDistanceToNow } from "date-fns";
-import { Calendar, TrendingUp } from "lucide-react";
+import { Calendar, TrendingUp, Trophy } from "lucide-react";
 import Link from "next/link";
 
 type ForecastWithOrg = Forecast & {
@@ -65,12 +66,12 @@ export default function UpcomingForecastsView({
             });
 
             return (
-              <Link
+              <Card
                 key={forecast.id}
-                href={Router.USER_FORECAST_DETAIL(forecast.id)}
+                className="h-full transition-shadow hover:shadow-lg"
               >
-                <Card className="h-full transition-shadow hover:shadow-lg cursor-pointer">
-                  <CardHeader>
+                <Link href={Router.USER_FORECAST_DETAIL(forecast.id)}>
+                  <CardHeader className="cursor-pointer">
                     <div className="flex items-start justify-between gap-2">
                       <CardTitle className="text-lg line-clamp-2">
                         {forecast.title}
@@ -80,31 +81,50 @@ export default function UpcomingForecastsView({
                       </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    {forecast.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {forecast.description}
-                      </p>
-                    )}
+                </Link>
+                <CardContent className="space-y-3">
+                  <Link href={Router.USER_FORECAST_DETAIL(forecast.id)}>
+                    <div className="cursor-pointer">
+                      {forecast.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {forecast.description}
+                        </p>
+                      )}
 
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">
-                        Due {format(dueDate, "MMM d, yyyy")}
-                      </span>
-                    </div>
+                      <div className="flex items-center gap-2 text-sm mt-3">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">
+                          Due {format(dueDate, "MMM d, yyyy")}
+                        </span>
+                      </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t">
-                      <span className="text-xs text-muted-foreground">
-                        {timeUntilDue}
-                      </span>
-                      <span className="text-xs font-medium text-primary">
-                        View Details →
-                      </span>
+                      <div className="flex items-center justify-between pt-2 border-t mt-3">
+                        <span className="text-xs text-muted-foreground">
+                          {timeUntilDue}
+                        </span>
+                        <span className="text-xs font-medium text-primary">
+                          View Details →
+                        </span>
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </Link>
+                  </Link>
+
+                  {/* Leaderboard Button */}
+                  <div className="pt-2 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      asChild
+                    >
+                      <Link href={Router.FORECAST_LEADERBOARD(forecast.id)}>
+                        <Trophy className="mr-2 h-4 w-4" />
+                        View Leaderboard
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>

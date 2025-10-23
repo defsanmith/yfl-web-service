@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Router from "@/constants/router";
 import { Forecast, ForecastType } from "@/generated/prisma";
 import { format } from "date-fns";
-import { ArrowLeft, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Trophy } from "lucide-react";
 import Link from "next/link";
 
 type ForecastWithOrg = Forecast & {
@@ -57,7 +57,7 @@ export default function UserForecastDetailView({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
             <Link href={Router.HOME}>
@@ -66,6 +66,12 @@ export default function UserForecastDetailView({
           </Button>
           <h1 className="text-3xl font-bold">{forecast.title}</h1>
         </div>
+        <Button variant="outline" asChild>
+          <Link href={Router.FORECAST_LEADERBOARD(forecast.id)}>
+            <Trophy className="mr-2 h-4 w-4" />
+            View Leaderboard
+          </Link>
+        </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
