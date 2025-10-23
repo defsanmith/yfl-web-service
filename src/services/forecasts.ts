@@ -134,6 +134,40 @@ export async function deleteForecast(id: string) {
 }
 
 /**
+ * Get upcoming forecasts for a user's organization
+ * Returns forecasts with dueDate in the future, ordered by dueDate ascending
+ */
+export async function getUpcomingForecastsForUser({
+  organizationId,
+  limit = 10,
+}: {
+  organizationId: string;
+  limit?: number;
+}) {
+  const now = new Date();
+
+  const forecasts = await prisma.forecast.findMany({
+    where: {
+      organizationId,
+      dueDate: {
+        gte: now,
+      },
+    },
+    orderBy: {
+      dueDate: "asc",
+    },
+    take: limit,
+    include: {
+      organization: {
+        select: { id: true, name: true },
+      },
+    },
+  });
+
+  return forecasts;
+}
+
+/**
  * Check if a forecast title exists within an organization (case-insensitive)
  * @param title - Forecast title to check
  * @param organizationId - Organization ID
