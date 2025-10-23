@@ -3,6 +3,7 @@
 import { auth } from "@/auth";
 import Router from "@/constants/router";
 import { getForecastById } from "@/services/forecasts";
+import { getUserPredictionForForecast } from "@/services/predictions";
 import UserForecastDetailView from "@/views/forecasts/UserForecastDetailView";
 import { notFound, redirect } from "next/navigation";
 
@@ -30,5 +31,16 @@ export default async function UserForecastDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  return <UserForecastDetailView forecast={forecast} />;
+  // Get the user's existing prediction (if any)
+  const existingPrediction = await getUserPredictionForForecast(
+    session.user.id,
+    forecastId
+  );
+
+  return (
+    <UserForecastDetailView
+      forecast={forecast}
+      existingPrediction={existingPrediction}
+    />
+  );
 }

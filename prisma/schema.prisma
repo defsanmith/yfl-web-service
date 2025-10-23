@@ -47,6 +47,7 @@ model User {
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   accounts       Account[]
   sessions       Session[]
+  predictions    Prediction[]
   // Optional for WebAuthn support
   // Authenticator Authenticator[]
 
@@ -101,6 +102,7 @@ model Forecast {
   dueDate        DateTime
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  predictions    Prediction[]
   // For categorical forecasts, store options as JSON array
   options        Json?
   createdAt      DateTime     @default(now())
@@ -109,6 +111,29 @@ model Forecast {
   @@index([organizationId])
   @@index([type])
   @@index([dueDate])
+}
+
+model Prediction {
+  id         String   @id @default(cuid())
+  forecastId String
+  forecast   Forecast @relation(fields: [forecastId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Store the prediction value - interpretation depends on forecast type:
+  // BINARY: "true" or "false"
+  // CONTINUOUS: numerical value as string
+  // CATEGORICAL: one of the options
+  value      String
+  // Optional confidence level (0-100)
+  confidence Int?
+  // Optional reasoning/notes
+  reasoning  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([forecastId, userId])
+  @@index([forecastId])
+  @@index([userId])
 }
 
 // Optional for WebAuthn support

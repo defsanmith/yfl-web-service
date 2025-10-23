@@ -1,12 +1,13 @@
 "use client";
 
+import PredictionDialog from "@/components/forecasts/PredictionDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Router from "@/constants/router";
 import { Forecast, ForecastType } from "@/generated/prisma";
 import { format } from "date-fns";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 
 type ForecastWithOrg = Forecast & {
@@ -18,6 +19,14 @@ type ForecastWithOrg = Forecast & {
 
 type UserForecastDetailViewProps = {
   forecast: ForecastWithOrg;
+  existingPrediction?: {
+    id: string;
+    value: string;
+    confidence: number | null;
+    reasoning: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  } | null;
 };
 
 const FORECAST_TYPE_LABELS: Record<ForecastType, string> = {
@@ -37,11 +46,14 @@ const FORECAST_TYPE_COLORS: Record<
 
 export default function UserForecastDetailView({
   forecast,
+  existingPrediction,
 }: UserForecastDetailViewProps) {
   const options =
     forecast.type === ForecastType.CATEGORICAL && forecast.options
       ? (forecast.options as string[])
       : [];
+
+  const isExpired = new Date(forecast.dueDate) <= new Date();
 
   return (
     <div className="space-y-6">
@@ -170,17 +182,117 @@ export default function UserForecastDetailView({
         </Card>
       )}
 
-      {/* Placeholder for future forecast submission form */}
-      <Card className="border-dashed">
+      {/* Prediction Submission */}
+      <Card>
         <CardHeader>
-          <CardTitle>Submit Your Forecast</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>
+              {existingPrediction
+                ? "Your Prediction"
+                : "Submit Your Prediction"}
+            </CardTitle>
+            {existingPrediction && (
+              <Badge variant="outline" className="flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3" />
+                Submitted
+              </Badge>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Forecast submission functionality will be available soon.
-          </p>
+          {isExpired ? (
+            <div className="rounded-lg border border-muted bg-muted/50 p-4">
+              <p className="text-sm text-muted-foreground">
+                This forecast has closed. Predictions can no longer be submitted
+                or updated.
+              </p>
+            </div>
+          ) : existingPrediction ? (
+            <div className="space-y-4">
+              <div className="rounded-lg border bg-muted/50 p-4 space-y-3">
+                <div>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Your prediction:{" "}
+                  </span>
+                  <span className="text-sm font-semibold">
+                    {existingPrediction.value}
+                  </span>
+                </div>
+                {existingPrediction.confidence !== null && (
+                  <div>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Confidence:{" "}
+                    </span>
+                    <span className="text-sm font-semibold">
+                      {existingPrediction.confidence}%
+                    </span>
+                  </div>
+                )}
+                {existingPrediction.reasoning && (
+                  <div>
+                    <span className="text-sm font-medium text-muted-foreground block mb-1">
+                      Reasoning:
+                    </span>
+                    <p className="text-sm">{existingPrediction.reasoning}</p>
+                  </div>
+                )}
+              </div>
+              <PredictionDialog
+                forecastId={forecast.id}
+                forecastTitle={forecast.title}
+                forecastType={forecast.type}
+                categoricalOptions={options}
+                existingPrediction={existingPrediction}
+              />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                You haven&apos;t submitted a prediction for this forecast yet.
+                Click the button below to submit your prediction.
+              </p>
+              <PredictionDialog
+                forecastId={forecast.id}
+                forecastTitle={forecast.title}
+                forecastType={forecast.type}
+                categoricalOptions={options}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Show existing prediction details if available */}
+      {existingPrediction && (
+        <Card className="border-muted">
+          <CardHeader>
+            <CardTitle className="text-base">Submission Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <div>
+              <span className="text-muted-foreground">First submitted: </span>
+              <span className="font-medium">
+                {format(
+                  new Date(existingPrediction.createdAt),
+                  "MMM d, yyyy 'at' h:mm a"
+                )}
+              </span>
+            </div>
+            {existingPrediction.updatedAt.getTime() !==
+              existingPrediction.createdAt.getTime() && (
+              <div>
+                <span className="text-muted-foreground">Last updated: </span>
+                <span className="font-medium">
+                  {format(
+                    new Date(existingPrediction.updatedAt),
+                    "MMM d, yyyy 'at' h:mm a"
+                  )}
+                </span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
