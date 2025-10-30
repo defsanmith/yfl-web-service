@@ -30,6 +30,11 @@ const authConfig: AuthOptions = {
       from: config.nextAuth.email.from,
     }),
   ],
+
+  pages: {
+    signIn: "/auth/signin", 
+  },
+  
   callbacks: {
     // JWT callback: runs when JWT is created or updated
     // This is where we add custom data to the token
