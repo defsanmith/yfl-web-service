@@ -25,7 +25,14 @@ export default async function ProtectedLayout({
         } as React.CSSProperties
       }
     >
-      <AppSidebar variant="inset" role={session.user.role} />
+      <AppSidebar
+        variant="inset"
+        role={session.user.role}
+        user={{
+          name: session.user.name ?? null,
+          email: session.user.email ?? null,
+        }}
+      />
       <SidebarInset>
         <SiteHeader />
         <div className="flex flex-1 flex-col">

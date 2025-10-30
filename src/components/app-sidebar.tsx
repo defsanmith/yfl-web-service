@@ -30,14 +30,6 @@ import Link from "next/link";
 import SuperAdminAction from "./main-action";
 import OrgAdminAction from "./org-admin-action";
 
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-};
-
 const superAdminNavItems: NavItem[] = [
   {
     title: "Dashboard",
@@ -91,9 +83,13 @@ export interface NavItem {
 
 export interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   role: Role;
+  user: {
+    name: string | null;
+    email: string | null;
+  };
 }
 
-export function AppSidebar({ role, ...props }: AppSidebarProps) {
+export function AppSidebar({ role, user, ...props }: AppSidebarProps) {
   const navItems =
     role === Role.SUPER_ADMIN
       ? superAdminNavItems
@@ -135,7 +131,7 @@ export function AppSidebar({ role, ...props }: AppSidebarProps) {
         <NavMain items={navItems} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>
   );
