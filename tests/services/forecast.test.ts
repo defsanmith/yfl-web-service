@@ -29,7 +29,7 @@ import {
   updateForecast
 } from "@/services/forecasts";
 
-type ForecastType = "NUMERIC" | "CATEGORICAL";
+type ForecastType = "BINARY" | "CATEGORICAL";
 
 const nowReal = new Date();
 const fixedNow = new Date("2030-01-01T12:00:00.000Z");
@@ -81,7 +81,7 @@ describe("getForecasts", () => {
       page: 2,
       limit: 10,
       search: "inflation",
-      type: "NUMERIC" as ForecastType,
+      type: "BINARY" as ForecastType,
       sortBy: "createdAt",
       sortOrder: "desc",
     });
@@ -89,7 +89,7 @@ describe("getForecasts", () => {
     expect(prisma.forecast.findMany).toHaveBeenCalledWith({
       where: {
         organizationId: "org1",
-        type: "NUMERIC",
+        type: "BINARY",
         title: { contains: "inflation", mode: "insensitive" },
       },
       orderBy: { createdAt: "desc" },
@@ -100,7 +100,7 @@ describe("getForecasts", () => {
     expect(prisma.forecast.count).toHaveBeenCalledWith({
       where: {
         organizationId: "org1",
-        type: "NUMERIC",
+        type: "BINARY",
         title: { contains: "inflation", mode: "insensitive" },
       },
     });
@@ -136,7 +136,7 @@ describe("createForecast", () => {
     const input = {
       title: "GDP 2030",
       description: "Forecast GDP",
-      type: "NUMERIC" as ForecastType,
+      type: "BINARY" as ForecastType,
       dueDate: "2030-06-01T00:00:00.000Z",
       organizationId: "org1",
       options: undefined,
@@ -155,7 +155,7 @@ describe("createForecast", () => {
       data: {
         title: "GDP 2030",
         description: "Forecast GDP",
-        type: "NUMERIC",
+        type: "BINARY",
         dueDate: new Date("2030-06-01T00:00:00.000Z"),
         organizationId: "org1",
         options: undefined,
