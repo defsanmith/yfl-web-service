@@ -1,6 +1,6 @@
 class Router {
   static HOME = "/";
-  static SIGN_IN = "/api/auth/signin";
+  static SIGN_IN = "/auth/signin";  
   static UNAUTHORIZED = "/unauthorized";
 
   // Organizations
