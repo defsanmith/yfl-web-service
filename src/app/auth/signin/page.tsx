@@ -127,7 +127,7 @@ export default function SignInPage() {
                                         type="email"
                                         inputMode="email"
                                         autoComplete="email"
-                                        placeholder="you@university.edu"
+                                        placeholder="you@email.com"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         disabled={isLoading}
