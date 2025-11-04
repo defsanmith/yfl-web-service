@@ -23,7 +23,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import Router from "@/constants/router";
-import { Forecast, ForecastType } from "@/generated/prisma";
+import { DataType, Forecast, ForecastType } from "@/generated/prisma";
 import { format } from "date-fns";
 import { ArrowLeft, Edit, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -34,6 +34,11 @@ type ForecastWithOrg = Forecast & {
     id: string;
     name: string;
   };
+  category?: {
+    id: string;
+    name: string;
+    color: string | null;
+  } | null;
 };
 
 type ForecastDetailViewProps = {
@@ -44,6 +49,12 @@ type ForecastDetailViewProps = {
   listPath?: string;
   /** Whether to show breadcrumbs (default: true for super admin, false for org admin) */
   showBreadcrumbs?: boolean;
+  /** Available categories for the organization */
+  categories?: Array<{
+    id: string;
+    name: string;
+    color: string | null;
+  }>;
 };
 
 const FORECAST_TYPE_LABELS: Record<ForecastType, string> = {
@@ -61,11 +72,20 @@ const FORECAST_TYPE_COLORS: Record<
   CATEGORICAL: "outline",
 };
 
+const DATA_TYPE_LABELS: Record<DataType, string> = {
+  NUMBER: "Number",
+  CURRENCY: "Currency",
+  PERCENT: "Percent",
+  DECIMAL: "Decimal",
+  INTEGER: "Integer",
+};
+
 export default function ForecastDetailView({
   forecast,
   isOrgAdmin = false,
   listPath,
   showBreadcrumbs = true,
+  categories = [],
 }: ForecastDetailViewProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -168,14 +188,62 @@ export default function ForecastDetailView({
                 </dd>
               </div>
 
+              {forecast.type === ForecastType.CONTINUOUS &&
+                forecast.dataType && (
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">
+                      Data Type
+                    </dt>
+                    <dd className="mt-1">
+                      <Badge variant="outline">
+                        {DATA_TYPE_LABELS[forecast.dataType]}
+                      </Badge>
+                    </dd>
+                  </div>
+                )}
+
+              {forecast.category && (
+                <div>
+                  <dt className="text-sm font-medium text-muted-foreground">
+                    Category
+                  </dt>
+                  <dd className="mt-1 flex items-center gap-2">
+                    {forecast.category.color && (
+                      <div
+                        className="h-3 w-3 rounded-full"
+                        style={{ backgroundColor: forecast.category.color }}
+                      />
+                    )}
+                    <span>{forecast.category.name}</span>
+                  </dd>
+                </div>
+              )}
+
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">
                   Due Date
                 </dt>
                 <dd className="mt-1 text-lg font-semibold">
-                  {format(new Date(forecast.dueDate), "MMMM d, yyyy")}
+                  {format(
+                    new Date(forecast.dueDate),
+                    "MMMM d, yyyy 'at' h:mm a"
+                  )}
                 </dd>
               </div>
+
+              {forecast.dataReleaseDate && (
+                <div>
+                  <dt className="text-sm font-medium text-muted-foreground">
+                    Data Release Date
+                  </dt>
+                  <dd className="mt-1 text-lg font-semibold">
+                    {format(
+                      new Date(forecast.dataReleaseDate),
+                      "MMMM d, yyyy 'at' h:mm a"
+                    )}
+                  </dd>
+                </div>
+              )}
 
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">
@@ -278,7 +346,10 @@ export default function ForecastDetailView({
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                This forecast accepts numerical values.
+                This forecast accepts numerical values
+                {forecast.dataType &&
+                  ` (${DATA_TYPE_LABELS[forecast.dataType].toLowerCase()})`}
+                .
               </p>
             </CardContent>
           </Card>
@@ -320,6 +391,7 @@ export default function ForecastDetailView({
         open={showEditModal}
         onOpenChange={setShowEditModal}
         isOrgAdmin={isOrgAdmin}
+        categories={categories}
       />
     </>
   );

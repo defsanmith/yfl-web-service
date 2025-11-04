@@ -26,14 +26,23 @@ enum ForecastType {
   CATEGORICAL
 }
 
+enum DataType {
+  NUMBER
+  CURRENCY
+  PERCENT
+  DECIMAL
+  INTEGER
+}
+
 model Organization {
-  id          String     @id @default(cuid())
-  name        String     @unique
+  id          String             @id @default(cuid())
+  name        String             @unique
   description String?
   users       User[]
   forecasts   Forecast[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  categories  ForecastCategory[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
 }
 
 model User {
@@ -94,21 +103,41 @@ model VerificationToken {
   @@id([identifier, token])
 }
 
-model Forecast {
+model ForecastCategory {
   id             String       @id @default(cuid())
-  title          String
+  name           String
   description    String?
-  type           ForecastType
-  dueDate        DateTime
+  color          String? // Hex color code for UI display
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  predictions    Prediction[]
-  // For categorical forecasts, store options as JSON array
-  options        Json?
+  forecasts      Forecast[]
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
+  @@unique([organizationId, name])
   @@index([organizationId])
+}
+
+model Forecast {
+  id              String            @id @default(cuid())
+  title           String
+  description     String?
+  type            ForecastType
+  dataType        DataType? // Only for CONTINUOUS forecasts
+  dueDate         DateTime // When predictions are due (includes time)
+  dataReleaseDate DateTime? // When the actual data will be released (includes time)
+  organizationId  String
+  organization    Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  categoryId      String?
+  category        ForecastCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  predictions     Prediction[]
+  // For categorical forecasts, store options as JSON array
+  options         Json?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([organizationId])
+  @@index([categoryId])
   @@index([type])
   @@index([dueDate])
 }

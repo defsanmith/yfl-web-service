@@ -48,6 +48,11 @@ type ForecastWithOrg = Forecast & {
     id: string;
     name: string;
   };
+  category?: {
+    id: string;
+    name: string;
+    color: string | null;
+  } | null;
 };
 
 type ForecastListViewProps = {
@@ -61,6 +66,12 @@ type ForecastListViewProps = {
   showBreadcrumbs?: boolean;
   /** Whether this is for org admin context */
   isOrgAdmin?: boolean;
+  /** Available categories for the organization */
+  categories?: Array<{
+    id: string;
+    name: string;
+    color: string | null;
+  }>;
 };
 
 const FORECAST_TYPE_LABELS: Record<ForecastType, string> = {
@@ -86,6 +97,7 @@ export default function ForecastListView({
   basePath,
   showBreadcrumbs = true,
   isOrgAdmin = false,
+  categories = [],
 }: ForecastListViewProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -239,6 +251,7 @@ export default function ForecastListView({
                   Type {getSortIcon("type")}
                 </Button>
               </TableHead>
+              <TableHead>Category</TableHead>
               <TableHead>
                 <Button
                   variant="ghost"
@@ -263,7 +276,7 @@ export default function ForecastListView({
             {forecasts.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={4}
+                  colSpan={5}
                   className="text-center text-muted-foreground"
                 >
                   No forecasts found
@@ -291,7 +304,31 @@ export default function ForecastListView({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {format(new Date(forecast.dueDate), "MMM d, yyyy")}
+                    {forecast.category ? (
+                      <div className="flex items-center gap-2">
+                        {forecast.category.color && (
+                          <div
+                            className="h-3 w-3 rounded-full"
+                            style={{ backgroundColor: forecast.category.color }}
+                          />
+                        )}
+                        <span className="text-sm">
+                          {forecast.category.name}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <div>
+                        {format(new Date(forecast.dueDate), "MMM d, yyyy")}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {format(new Date(forecast.dueDate), "h:mm a")}
+                      </div>
+                    </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {format(new Date(forecast.createdAt), "MMM d, yyyy")}
@@ -330,6 +367,7 @@ export default function ForecastListView({
         open={showCreateModal}
         onOpenChange={setShowCreateModal}
         isOrgAdmin={isOrgAdmin}
+        categories={categories}
       />
     </div>
   );

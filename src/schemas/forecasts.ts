@@ -1,4 +1,4 @@
-import { ForecastType } from "@/generated/prisma";
+import { DataType, ForecastType } from "@/generated/prisma";
 import { z } from "zod";
 
 /**
@@ -18,8 +18,16 @@ export const createForecastSchema = z
     type: z.nativeEnum(ForecastType, {
       message: "Invalid forecast type",
     }),
+    dataType: z
+      .nativeEnum(DataType, {
+        message: "Invalid data type",
+      })
+      .optional()
+      .nullable(),
     dueDate: z.string().min(1, "Due date is required"),
+    dataReleaseDate: z.string().optional().nullable(),
     organizationId: z.string().cuid("Invalid organization ID"),
+    categoryId: z.string().cuid("Invalid category ID").optional().nullable(),
     // For categorical forecasts only
     options: z
       .array(z.string().min(1, "Option cannot be empty"))
@@ -52,6 +60,47 @@ export const createForecastSchema = z
       message: "Options are only allowed for categorical forecasts",
       path: ["options"],
     }
+  )
+  .refine(
+    (data) => {
+      // If type is CONTINUOUS, dataType must be provided
+      if (data.type === ForecastType.CONTINUOUS) {
+        return !!data.dataType;
+      }
+      return true;
+    },
+    {
+      message: "Data type is required for continuous forecasts",
+      path: ["dataType"],
+    }
+  )
+  .refine(
+    (data) => {
+      // If type is not CONTINUOUS, dataType should not be provided
+      if (data.type !== ForecastType.CONTINUOUS) {
+        return !data.dataType;
+      }
+      return true;
+    },
+    {
+      message: "Data type is only allowed for continuous forecasts",
+      path: ["dataType"],
+    }
+  )
+  .refine(
+    (data) => {
+      // If dataReleaseDate is provided, it should be after dueDate
+      if (data.dataReleaseDate && data.dueDate) {
+        const dueDate = new Date(data.dueDate);
+        const releaseDate = new Date(data.dataReleaseDate);
+        return releaseDate >= dueDate;
+      }
+      return true;
+    },
+    {
+      message: "Data release date must be on or after the due date",
+      path: ["dataReleaseDate"],
+    }
   );
 
 /**
@@ -72,7 +121,15 @@ export const updateForecastSchema = z
     type: z.nativeEnum(ForecastType, {
       message: "Invalid forecast type",
     }),
+    dataType: z
+      .nativeEnum(DataType, {
+        message: "Invalid data type",
+      })
+      .optional()
+      .nullable(),
     dueDate: z.string().min(1, "Due date is required"),
+    dataReleaseDate: z.string().optional().nullable(),
+    categoryId: z.string().cuid("Invalid category ID").optional().nullable(),
     options: z
       .array(z.string().min(1, "Option cannot be empty"))
       .min(2, "Categorical forecasts require at least 2 options")
@@ -101,6 +158,47 @@ export const updateForecastSchema = z
     {
       message: "Options are only allowed for categorical forecasts",
       path: ["options"],
+    }
+  )
+  .refine(
+    (data) => {
+      // If type is CONTINUOUS, dataType must be provided
+      if (data.type === ForecastType.CONTINUOUS) {
+        return !!data.dataType;
+      }
+      return true;
+    },
+    {
+      message: "Data type is required for continuous forecasts",
+      path: ["dataType"],
+    }
+  )
+  .refine(
+    (data) => {
+      // If type is not CONTINUOUS, dataType should not be provided
+      if (data.type !== ForecastType.CONTINUOUS) {
+        return !data.dataType;
+      }
+      return true;
+    },
+    {
+      message: "Data type is only allowed for continuous forecasts",
+      path: ["dataType"],
+    }
+  )
+  .refine(
+    (data) => {
+      // If dataReleaseDate is provided, it should be after dueDate
+      if (data.dataReleaseDate && data.dueDate) {
+        const dueDate = new Date(data.dueDate);
+        const releaseDate = new Date(data.dataReleaseDate);
+        return releaseDate >= dueDate;
+      }
+      return true;
+    },
+    {
+      message: "Data release date must be on or after the due date",
+      path: ["dataReleaseDate"],
     }
   );
 
