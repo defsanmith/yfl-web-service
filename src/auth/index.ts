@@ -13,6 +13,9 @@ import EmailProvider from "next-auth/providers/email";
 const authConfig: AuthOptions = {
   // @ts-expect-error - Type mismatch between @auth/core versions in dependencies
   adapter: PrismaAdapter(prisma),
+  pages: {
+    signIn: "/signin",
+  },
   // Use JWT strategy for better performance (no DB query on every session access)
   session: {
     strategy: "jwt",
