@@ -1,4 +1,5 @@
 import config from "@/constants/config";
+import Router from "@/constants/router";
 import { Role } from "@/generated/prisma";
 import prisma from "@/lib/prisma";
 import { PrismaAdapter } from "@auth/prisma-adapter";
@@ -32,7 +33,7 @@ const authConfig: AuthOptions = {
   ],
 
   pages: {
-    signIn: "/auth/signin", 
+    signIn: Router.SIGN_IN,
   },
   
   callbacks: {

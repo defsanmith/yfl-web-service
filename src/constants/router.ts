@@ -3,6 +3,10 @@ class Router {
   static SIGN_IN = "/auth/signin";  
   static UNAUTHORIZED = "/unauthorized";
 
+  // Legal
+  static TERMS = "/terms";
+  static PRIVACY = "/privacy";
+
   // Organizations
   static ORGANIZATIONS = "/orgs";
   static CREATE_ORGANIZATION = `${Router.ORGANIZATIONS}/create`;
