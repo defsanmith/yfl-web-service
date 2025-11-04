@@ -30,5 +30,7 @@ export default async function Page() {
     limit: 10,
   });
 
-  return <UpcomingForecastsView forecasts={forecasts} />;
+  return session.user.role === "USER" ? (
+    <UpcomingForecastsView forecasts={forecasts} />
+  ) : null;
 }

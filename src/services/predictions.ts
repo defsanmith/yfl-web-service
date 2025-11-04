@@ -127,6 +127,10 @@ export async function createPrediction(
       value: data.value,
       confidence: data.confidence,
       reasoning: data.reasoning,
+      method: data.method,
+      estimatedTime: data.estimatedTime,
+      equityInvestment: data.equityInvestment,
+      debtFinancing: data.debtFinancing,
     },
     include: {
       forecast: {
@@ -146,6 +150,10 @@ export async function updatePrediction(data: UpdatePredictionInput) {
       value: data.value,
       confidence: data.confidence,
       reasoning: data.reasoning,
+      method: data.method,
+      estimatedTime: data.estimatedTime,
+      equityInvestment: data.equityInvestment,
+      debtFinancing: data.debtFinancing,
     },
     include: {
       forecast: {

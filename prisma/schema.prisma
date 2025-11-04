@@ -26,14 +26,23 @@ enum ForecastType {
   CATEGORICAL
 }
 
+enum DataType {
+  NUMBER
+  CURRENCY
+  PERCENT
+  DECIMAL
+  INTEGER
+}
+
 model Organization {
-  id          String     @id @default(cuid())
-  name        String     @unique
+  id          String             @id @default(cuid())
+  name        String             @unique
   description String?
   users       User[]
   forecasts   Forecast[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  categories  ForecastCategory[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
 }
 
 model User {
@@ -94,42 +103,70 @@ model VerificationToken {
   @@id([identifier, token])
 }
 
-model Forecast {
+model ForecastCategory {
   id             String       @id @default(cuid())
-  title          String
+  name           String
   description    String?
-  type           ForecastType
-  dueDate        DateTime
+  color          String? // Hex color code for UI display
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  predictions    Prediction[]
-  // For categorical forecasts, store options as JSON array
-  options        Json?
+  forecasts      Forecast[]
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
+  @@unique([organizationId, name])
   @@index([organizationId])
+}
+
+model Forecast {
+  id              String            @id @default(cuid())
+  title           String
+  description     String?
+  type            ForecastType
+  dataType        DataType? // Only for CONTINUOUS forecasts
+  dueDate         DateTime // When predictions are due (includes time)
+  dataReleaseDate DateTime? // When the actual data will be released (includes time)
+  organizationId  String
+  organization    Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  categoryId      String?
+  category        ForecastCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  predictions     Prediction[]
+  // For categorical forecasts, store options as JSON array
+  options         Json?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([organizationId])
+  @@index([categoryId])
   @@index([type])
   @@index([dueDate])
 }
 
 model Prediction {
-  id         String   @id @default(cuid())
-  forecastId String
-  forecast   Forecast @relation(fields: [forecastId], references: [id], onDelete: Cascade)
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String   @id @default(cuid())
+  forecastId       String
+  forecast         Forecast @relation(fields: [forecastId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   // Store the prediction value - interpretation depends on forecast type:
   // BINARY: "true" or "false"
   // CONTINUOUS: numerical value as string
   // CATEGORICAL: one of the options
-  value      String
-  // Optional confidence level (0-100)
-  confidence Int?
+  value            String
+  // Optional confidence level (0-100) - also known as Probability
+  confidence       Int?
   // Optional reasoning/notes
-  reasoning  String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  reasoning        String?
+  // Method used for the prediction
+  method           String?
+  // Estimated time spent on the prediction (in minutes)
+  estimatedTime    Int?
+  // Equity investment amount
+  equityInvestment Float?
+  // Debt financing amount
+  debtFinancing    Float?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@unique([forecastId, userId])
   @@index([forecastId])

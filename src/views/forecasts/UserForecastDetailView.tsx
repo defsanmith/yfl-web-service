@@ -24,6 +24,10 @@ type UserForecastDetailViewProps = {
     value: string;
     confidence: number | null;
     reasoning: string | null;
+    method: string | null;
+    estimatedTime: number | null;
+    equityInvestment: number | null;
+    debtFinancing: number | null;
     createdAt: Date;
     updatedAt: Date;
   } | null;
@@ -231,6 +235,44 @@ export default function UserForecastDetailView({
                     </span>
                     <span className="text-sm font-semibold">
                       {existingPrediction.confidence}%
+                    </span>
+                  </div>
+                )}
+                {existingPrediction.method && (
+                  <div>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Method:{" "}
+                    </span>
+                    <span className="text-sm">{existingPrediction.method}</span>
+                  </div>
+                )}
+                {existingPrediction.estimatedTime !== null && (
+                  <div>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Estimated Time:{" "}
+                    </span>
+                    <span className="text-sm font-semibold">
+                      {existingPrediction.estimatedTime} minutes
+                    </span>
+                  </div>
+                )}
+                {existingPrediction.equityInvestment !== null && (
+                  <div>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Equity Investment:{" "}
+                    </span>
+                    <span className="text-sm font-semibold">
+                      ${existingPrediction.equityInvestment.toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                {existingPrediction.debtFinancing !== null && (
+                  <div>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Debt Financing:{" "}
+                    </span>
+                    <span className="text-sm font-semibold">
+                      ${existingPrediction.debtFinancing.toLocaleString()}
                     </span>
                   </div>
                 )}

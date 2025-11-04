@@ -15,6 +15,9 @@ export async function getForecastById(id: string) {
       organization: {
         select: { id: true, name: true },
       },
+      category: {
+        select: { id: true, name: true, color: true },
+      },
     },
   });
 }
@@ -68,6 +71,9 @@ export async function getForecasts({
         organization: {
           select: { id: true, name: true },
         },
+        category: {
+          select: { id: true, name: true, color: true },
+        },
       },
     }),
     prisma.forecast.count({ where }),
@@ -91,13 +97,21 @@ export async function createForecast(data: CreateForecastInput) {
       title: data.title,
       description: data.description,
       type: data.type,
+      dataType: data.dataType,
       dueDate: new Date(data.dueDate),
+      dataReleaseDate: data.dataReleaseDate
+        ? new Date(data.dataReleaseDate)
+        : null,
       organizationId: data.organizationId,
+      categoryId: data.categoryId,
       options: data.options || undefined,
     },
     include: {
       organization: {
         select: { id: true, name: true },
+      },
+      category: {
+        select: { id: true, name: true, color: true },
       },
     },
   });
@@ -113,12 +127,20 @@ export async function updateForecast(data: UpdateForecastInput) {
       title: data.title,
       description: data.description,
       type: data.type,
+      dataType: data.dataType,
       dueDate: new Date(data.dueDate),
+      dataReleaseDate: data.dataReleaseDate
+        ? new Date(data.dataReleaseDate)
+        : null,
+      categoryId: data.categoryId,
       options: data.options || undefined,
     },
     include: {
       organization: {
         select: { id: true, name: true },
+      },
+      category: {
+        select: { id: true, name: true, color: true },
       },
     },
   });
@@ -160,6 +182,9 @@ export async function getUpcomingForecastsForUser({
     include: {
       organization: {
         select: { id: true, name: true },
+      },
+      category: {
+        select: { id: true, name: true, color: true },
       },
     },
   });

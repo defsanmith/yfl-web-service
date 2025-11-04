@@ -26,6 +26,10 @@ type PredictionFormData = {
   value: string;
   confidence: string;
   reasoning: string | null;
+  method: string | null;
+  estimatedTime: string;
+  equityInvestment: string;
+  debtFinancing: string;
 };
 
 export async function createPredictionAction(
@@ -47,6 +51,10 @@ export async function createPredictionAction(
     "value",
     "confidence",
     "reasoning",
+    "method",
+    "estimatedTime",
+    "equityInvestment",
+    "debtFinancing",
   ]);
 
   // 3. Validate schema
@@ -60,6 +68,16 @@ export async function createPredictionAction(
     reasoning: rawData.reasoning
       ? formDataToString(rawData.reasoning)
       : undefined,
+    method: rawData.method ? formDataToString(rawData.method) : undefined,
+    estimatedTime: rawData.estimatedTime
+      ? formDataToString(rawData.estimatedTime)
+      : undefined,
+    equityInvestment: rawData.equityInvestment
+      ? formDataToString(rawData.equityInvestment)
+      : undefined,
+    debtFinancing: rawData.debtFinancing
+      ? formDataToString(rawData.debtFinancing)
+      : undefined,
   });
 
   if (!validation.success) {
@@ -67,6 +85,10 @@ export async function createPredictionAction(
       value: formDataToString(rawData.value),
       confidence: formDataToString(rawData.confidence) || "",
       reasoning: formDataToString(rawData.reasoning) || null,
+      method: formDataToString(rawData.method) || null,
+      estimatedTime: formDataToString(rawData.estimatedTime) || "",
+      equityInvestment: formDataToString(rawData.equityInvestment) || "",
+      debtFinancing: formDataToString(rawData.debtFinancing) || "",
     });
   }
 
@@ -81,6 +103,10 @@ export async function createPredictionAction(
       value: validation.data.value,
       confidence: validation.data.confidence?.toString() || "",
       reasoning: validation.data.reasoning || null,
+      method: validation.data.method || null,
+      estimatedTime: validation.data.estimatedTime?.toString() || "",
+      equityInvestment: validation.data.equityInvestment?.toString() || "",
+      debtFinancing: validation.data.debtFinancing?.toString() || "",
     });
   }
 
@@ -116,6 +142,10 @@ export async function updatePredictionAction(
     "value",
     "confidence",
     "reasoning",
+    "method",
+    "estimatedTime",
+    "equityInvestment",
+    "debtFinancing",
   ]);
 
   // 3. Validate schema
@@ -129,6 +159,16 @@ export async function updatePredictionAction(
     reasoning: rawData.reasoning
       ? formDataToString(rawData.reasoning)
       : undefined,
+    method: rawData.method ? formDataToString(rawData.method) : undefined,
+    estimatedTime: rawData.estimatedTime
+      ? formDataToString(rawData.estimatedTime)
+      : undefined,
+    equityInvestment: rawData.equityInvestment
+      ? formDataToString(rawData.equityInvestment)
+      : undefined,
+    debtFinancing: rawData.debtFinancing
+      ? formDataToString(rawData.debtFinancing)
+      : undefined,
   });
 
   if (!validation.success) {
@@ -136,6 +176,10 @@ export async function updatePredictionAction(
       value: formDataToString(rawData.value),
       confidence: formDataToString(rawData.confidence) || "",
       reasoning: formDataToString(rawData.reasoning) || null,
+      method: formDataToString(rawData.method) || null,
+      estimatedTime: formDataToString(rawData.estimatedTime) || "",
+      equityInvestment: formDataToString(rawData.equityInvestment) || "",
+      debtFinancing: formDataToString(rawData.debtFinancing) || "",
     });
   }
 
@@ -147,6 +191,10 @@ export async function updatePredictionAction(
       value: validation.data.value,
       confidence: validation.data.confidence?.toString() || "",
       reasoning: validation.data.reasoning || null,
+      method: validation.data.method || null,
+      estimatedTime: validation.data.estimatedTime?.toString() || "",
+      equityInvestment: validation.data.equityInvestment?.toString() || "",
+      debtFinancing: validation.data.debtFinancing?.toString() || "",
     });
   }
 
