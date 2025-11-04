@@ -19,6 +19,23 @@ export const createPredictionSchema = z
       .string()
       .max(1000, "Reasoning must be 1000 characters or less")
       .optional(),
+    method: z
+      .string()
+      .max(500, "Method must be 500 characters or less")
+      .optional(),
+    estimatedTime: z.coerce
+      .number()
+      .int()
+      .min(0, "Estimated time must be at least 0")
+      .optional(),
+    equityInvestment: z.coerce
+      .number()
+      .min(0, "Equity investment must be at least 0")
+      .optional(),
+    debtFinancing: z.coerce
+      .number()
+      .min(0, "Debt financing must be at least 0")
+      .optional(),
   })
   .refine(
     (data) => {
@@ -65,6 +82,23 @@ export const updatePredictionSchema = z
     reasoning: z
       .string()
       .max(1000, "Reasoning must be 1000 characters or less")
+      .optional(),
+    method: z
+      .string()
+      .max(500, "Method must be 500 characters or less")
+      .optional(),
+    estimatedTime: z.coerce
+      .number()
+      .int()
+      .min(0, "Estimated time must be at least 0")
+      .optional(),
+    equityInvestment: z.coerce
+      .number()
+      .min(0, "Equity investment must be at least 0")
+      .optional(),
+    debtFinancing: z.coerce
+      .number()
+      .min(0, "Debt financing must be at least 0")
       .optional(),
   })
   .refine(

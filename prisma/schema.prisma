@@ -143,22 +143,30 @@ model Forecast {
 }
 
 model Prediction {
-  id         String   @id @default(cuid())
-  forecastId String
-  forecast   Forecast @relation(fields: [forecastId], references: [id], onDelete: Cascade)
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String   @id @default(cuid())
+  forecastId       String
+  forecast         Forecast @relation(fields: [forecastId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   // Store the prediction value - interpretation depends on forecast type:
   // BINARY: "true" or "false"
   // CONTINUOUS: numerical value as string
   // CATEGORICAL: one of the options
-  value      String
-  // Optional confidence level (0-100)
-  confidence Int?
+  value            String
+  // Optional confidence level (0-100) - also known as Probability
+  confidence       Int?
   // Optional reasoning/notes
-  reasoning  String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  reasoning        String?
+  // Method used for the prediction
+  method           String?
+  // Estimated time spent on the prediction (in minutes)
+  estimatedTime    Int?
+  // Equity investment amount
+  equityInvestment Float?
+  // Debt financing amount
+  debtFinancing    Float?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@unique([forecastId, userId])
   @@index([forecastId])

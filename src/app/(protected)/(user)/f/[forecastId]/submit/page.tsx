@@ -1,1 +1,5 @@
-// Leaderboard for submissions for a specific forecast for Org Admin
+// Submit prediction page for users
+
+export default function UserSubmitPredictionPage() {
+  return <div>User Submit Prediction - Coming Soon</div>;
+}
