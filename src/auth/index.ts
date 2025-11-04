@@ -1,4 +1,5 @@
 import config from "@/constants/config";
+import Router from "@/constants/router";
 import { Role } from "@/generated/prisma";
 import prisma from "@/lib/prisma";
 import { PrismaAdapter } from "@auth/prisma-adapter";
@@ -30,6 +31,11 @@ const authConfig: AuthOptions = {
       from: config.nextAuth.email.from,
     }),
   ],
+
+  pages: {
+    signIn: Router.SIGN_IN,
+  },
+  
   callbacks: {
     // JWT callback: runs when JWT is created or updated
     // This is where we add custom data to the token

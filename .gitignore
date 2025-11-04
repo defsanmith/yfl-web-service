@@ -40,4 +40,15 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# prisma generated files
 /src/generated/prisma
+
+# IntelliJ IDEA
+.idea/*
+# Keep shared project configuration files
+!.idea/codeStyles/
+!.idea/runConfigurations/
+!.idea/inspectionProfiles/
+!.idea/vcs.xml
+!.idea/modules.xml
+!.idea/*.iml
