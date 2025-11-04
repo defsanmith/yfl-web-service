@@ -16,6 +16,11 @@ import { toast, Toaster } from "sonner";
 // --- Validation ---
 const EmailSchema = z.string().email("Please enter a valid email.");
 
+type SignInViewProps = {
+  error?: string;
+};
+
+
 // --- Action state shape (matches the template’s contract) ---
 type ActionState = {
   success?: boolean;
@@ -79,7 +84,7 @@ function SparkIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-export default function SignInPage() {
+export default function SignInPage({ error }: SignInViewProps) {
   const sp = useSearchParams();
   const callbackUrl = sp?.get("callbackUrl") ?? Router.HOME;
 
@@ -141,6 +146,7 @@ export default function SignInPage() {
           <Card className="border-slate-700 bg-slate-900/90 backdrop-blur text-white">
             <CardHeader className="pb-0">
               <h2 className="text-xl font-semibold text-white">Sign in to continue</h2>
+              {error && <p style={{ color: "red" }}>{error}</p>}
               <p className="text-sm text-white/80">We’ll email you a secure magic link.</p>
             </CardHeader>
             <CardContent className="pt-6">

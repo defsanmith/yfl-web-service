@@ -6,16 +6,15 @@ import { redirect } from "next/navigation";
 export default async function SignInPage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const session = await auth();
-  if (session) {
-    redirect(Router.HOME);
-  }
+  if (session) redirect(Router.HOME);
 
-  const rawError = searchParams?.error;
+  // 👇 Await searchParams before using its properties
+  const params = await searchParams;
+  const rawError = params?.error;
   const error = typeof rawError === "string" ? rawError : undefined;
 
   return <SignInView error={error} />;
 }
-
