@@ -2,7 +2,7 @@
 
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import * as React from "react";
+import React from "react";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ const initialActionState: ActionState = { data: { email: "" } };
 
 // --- Server action (client-executed) ---
 async function requestMagicLinkAction(
-  _prevState: ActionState | undefined,
+  _prevState: ActionState,
   formData: FormData
 ): Promise<ActionState> {
   try {

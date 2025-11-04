@@ -7,7 +7,7 @@ export default function TermsView() {
       </header>
       <section className="space-y-4 text-sm leading-6 text-foreground/90">
         <p>
-          These Terms of Service ("Terms") govern your access to and use of the
+          These Terms of Service (`&quot;`Terms`&quot;`) govern your access to and use of the
           service. By accessing or using the service, you agree to be bound by
           these Terms.
         </p>
