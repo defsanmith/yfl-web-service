@@ -2,7 +2,7 @@ import type { Role } from "@/generated/prisma";
 
 class Router {
   static HOME = "/";
-  static SIGN_IN = "/api/auth/signin";
+  static SIGN_IN = "/signin";
   static UNAUTHORIZED = "/unauthorized";
 
   // Role-specific dashboards
@@ -10,6 +10,9 @@ class Router {
   static DASHBOARD_SUPER_ADMIN = "/dashboard/super-admin";
   static DASHBOARD_ORG_ADMIN = "/dashboard/org-admin";
   static DASHBOARD_USER = "/dashboard/user";
+  // Legal
+  static TERMS = "/terms";
+  static PRIVACY = "/privacy";
 
   // Organizations
   static ORGANIZATIONS = "/orgs";

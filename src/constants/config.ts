@@ -4,7 +4,9 @@ import { z } from "zod";
 const envSchema = z.object({
   // NextAuth
   NEXTAUTH_SECRET: z.string().min(1, "NEXTAUTH_SECRET is required"),
-  NEXTAUTH_URL: z.url("NEXTAUTH_URL must be a valid URL"),
+  NEXTAUTH_URL: z
+    .string()
+    .url("NEXTAUTH_URL must be a valid URL"),
 
   // Admin
   ADMIN_EMAIL: z.email("ADMIN_EMAIL must be a valid email").optional(),
@@ -25,6 +27,12 @@ const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
+
+  // ✅ New — public URL for app (used in emails, logos, etc.)
+  NEXT_PUBLIC_APP_URL: z
+    .string()
+    .url("NEXT_PUBLIC_APP_URL must be a valid URL")
+    .optional(),
 });
 
 // Validate environment variables
@@ -33,7 +41,7 @@ const parseEnv = () => {
 
   if (!result.success) {
     console.error("❌ Invalid environment variables:");
-    console.error(z.treeifyError(result.error));
+    console.error(result.error.format());
     throw new Error("Invalid environment variables");
   }
 
@@ -62,6 +70,11 @@ class Config {
   };
 
   nodeEnv = env.NODE_ENV;
+
+  publicUrl =
+    env.NEXT_PUBLIC_APP_URL ||
+    env.NEXTAUTH_URL ||
+    "http://localhost:3000";
 }
 
 const config = new Config();
