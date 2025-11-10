@@ -1,7 +1,11 @@
 class Router {
   static HOME = "/";
-  static SIGN_IN = "/api/auth/signin";
+  static SIGN_IN = "/signin";
   static UNAUTHORIZED = "/unauthorized";
+
+  // Legal
+  static TERMS = "/terms";
+  static PRIVACY = "/privacy";
 
   // Organizations
   static ORGANIZATIONS = "/orgs";
