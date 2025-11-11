@@ -10,6 +10,7 @@ class Router {
   static DASHBOARD_SUPER_ADMIN = "/dashboard/super-admin";
   static DASHBOARD_ORG_ADMIN = "/dashboard/org-admin";
   static DASHBOARD_USER = "/dashboard/user";
+  
   // Legal
   static TERMS = "/terms";
   static PRIVACY = "/privacy";

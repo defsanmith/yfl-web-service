@@ -8,31 +8,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import {
   ArrowDownRight,
-  ArrowUpRight,
-  ChevronsUpDown,
-  MoreHorizontal,
+  ArrowUpRight
 } from "lucide-react";
 import { useMemo } from "react";
 import {
@@ -225,96 +204,6 @@ export default function UserDashboardView({
               <Area type="monotone" dataKey="b" stroke="currentColor" fillOpacity={1} fill="url(#g2)" />
             </AreaChart>
           </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      {/* Forecasts Tabs & Table */}
-      <Card className="shadow-sm">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <Tabs defaultValue="all">
-              <TabsList>
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="inprogress">In Progress</TabsTrigger>
-                <TabsTrigger value="completed">Completed</TabsTrigger>
-                <TabsTrigger value="bytype">By Type</TabsTrigger>
-              </TabsList>
-            </Tabs>
-
-            <div className="flex items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    Customize Columns <ChevronsUpDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>Title</DropdownMenuItem>
-                  <DropdownMenuItem>Type</DropdownMenuItem>
-                  <DropdownMenuItem>Status</DropdownMenuItem>
-                  <DropdownMenuItem>Target</DropdownMenuItem>
-                  <DropdownMenuItem>Limit</DropdownMenuItem>
-                  <DropdownMenuItem>Reviewer</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <Button size="sm">+ New Forecast</Button>
-            </div>
-          </div>
-
-          <Separator className="my-4" />
-
-          <Table>
-            <TableCaption className="text-left">Forecast summary</TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[40px]">#</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Target</TableHead>
-                <TableHead className="text-right">Limit</TableHead>
-                <TableHead>Reviewer</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {forecasts.map((f, idx) => (
-                <TableRow key={f.id}>
-                  <TableCell className="text-muted-foreground">
-                    {String(idx + 1).padStart(2, "0")}
-                  </TableCell>
-                  <TableCell className="font-medium">{f.title}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="rounded-full">
-                      {f.type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge
-                      status={
-                        f.status === "Completed" ? "Done" : "In Process"
-                      }
-                    />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {f.target.toLocaleString()}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {f.limit.toLocaleString()}
-                  </TableCell>
-                  <TableCell>{f.reviewer}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
         </CardContent>
       </Card>
     </div>
