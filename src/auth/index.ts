@@ -1,6 +1,7 @@
 import config from "@/constants/config";
 import { Role } from "@/generated/prisma";
 import prisma from "@/lib/prisma";
+import { ensureStartingBalancesForUser } from "@/services/finance";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import type {
   GetServerSidePropsContext,
@@ -22,50 +23,60 @@ function emailText(url: string, host: string) {
 This one-time link will expire soon. If you didn’t request it, you can safely ignore this email.`;
 }
 
-function emailHtml({
-  url,
-  host,
-  product = "yFL",
-  accent = "#4f46e5", // brand color
-  logoUrl,            // absolute https url optional
-}: {
+type EmailHtmlParams = {
   url: string;
   host: string;
   product?: string;
   accent?: string;
-  logoUrl?: string;
-}) {
+  logoUrl?: string; // absolute https url optional
+};
+
+function emailHtml({
+  url,
+  host,
+  product = "yFL",
+  accent = "#4f46e5",
+  logoUrl,
+}: EmailHtmlParams) {
+  // Optional logo block to avoid unused param errors
+  const logoBlock = logoUrl
+    ? `<tr><td align="center" style="padding-bottom:16px;">
+         <img src="${logoUrl}" alt="${product} logo" width="48" height="48" style="display:block;border:0" />
+       </td></tr>`
+    : "";
+
   return `<!doctype html>
-<html>
-  <head>
-    <meta name="color-scheme" content="light dark">
-    <meta name="supported-color-schemes" content="light dark">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Sign in to ${product}</title>
-  </head>
-  <body style="margin:0;background:#f6f7f9;padding:24px 0;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f7f9;">
-      <tr><td align="center">
-        <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:14px;padding:32px;font-family:ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;color:#0f172a;">
-          <tr><td align="center" style="font-size:24px;font-weight:700;letter-spacing:-0.02em;">Sign in to ${product}</td></tr>
-          <tr><td align="center" style="padding-top:6px;font-size:14px;color:#6b7280;">Host: ${host}</td></tr>
-          <tr><td align="center" style="padding-top:24px;">
-            <a href="${url}" style="display:inline-block;padding:14px 22px;font-weight:600;border-radius:10px;background:${accent};color:#ffffff;text-decoration:none;">Sign in</a>
+    <html>
+      <head>
+        <meta name="color-scheme" content="light dark">
+        <meta name="supported-color-schemes" content="light dark">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <title>Sign in to ${product}</title>
+      </head>
+      <body style="margin:0;background:#f6f7f9;padding:24px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f7f9;">
+          <tr><td align="center">
+            <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:14px;padding:32px;font-family:ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;color:#0f172a;">
+              ${logoBlock}
+              <tr><td align="center" style="font-size:24px;font-weight:700;letter-spacing:-0.02em;">Sign in to ${product}</td></tr>
+              <tr><td align="center" style="padding-top:6px;font-size:14px;color:#6b7280;">Host: ${host}</td></tr>
+              <tr><td align="center" style="padding-top:24px;">
+                <a href="${url}" style="display:inline-block;padding:14px 22px;font-weight:600;border-radius:10px;background:${accent};color:#ffffff;text-decoration:none;">Sign in</a>
+              </td></tr>
+              <tr><td align="center" style="font-size:12px;color:#6b7280;padding-top:8px;">This magic link expires soon and can be used once.</td></tr>
+              <tr><td style="padding-top:24px;font-size:14px;line-height:1.6;">
+                If the button doesn’t work, copy and paste this URL:<br/>
+                <span style="word-break:break-all;color:#374151;">${url}</span>
+              </td></tr>
+              <tr><td style="padding-top:24px;font-size:12px;color:#6b7280;">Didn’t request this? Ignore this email.</td></tr>
+            </table>
+            <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="padding:16px;font-family:ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;">
+              <tr><td align="center" style="font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} ${product}. All rights reserved.</td></tr>
+            </table>
           </td></tr>
-          <tr><td align="center" style="font-size:12px;color:#6b7280;padding-top:8px;">This magic link expires soon and can be used once.</td></tr>
-          <tr><td style="padding-top:24px;font-size:14px;line-height:1.6;">
-            If the button doesn’t work, copy and paste this URL:<br/>
-            <span style="word-break:break-all;color:#374151;">${url}</span>
-          </td></tr>
-          <tr><td style="padding-top:24px;font-size:12px;color:#6b7280;">Didn’t request this? Ignore this email.</td></tr>
         </table>
-        <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="padding:16px;font-family:ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;">
-          <tr><td align="center" style="font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} ${product}. All rights reserved.</td></tr>
-        </table>
-      </td></tr>
-    </table>
-  </body>
-</html>`;
+      </body>
+    </html>`;
 }
 
 /** ---------- Keep your existing config, add custom mailer ---------- */
@@ -124,19 +135,28 @@ const authConfig: AuthOptions = {
       },
     }),
   ],
+  
+  events: {
+    async createUser({ user }) {
+      try {
+        await ensureStartingBalancesForUser(user.id);
+      } catch (err) {
+        console.error("ensureStartingBalancesForUser failed on createUser:", err);
+      }
+    },
+  },
+
   callbacks: {
     // JWT callback: runs when JWT is created or updated
-    // This is where we add custom data to the token
     async jwt({ token, user, trigger }) {
-      // Initial sign in - user object is available
+      // Initial sign in – user object is available
       if (user) {
         token.id = user.id;
         token.role = user.role;
         token.organizationId = user.organizationId;
       }
 
-      // Handle token refresh or update
-      // Optionally refresh role and organizationId from DB on token update
+      // Handle token refresh or manual update
       if (trigger === "update") {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
@@ -151,8 +171,14 @@ const authConfig: AuthOptions = {
       return token;
     },
 
-    // Session callback: runs when session is checked
-    // This is where we add data from token to session
+    // Sign-in callback: runs each time a user logs in
+    async signIn({ user }) {
+      // Fire-and-forget; ensures every user has seeded balances
+      ensureStartingBalancesForUser(user.id).catch(() => {});
+      return true; // must return true to continue sign-in
+    },
+
+    // Session callback: runs when session is created or checked
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
@@ -162,6 +188,7 @@ const authConfig: AuthOptions = {
       return session;
     },
   },
+
 };
 
 export const handlers = NextAuth(authConfig);
