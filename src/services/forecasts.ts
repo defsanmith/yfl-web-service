@@ -178,6 +178,7 @@ export async function getUpcomingForecastsForUser({
         gte: now,
       },
     },
+    distinct: ['id'],
     orderBy: {
       dueDate: "asc",
     },

@@ -27,6 +27,7 @@ import {
 // Demo data (replace with Prisma/real queries later)
 // ------------------------------------------------------------------
 
+
 const series = [
   { date: "Jun 23", a: 28, b: 14 },
   { date: "Jun 24", a: 10, b: 6 },

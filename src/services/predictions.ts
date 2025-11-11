@@ -8,6 +8,8 @@ import type {
  * Get a prediction by ID
  */
 export async function getPredictionById(id: string) {
+  console.log("🔍 Fetching forecasts for:", { id});
+
   return await prisma.prediction.findUnique({
     where: { id },
     include: {

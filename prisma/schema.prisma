@@ -167,6 +167,9 @@ model Forecast {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
+  slug            String    @db.VarChar(160)
+
+  @@unique([organizationId, slug])
   @@index([organizationId])
   @@index([categoryId])
   @@index([type])

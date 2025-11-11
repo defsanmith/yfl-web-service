@@ -22,8 +22,25 @@ export default function UserForecastTable({
   page?: number;
   totalPages?: number;
 }) {
+  // 🧭 Defensive de-duplication
+  const uniqueForecasts: Forecast[] = Array.from(
+    new Map((forecasts ?? []).map((f) => [f.id, f])).values()
+  );
+
+  // 🧩 Optional console warning for dev only
+  if (process.env.NODE_ENV !== "production") {
+    const ids = (forecasts ?? []).map((f) => f.id);
+    const dupes = ids.filter((id, i) => ids.indexOf(id) !== i);
+    if (dupes.length) {
+      console.warn(
+        "Duplicate forecast IDs passed to UserForecastTable:",
+        Array.from(new Set(dupes))
+      );
+    }
+  }
+
   // 🧭 Handle empty state
-  if (!forecasts?.length) {
+  if (!uniqueForecasts?.length) {
     return (
       <div className="rounded-md border p-6 text-center text-muted-foreground">
         No forecasts yet. Create your first one to see it here.
@@ -33,16 +50,15 @@ export default function UserForecastTable({
 
   return (
     <div className="space-y-3">
-      {/* Header text above table */}
       <div className="text-sm text-muted-foreground">
-        Showing {forecasts.length} {forecasts.length === 1 ? "forecast" : "forecasts"}
+        Showing {uniqueForecasts.length}{" "}
+        {uniqueForecasts.length === 1 ? "forecast" : "forecasts"}
         {typeof total === "number" ? ` • ${total} total` : ""}
         {typeof page === "number" && typeof totalPages === "number"
           ? ` • Page ${page} of ${totalPages}`
           : ""}
       </div>
 
-      {/* Forecast table */}
       <div className="overflow-x-auto rounded-md border">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left">
@@ -56,7 +72,7 @@ export default function UserForecastTable({
             </tr>
           </thead>
           <tbody>
-            {forecasts.map((f, i) => (
+            {uniqueForecasts.map((f, i) => (
               <tr key={f.id} className="border-t hover:bg-muted/30">
                 <td className="px-4 py-2 text-muted-foreground">
                   {String(i + 1).padStart(2, "0")}
@@ -108,7 +124,6 @@ export default function UserForecastTable({
         </table>
       </div>
 
-      {/* Optional pagination footer */}
       <div className="text-sm text-muted-foreground text-right">
         Page {page ?? 1}
         {totalPages ? ` of ${totalPages}` : ""}
