@@ -47,40 +47,6 @@ import {
 // ------------------------------------------------------------------
 // Demo data (replace with Prisma/real queries later)
 // ------------------------------------------------------------------
-const kpis = [
-  {
-    id: "revenue",
-    label: "Total Revenue",
-    value: "$1,250.00",
-    delta: "+12.5%",
-    up: true,
-    subLabel: "Visitors for the last 6 months",
-  },
-  {
-    id: "customers",
-    label: "New Customers",
-    value: "1,234",
-    delta: "-20%",
-    up: false,
-    subLabel: "Acquisition needs attention",
-  },
-  {
-    id: "accounts",
-    label: "Active Accounts",
-    value: "45,678",
-    delta: "+12.5%",
-    up: true,
-    subLabel: "Engagement exceed targets",
-  },
-  {
-    id: "growth",
-    label: "Growth Rate",
-    value: "4.5%",
-    delta: "+4.5%",
-    up: true,
-    subLabel: "Meets growth projections",
-  },
-];
 
 const series = [
   { date: "Jun 23", a: 28, b: 14 },
@@ -155,44 +121,65 @@ function StatusBadge({ status }: { status: "Done" | "In Process" }) {
 // ------------------------------------------------------------------
 // Component
 // ------------------------------------------------------------------
-export default function UserDashboardView() {
+
+type Stat = {
+  id: string;
+  label: string;
+  value: string | number;
+  subLabel?: string;
+  up?: boolean;
+  delta?: string;
+};
+
+type UserDashboardViewProps = {
+  userName?: string;
+  stats?: Stat[];
+  // forecasts?: Forecast[]  // keep/add if you actually use it
+};
+
+export default function UserDashboardView({
+  userName = "",
+  stats = [],
+}: UserDashboardViewProps) {
   const timeframeTabs = useMemo(
     () => ["Last 3 months", "Last 30 days", "Last 7 days"],
     []
   );
 
+  // console.log("userName prop:", userName);
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="space-y-1">
-        <h1 className="text-3xl font-bold">User Dashboard</h1>
+        <h1 className="text-3xl font-bold">Welcome{userName ? `, ${userName}` : ""}</h1>
         <p className="text-muted-foreground">
           Track your forecasts, deadlines, and progress here.
         </p>
       </div>
 
-      {/* KPI Cards */}
+       {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {kpis.map((kpi) => (
+        {stats.map((kpi) => (
           <Card key={kpi.id} className="shadow-sm">
             <CardHeader className="pb-2">
               <div className="text-sm text-muted-foreground flex items-center justify-between">
                 <span>{kpi.label}</span>
-                <span className="inline-flex items-center gap-1 text-xs font-medium">
-                  {kpi.up ? (
-                    <ArrowUpRight className="h-4 w-4" />
-                  ) : (
-                    <ArrowDownRight className="h-4 w-4" />
-                  )}
-                  {kpi.delta}
-                </span>
+                {(kpi.delta ?? kpi.up !== undefined) && (
+                  <span className="inline-flex items-center gap-1 text-xs font-medium">
+                    {kpi.up ? (
+                      <ArrowUpRight className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <ArrowDownRight className="h-4 w-4 text-red-500" />
+                    )}
+                    {kpi.delta}
+                  </span>
+                )}
               </div>
-              <CardTitle className="text-3xl font-semibold tracking-tight">
-                {kpi.value}
-              </CardTitle>
+              <CardTitle className="text-3xl font-semibold tracking-tight">{kpi.value}</CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
-              <p className="text-xs text-muted-foreground">{kpi.subLabel}</p>
+              {kpi.subLabel && <p className="text-xs text-muted-foreground">{kpi.subLabel}</p>}
             </CardContent>
           </Card>
         ))}

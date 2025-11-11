@@ -1,9 +1,10 @@
-import { PrismaClient, Role } from "../src/generated/prisma";
 import config from "../src/constants/config";
+import { PrismaClient, Role } from "../src/generated/prisma";
 
 const prisma = new PrismaClient();
+const CENTS = (d: number) => Math.round(d * 100);
 
-async function main() {
+async function seedAdmin() {
   const adminEmail = config.nextAuth.adminEmail;
 
   if (!adminEmail) {
@@ -11,43 +12,101 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`🌱 Seeding database...`);
+  console.log(`🌱 Seeding admin user...`);
 
-  // Check if admin user already exists
   const existingAdmin = await prisma.user.findUnique({
     where: { email: adminEmail },
   });
 
   if (existingAdmin) {
     console.log(`✅ Admin user already exists: ${adminEmail}`);
-
-    // Update role to SUPER_ADMIN if it's not already
     if (existingAdmin.role !== Role.SUPER_ADMIN) {
-      const updatedAdmin = await prisma.user.update({
+      await prisma.user.update({
         where: { email: adminEmail },
         data: { role: Role.SUPER_ADMIN },
       });
       console.log(`🔄 Updated user role to SUPER_ADMIN`);
-      console.log(updatedAdmin);
-    } else {
-      console.log(existingAdmin);
     }
   } else {
-    // Create new admin user
-    const adminUser = await prisma.user.create({
+    await prisma.user.create({
       data: {
         email: adminEmail,
         role: Role.SUPER_ADMIN,
-        emailVerified: new Date(), // Mark as verified so they can login
+        emailVerified: new Date(),
         name: "Super Admin",
       },
     });
-
     console.log(`✅ Created admin user: ${adminEmail}`);
-    console.log(adminUser);
+  }
+}
+
+async function seedRegularUser() {
+  const userEmail = "edmiyatake@gmail.com";
+
+  console.log(`🌱 Seeding regular user...`);
+
+  let user = await prisma.user.findUnique({
+    where: { email: userEmail },
+  });
+
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        email: userEmail,
+        role: Role.USER,
+        name: "Edwin Miyatake",
+        emailVerified: new Date(),
+      },
+    });
+    console.log(`✅ Created user: ${userEmail}`);
+  } else {
+    console.log(`✅ User already exists: ${userEmail}`);
   }
 
-  console.log(`🌱 Seeding completed!`);
+  // Check if the ledger is already seeded
+  const already = await prisma.ledgerEntry.findFirst({
+    where: { userId: user.id, memo: "SEED: Starting grant $10k" },
+  });
+
+  if (already) {
+    console.log(`⚠️  Ledger already seeded for ${userEmail}`);
+    return;
+  }
+
+  // Create starting balance and loan
+  await prisma.ledgerEntry.createMany({
+    data: [
+      {
+        userId: user.id,
+        amountCents: CENTS(10000),
+        kind: "PAYMENT",
+        memo: "SEED: Starting grant $10k",
+      },
+      {
+        userId: user.id,
+        amountCents: CENTS(10000),
+        kind: "PAYMENT",
+        memo: "SEED: Loan proceeds $10k",
+      },
+      {
+        userId: user.id,
+        amountCents: CENTS(10000),
+        kind: "DEBT",
+        memo: "SEED: Loan principal $10k (outstanding)",
+      },
+    ],
+  });
+
+  console.log(`💰 Seeded ledger for ${userEmail}`);
+}
+
+async function main() {
+  console.log(`🌱 Starting seed...`);
+
+  await seedAdmin();
+  await seedRegularUser();
+
+  console.log(`✅ Seeding completed!`);
 }
 
 main()
