@@ -1,77 +1,52 @@
 // src/app/(protected)/(user)/dashboard/page.tsx
 import { auth } from "@/auth";
 import Router from "@/constants/router";
-import { getForecastCounts, getUserFinanceStats } from "@/services/dashboard";
+import { getForecasts } from "@/services/forecasts";
 import UserDashboardView from "@/views/home/UserDashboardView";
+import UserForecastTable from "@/views/home/UserForecastTable";
 import { redirect } from "next/navigation";
 
-/**
- * Format numbers as whole-dollar USD strings.
- */
-const currency = (n: number) =>
-  n.toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  });
-
 export default async function UserDashboardPage() {
-  // 1️⃣  Authenticate user (server-side)
+  // 1) Authenticate user (server-side)
   const session = await auth();
   if (!session) redirect(Router.SIGN_IN);
 
   const userId = session.user.id!;
   const orgId = session.user.organizationId ?? null;
 
-  // 2️⃣  Fallback display name
+  // 2) Fallback display name
   const displayName =
     session.user.name ??
     (session.user.email ? session.user.email.split("@")[0] : "Player");
 
-  // 3️⃣  Query Prisma for finance + forecast data
-  const [fin, counts] = await Promise.all([
-    getUserFinanceStats(userId),
-    orgId
-      ? getForecastCounts(orgId, userId)
-      : Promise.resolve({ orgCount: 0, userCount: 0 }),
-  ]);
+  // 3) Fetch only forecasts for this user (no KPIs)
+  const forecastBundle = orgId
+    ? await getForecasts({
+        organizationId: orgId,
+        userId, // filter to this user
+        page: 1,
+        limit: 20,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      })
+    : { forecasts: [], total: 0, page: 1, limit: 20, totalPages: 0 };
 
-  // 4️⃣  Build KPI cards (matches your dashboard view)
-  const kpis = [
-    {
-      id: "forecasts",
-      label: "Total Forecasts",
-      value: counts.userCount ?? 0, // change to orgCount for org-level
-      subLabel: "Forecasts created by you",
-      up: true,
-      delta: "+0%",
-    },
-    {
-      id: "balance",
-      label: "Current Balance",
-      value: currency(fin.balance),
-      subLabel: "Available account balance",
-      up: true,
-      delta: "+0%",
-    },
-    {
-      id: "loan",
-      label: "Loan Balance",
-      value: currency(fin.debt),
-      subLabel: "Outstanding loan amount",
-      up: false,
-      delta: "-0%",
-    },
-    {
-      id: "revenue",
-      label: "Revenue (MTD)",
-      value: currency(fin.mtdRevenue),
-      subLabel: "Month-to-date revenue",
-      up: true,
-      delta: "+0%",
-    },
-  ];
+  const { forecasts, total, page, totalPages } = forecastBundle;
 
-  // 5️⃣  Render client dashboard view
-  return <UserDashboardView userName={displayName} stats={kpis} />;
+  // 4) Render dashboard header + forecasts table (no KPI prop)
+  return (
+    <div className="p-6 space-y-6">
+      <UserDashboardView userName={displayName} />
+
+      <section className="space-y-3">
+        <h2 className="text-2xl font-semibold">Your Forecasts</h2>
+        <UserForecastTable
+          forecasts={forecasts}
+          total={total}
+          page={page}
+          totalPages={totalPages}
+        />
+      </section>
+    </div>
+  );
 }

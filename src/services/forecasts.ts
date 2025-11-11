@@ -27,6 +27,7 @@ export async function getForecastById(id: string) {
  */
 export async function getForecasts({
   organizationId,
+  userId,
   page = 1,
   limit = 10,
   search,
@@ -35,6 +36,7 @@ export async function getForecasts({
   sortOrder = "desc",
 }: {
   organizationId: string;
+  userId?: string;
   page?: number;
   limit?: number;
   search?: string;
@@ -47,6 +49,7 @@ export async function getForecasts({
   // Build where clause
   const where: Prisma.ForecastWhereInput = {
     organizationId,
+    ...(userId && { userId }),
     ...(type && { type }),
     ...(search && {
       title: {

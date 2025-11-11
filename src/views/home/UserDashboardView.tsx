@@ -58,42 +58,42 @@ const series = [
   { date: "Jun 29", a: 65, b: 28 },
 ];
 
-const rows = [
+const forecasts = [
   {
     id: "1",
-    header: "Cover page",
-    type: "Cover page",
-    status: "In Process" as const,
-    target: 18,
-    limit: 5,
-    reviewer: "Eddie Lake",
+    title: "Q4 Revenue Forecast",
+    type: "Financial",
+    status: "In Progress" as const,
+    target: 125000,
+    limit: 100000,
+    reviewer: "David Savlowitz",
   },
   {
     id: "2",
-    header: "Table of contents",
-    type: "Table of contents",
-    status: "Done" as const,
-    target: 29,
-    limit: 24,
-    reviewer: "Eddie Lake",
+    title: "Customer Growth Projection",
+    type: "Market Analysis",
+    status: "Completed" as const,
+    target: 7500,
+    limit: 5000,
+    reviewer: "David Savlowitz",
   },
   {
     id: "3",
-    header: "Executive summary",
-    type: "Narrative",
-    status: "Done" as const,
-    target: 10,
-    limit: 13,
-    reviewer: "Eddie Lake",
+    title: "Operating Expenses Estimate",
+    type: "Operational",
+    status: "Completed" as const,
+    target: 48000,
+    limit: 45000,
+    reviewer: "David Savlowitz",
   },
   {
     id: "4",
-    header: "Technical approach",
-    type: "Narrative",
-    status: "Done" as const,
-    target: 27,
-    limit: 23,
-    reviewer: "Jamik Tashpulatov",
+    title: "Product Launch Impact Model",
+    type: "Scenario Analysis",
+    status: "In Progress" as const,
+    target: 35000,
+    limit: 30000,
+    reviewer: "David Savlowitz",
   },
 ];
 
@@ -228,16 +228,16 @@ export default function UserDashboardView({
         </CardContent>
       </Card>
 
-      {/* Tabs & Table */}
+      {/* Forecasts Tabs & Table */}
       <Card className="shadow-sm">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <Tabs defaultValue="outline">
+            <Tabs defaultValue="all">
               <TabsList>
-                <TabsTrigger value="outline">Outline</TabsTrigger>
-                <TabsTrigger value="past">Past Performance <Badge className="ml-2" variant="secondary">3</Badge></TabsTrigger>
-                <TabsTrigger value="key">Key Personnel <Badge className="ml-2" variant="secondary">2</Badge></TabsTrigger>
-                <TabsTrigger value="docs">Focus Documents</TabsTrigger>
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="inprogress">In Progress</TabsTrigger>
+                <TabsTrigger value="completed">Completed</TabsTrigger>
+                <TabsTrigger value="bytype">By Type</TabsTrigger>
               </TabsList>
             </Tabs>
 
@@ -251,8 +251,8 @@ export default function UserDashboardView({
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>Header</DropdownMenuItem>
-                  <DropdownMenuItem>Section Type</DropdownMenuItem>
+                  <DropdownMenuItem>Title</DropdownMenuItem>
+                  <DropdownMenuItem>Type</DropdownMenuItem>
                   <DropdownMenuItem>Status</DropdownMenuItem>
                   <DropdownMenuItem>Target</DropdownMenuItem>
                   <DropdownMenuItem>Limit</DropdownMenuItem>
@@ -260,19 +260,19 @@ export default function UserDashboardView({
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Button size="sm">+ Add Section</Button>
+              <Button size="sm">+ New Forecast</Button>
             </div>
           </div>
 
           <Separator className="my-4" />
 
           <Table>
-            <TableCaption className="text-left">Draft outline for Proposal</TableCaption>
+            <TableCaption className="text-left">Forecast summary</TableCaption>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[40px]">#</TableHead>
-                <TableHead>Header</TableHead>
-                <TableHead>Section Type</TableHead>
+                <TableHead>Title</TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Target</TableHead>
                 <TableHead className="text-right">Limit</TableHead>
@@ -281,21 +281,31 @@ export default function UserDashboardView({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((r, idx) => (
-                <TableRow key={r.id}>
-                  <TableCell className="text-muted-foreground">{String(idx + 1).padStart(2, "0")}</TableCell>
-                  <TableCell className="font-medium">{r.header}</TableCell>
+              {forecasts.map((f, idx) => (
+                <TableRow key={f.id}>
+                  <TableCell className="text-muted-foreground">
+                    {String(idx + 1).padStart(2, "0")}
+                  </TableCell>
+                  <TableCell className="font-medium">{f.title}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className="rounded-full">
-                      {r.type}
+                      {f.type}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <StatusBadge status={r.status} />
+                    <StatusBadge
+                      status={
+                        f.status === "Completed" ? "Done" : "In Process"
+                      }
+                    />
                   </TableCell>
-                  <TableCell className="text-right">{r.target}</TableCell>
-                  <TableCell className="text-right">{r.limit}</TableCell>
-                  <TableCell>{r.reviewer}</TableCell>
+                  <TableCell className="text-right">
+                    {f.target.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {f.limit.toLocaleString()}
+                  </TableCell>
+                  <TableCell>{f.reviewer}</TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="icon">
                       <MoreHorizontal className="h-4 w-4" />
