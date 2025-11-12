@@ -126,11 +126,20 @@ export default function UserDashboardView({
     []
   );
 
+  const demoStats: Stat[] = useMemo(
+    () => [
+      { id: "open", label: "Open Forecasts", value: 24, up: true,  delta: "12%", subLabel: "vs last 30 days" },
+      { id: "due",  label: "Due Soon",       value: 5,  up: false, delta: "−2",  subLabel: "next 7 days" },
+      { id: "acc",  label: "Avg. Accuracy",  value: "74%", up: true, delta: "3%", subLabel: "rolling 90 days" },
+      { id: "rev",  label: "Ledger Balance", value: "$48,300", up: true, delta: "$1.2k", subLabel: "MTD" },
+    ],
+    []
+  );
+
   // console.log("userName prop:", userName);
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div className="space-y-1">
         <h1 className="text-3xl font-bold">Welcome{userName ? `, ${userName}` : ""}</h1>
         <p className="text-muted-foreground">
@@ -138,14 +147,14 @@ export default function UserDashboardView({
         </p>
       </div>
 
-       {/* KPI Cards */}
+      {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((kpi) => (
+        {demoStats.map((kpi) => (
           <Card key={kpi.id} className="shadow-sm">
             <CardHeader className="pb-2">
               <div className="text-sm text-muted-foreground flex items-center justify-between">
                 <span>{kpi.label}</span>
-                {(kpi.delta ?? kpi.up !== undefined) && (
+                {(kpi.delta !== undefined || kpi.up !== undefined) && (
                   <span className="inline-flex items-center gap-1 text-xs font-medium">
                     {kpi.up ? (
                       <ArrowUpRight className="h-4 w-4 text-green-500" />
@@ -156,10 +165,14 @@ export default function UserDashboardView({
                   </span>
                 )}
               </div>
-              <CardTitle className="text-3xl font-semibold tracking-tight">{kpi.value}</CardTitle>
+              <CardTitle className="text-3xl font-semibold tracking-tight">
+                {kpi.value}
+              </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
-              {kpi.subLabel && <p className="text-xs text-muted-foreground">{kpi.subLabel}</p>}
+              {kpi.subLabel && (
+                <p className="text-xs text-muted-foreground">{kpi.subLabel}</p>
+              )}
             </CardContent>
           </Card>
         ))}

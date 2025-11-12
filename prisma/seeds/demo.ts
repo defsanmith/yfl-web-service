@@ -208,7 +208,7 @@ async function main() {
     create: {
       forecastId: binary.id,
       userId: user.id,
-      value: "true",
+      value: "5000",
       confidence: 65,
       reasoning:
         "Energy base effects plus shelter persistence. Nowcasting models suggest an upside risk.",
