@@ -4,6 +4,33 @@ import type {
   CreateForecastInput,
   UpdateForecastInput,
 } from "@/schemas/forecasts";
+import slugify from "slugify";
+
+
+/** 
+ * Generate a URL-friendly slug from a forecast title
+ */
+export function baseSlug(title: string) {
+  return slugify(title, { lower: true, strict: true, trim: true });
+}
+
+async function getUniqueForecastSlug(title: string, organizationId: string) {
+  const base = baseSlug(title) || "forecast";
+  let slug = base;
+  let n = 1;
+
+  // If you have the compound unique index above, use findFirst with both fields
+  // Loop until no conflict for this org
+  while (true) {
+    const conflict = await prisma.forecast.findFirst({
+      where: { organizationId, slug },
+      select: { id: true },
+    });
+    if (!conflict) return slug;
+    n += 1;
+    slug = `${base}-${n}`;
+  }
+}
 
 /**
  * Get a forecast by ID
@@ -95,9 +122,12 @@ export async function getForecasts({
  * Create a new forecast
  */
 export async function createForecast(data: CreateForecastInput) {
+  const slug = await getUniqueForecastSlug(data.title, data.organizationId);
+
   return await prisma.forecast.create({
     data: {
       title: data.title,
+      slug,
       description: data.description,
       type: data.type,
       dataType: data.dataType,
