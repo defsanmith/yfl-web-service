@@ -1,0 +1,23 @@
+-- AlterTable
+ALTER TABLE "Forecast" ADD COLUMN     "actualValue" TEXT;
+
+-- AlterTable
+ALTER TABLE "Prediction" ADD COLUMN     "absoluteActualErrorPct" DOUBLE PRECISION,
+ADD COLUMN     "absoluteError" DOUBLE PRECISION,
+ADD COLUMN     "absoluteForecastErrorPct" DOUBLE PRECISION,
+ADD COLUMN     "brierScore" DOUBLE PRECISION,
+ADD COLUMN     "debtRepayment" DOUBLE PRECISION,
+ADD COLUMN     "error" DOUBLE PRECISION,
+ADD COLUMN     "financingGrossProfit" DOUBLE PRECISION,
+ADD COLUMN     "highLow" TEXT,
+ADD COLUMN     "isCorrect" BOOLEAN,
+ADD COLUMN     "netProfitEquityPlusDebt" DOUBLE PRECISION,
+ADD COLUMN     "ppVariance" DOUBLE PRECISION,
+ADD COLUMN     "profitPerHour" DOUBLE PRECISION,
+ADD COLUMN     "roe" DOUBLE PRECISION,
+ADD COLUMN     "roePct" DOUBLE PRECISION,
+ADD COLUMN     "rof" DOUBLE PRECISION,
+ADD COLUMN     "rofPct" DOUBLE PRECISION,
+ADD COLUMN     "roiEquityPlusDebtPct" DOUBLE PRECISION,
+ADD COLUMN     "roiScore" DOUBLE PRECISION,
+ADD COLUMN     "totalInvestment" DOUBLE PRECISION;

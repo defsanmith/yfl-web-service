@@ -126,6 +126,7 @@ model Forecast {
   dataType        DataType? // Only for CONTINUOUS forecasts
   dueDate         DateTime // When predictions are due (includes time)
   dataReleaseDate DateTime? // When the actual data will be released (includes time)
+  actualValue     String? // Actual outcome - for BINARY: "true"/"false", for CONTINUOUS: numeric string
   organizationId  String
   organization    Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   categoryId      String?
@@ -165,8 +166,30 @@ model Prediction {
   equityInvestment Float?
   // Debt financing amount
   debtFinancing    Float?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+
+  // Derived metrics (calculated by PredictionMetricsService)
+  totalInvestment          Float?
+  isCorrect                Boolean? // for binary
+  highLow                  String? // for continuous: "HIGH" | "LOW" | "PERFECT"
+  ppVariance               Float? // probability variance for binary
+  error                    Float? // for continuous
+  brierScore               Float? // for binary
+  absoluteError            Float? // for continuous
+  absoluteActualErrorPct   Float?
+  absoluteForecastErrorPct Float?
+  roiScore                 Float? // unified ROI score from Brier / % error
+  roe                      Float? // profit from equity (amount, not %)
+  roePct                   Float? // return on equity (decimal)
+  financingGrossProfit     Float? // profit from debt before repayment
+  debtRepayment            Float? // interest payment at -10% of debt
+  rof                      Float? // net profit from financing (debt)
+  rofPct                   Float? // ROI on net debt (decimal)
+  netProfitEquityPlusDebt  Float? // ROT: total net profit (equity + debt)
+  roiEquityPlusDebtPct     Float? // ROI % on equity + debt
+  profitPerHour            Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([forecastId, userId])
   @@index([forecastId])

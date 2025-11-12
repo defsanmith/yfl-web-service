@@ -4,6 +4,7 @@ import type {
   CreateForecastInput,
   UpdateForecastInput,
 } from "@/schemas/forecasts";
+import { PredictionMetricsService } from "./prediction-metrics";
 
 /**
  * Get a forecast by ID
@@ -92,7 +93,7 @@ export async function getForecasts({
  * Create a new forecast
  */
 export async function createForecast(data: CreateForecastInput) {
-  return await prisma.forecast.create({
+  const forecast = await prisma.forecast.create({
     data: {
       title: data.title,
       description: data.description,
@@ -102,6 +103,7 @@ export async function createForecast(data: CreateForecastInput) {
       dataReleaseDate: data.dataReleaseDate
         ? new Date(data.dataReleaseDate)
         : null,
+      actualValue: data.actualValue,
       organizationId: data.organizationId,
       categoryId: data.categoryId,
       options: data.options || undefined,
@@ -115,13 +117,26 @@ export async function createForecast(data: CreateForecastInput) {
       },
     },
   });
+
+  // If actualValue is provided, recalculate metrics for all predictions
+  if (data.actualValue) {
+    await PredictionMetricsService.recalculateMetricsForForecast(forecast.id);
+  }
+
+  return forecast;
 }
 
 /**
  * Update a forecast
  */
 export async function updateForecast(data: UpdateForecastInput) {
-  return await prisma.forecast.update({
+  // Get the current forecast to check if actualValue changed
+  const currentForecast = await prisma.forecast.findUnique({
+    where: { id: data.id },
+    select: { actualValue: true },
+  });
+
+  const forecast = await prisma.forecast.update({
     where: { id: data.id },
     data: {
       title: data.title,
@@ -132,6 +147,7 @@ export async function updateForecast(data: UpdateForecastInput) {
       dataReleaseDate: data.dataReleaseDate
         ? new Date(data.dataReleaseDate)
         : null,
+      actualValue: data.actualValue,
       categoryId: data.categoryId,
       options: data.options || undefined,
     },
@@ -144,6 +160,13 @@ export async function updateForecast(data: UpdateForecastInput) {
       },
     },
   });
+
+  // If actualValue changed, recalculate metrics for all predictions
+  if (currentForecast?.actualValue !== data.actualValue) {
+    await PredictionMetricsService.recalculateMetricsForForecast(data.id);
+  }
+
+  return forecast;
 }
 
 /**
