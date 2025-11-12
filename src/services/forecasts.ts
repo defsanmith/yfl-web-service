@@ -2,6 +2,7 @@ import { ForecastType, Prisma } from "@/generated/prisma";
 import prisma from "@/lib/prisma";
 import type {
   CreateForecastInput,
+  SetActualValueInput,
   UpdateForecastInput,
 } from "@/schemas/forecasts";
 import { PredictionMetricsService } from "./prediction-metrics";
@@ -165,6 +166,55 @@ export async function updateForecast(data: UpdateForecastInput) {
   if (currentForecast?.actualValue !== data.actualValue) {
     await PredictionMetricsService.recalculateMetricsForForecast(data.id);
   }
+
+  return forecast;
+}
+
+/**
+ * Set the actual value for a forecast
+ * If the actual value is set before the due date or data release date,
+ * both dates are automatically updated to the current time
+ */
+export async function setActualValue(data: SetActualValueInput) {
+  const now = new Date();
+
+  // Get the current forecast
+  const currentForecast = await prisma.forecast.findUnique({
+    where: { id: data.id },
+    select: { dueDate: true, dataReleaseDate: true },
+  });
+
+  if (!currentForecast) {
+    throw new Error("Forecast not found");
+  }
+
+  // Check if we need to update dates
+  const needsDateUpdate =
+    now < currentForecast.dueDate ||
+    (currentForecast.dataReleaseDate && now < currentForecast.dataReleaseDate);
+
+  const forecast = await prisma.forecast.update({
+    where: { id: data.id },
+    data: {
+      actualValue: data.actualValue,
+      // Update dates if actual value is set before due date or data release date
+      ...(needsDateUpdate && {
+        dueDate: now,
+        dataReleaseDate: now,
+      }),
+    },
+    include: {
+      organization: {
+        select: { id: true, name: true },
+      },
+      category: {
+        select: { id: true, name: true, color: true },
+      },
+    },
+  });
+
+  // Recalculate metrics for all predictions
+  await PredictionMetricsService.recalculateMetricsForForecast(data.id);
 
   return forecast;
 }
