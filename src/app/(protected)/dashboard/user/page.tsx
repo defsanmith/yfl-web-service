@@ -10,7 +10,7 @@ import type { UpcomingForecast } from "@/views/forecasts/UpcomingForecastView";
 import UpcomingForecastsTable from "@/views/forecasts/UpcomingForecastView";
 import UserDashboardView from "@/views/home/UserDashboardView";
 
-// IMPORTANT: mirror the exact include/selects from the service above
+// Define type with relations for forecasts
 type ForecastWithRelations = Prisma.ForecastGetPayload<{
   include: {
     organization: { select: { id: true; name: true } };
@@ -53,7 +53,7 @@ function toUpcomingForecasts(
       type: f.type ?? null,
       status: computedStatus,
       org: f.organization?.name ?? null,
-      prediction,          // <- now number | null
+      prediction,
       reviewer: null,
     };
   });
