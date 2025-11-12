@@ -38,45 +38,6 @@ const series = [
   { date: "Jun 29", a: 65, b: 28 },
 ];
 
-const forecasts = [
-  {
-    id: "1",
-    title: "Q4 Revenue Forecast",
-    type: "Financial",
-    status: "In Progress" as const,
-    target: 125000,
-    limit: 100000,
-    reviewer: "David Savlowitz",
-  },
-  {
-    id: "2",
-    title: "Customer Growth Projection",
-    type: "Market Analysis",
-    status: "Completed" as const,
-    target: 7500,
-    limit: 5000,
-    reviewer: "David Savlowitz",
-  },
-  {
-    id: "3",
-    title: "Operating Expenses Estimate",
-    type: "Operational",
-    status: "Completed" as const,
-    target: 48000,
-    limit: 45000,
-    reviewer: "David Savlowitz",
-  },
-  {
-    id: "4",
-    title: "Product Launch Impact Model",
-    type: "Scenario Analysis",
-    status: "In Progress" as const,
-    target: 35000,
-    limit: 30000,
-    reviewer: "David Savlowitz",
-  },
-];
-
 // Small helper for status badge styles
 function StatusBadge({ status }: { status: "Done" | "In Process" }) {
   return (
