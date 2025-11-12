@@ -164,36 +164,31 @@ export async function deleteForecast(id: string) {
  */
 export async function getUpcomingForecastsForUser({
   organizationId,
+  userId,
   limit = 10,
 }: {
   organizationId: string;
+  userId: string;
   limit?: number;
 }) {
   const now = new Date();
 
-  const forecasts = await prisma.forecast.findMany({
+  return prisma.forecast.findMany({
     where: {
       organizationId,
-      dueDate: {
-        gte: now,
-      },
+      dueDate: { gte: now },
     },
-    distinct: ['id'],
-    orderBy: {
-      dueDate: "asc",
-    },
+    orderBy: { dueDate: "asc" },
     take: limit,
     include: {
-      organization: {
-        select: { id: true, name: true },
-      },
-      category: {
-        select: { id: true, name: true, color: true },
+      organization: { select: { id: true, name: true } },
+      category: { select: { id: true, name: true, color: true } },
+      predictions: {
+        where: { userId }, // only this user's prediction
+        select: { id: true, userId: true, value: true },
       },
     },
   });
-
-  return forecasts;
 }
 
 /**

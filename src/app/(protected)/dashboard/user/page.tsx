@@ -4,18 +4,66 @@ import Router from "@/constants/router";
 import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
+import type { Prisma } from "@/generated/prisma";
 import { getUpcomingForecastsForUser } from "@/services/forecasts";
 import type { UpcomingForecast } from "@/views/forecasts/UpcomingForecastView";
 import UpcomingForecastsTable from "@/views/forecasts/UpcomingForecastView";
 import UserDashboardView from "@/views/home/UserDashboardView";
+
+// IMPORTANT: mirror the exact include/selects from the service above
+type ForecastWithRelations = Prisma.ForecastGetPayload<{
+  include: {
+    organization: { select: { id: true; name: true } };
+    category: { select: { id: true; name: true; color: true } };
+    predictions: { select: { id: true; userId: true; value: true } };
+  };
+}>;
+
+// Map forecasts to table rows
+function toUpcomingForecasts(
+  forecasts: ForecastWithRelations[] | undefined,
+  currentUserId?: string
+): UpcomingForecast[] {
+  const now = new Date();
+
+  return (forecasts ?? []).map((f): UpcomingForecast => {
+    const mine = f.predictions.find(p =>
+      currentUserId ? p.userId === currentUserId : true
+    );
+
+    // ---- convert string -> number per forecast type ----
+    let prediction: number | null = null;
+    if (mine?.value != null) {
+      if (f.type === "CONTINUOUS") {
+        const n = Number(mine.value);
+        prediction = Number.isFinite(n) ? n : null;
+      } else if (f.type === "BINARY") {
+        if (mine.value === "true") prediction = 1;
+        else if (mine.value === "false") prediction = 0;
+      } // CATEGORICAL -> keep null since UI expects number
+    }
+
+    const due = f.dueDate ? new Date(f.dueDate) : null;
+    const computedStatus: UpcomingForecast["status"] =
+      due && due < now ? "Completed" : prediction !== null ? "In Progress" : "Open";
+
+    return {
+      id: f.id,
+      title: f.title,
+      type: f.type ?? null,
+      status: computedStatus,
+      org: f.organization?.name ?? null,
+      prediction,          // <- now number | null
+      reviewer: null,
+    };
+  });
+}
 
 export default async function UserDashboardPage() {
   const session = await auth();
   if (!session) redirect(Router.SIGN_IN);
 
   const userId = session.user.id!;
-
-  // Always resolve org from DB; session may have null
   const dbUser = await prisma.user.findUnique({
     where: { id: userId },
     select: { organizationId: true, name: true, email: true },
@@ -33,7 +81,7 @@ export default async function UserDashboardPage() {
     );
   }
 
-  // Fetch upcoming forecasts + (optionally) user's prediction per forecast
+  // NOTE: pass userId now that the service filters predictions by user
   const forecasts = await getUpcomingForecastsForUser({
     organizationId: orgId,
     userId,
@@ -44,36 +92,7 @@ export default async function UserDashboardPage() {
     session.user.name ??
     (session.user.email ? session.user.email.split("@")[0] : "Player");
 
-  // ---- Shape data for UpcomingForecastsTable safely ----
-  // We support two cases:
-  // 1) Service already returns status/myPrediction
-  // 2) Service returns plain Forecast with include { organization, predictions(where: { userId }) }
-  const upcoming: UpcomingForecast[] = (forecasts ?? []).map((f: any) => {
-    // Fallbacks if service didn't compute them:
-    const myPredObj = Array.isArray(f.predictions) ? f.predictions[0] : undefined;
-    const myPrediction = f.myPrediction ?? myPredObj?.value ?? null;
-    const due = f.dueDate ? new Date(f.dueDate) : null;
-    const computedStatus =
-      due && due < new Date() ? "Completed" : myPrediction ? "In Progress" : "Open";
-
-    return {
-      id: f.id,
-      title: f.title,
-      // Your schema has `type`; some views may expect a string
-      type: f.type ?? null,
-      status: f.status ?? computedStatus,
-      org: f.organization?.name ?? null,
-      prediction: myPrediction,
-      // Your schema doesn’t have reviewer/organization.admin; set null
-      reviewer: null,
-    };
-  });
-
-  console.log({
-    email: session.user.email,
-    userId,
-    orgId,
-  });
+  const upcoming = toUpcomingForecasts(forecasts, userId);
 
   return (
     <div className="p-6 space-y-6">
