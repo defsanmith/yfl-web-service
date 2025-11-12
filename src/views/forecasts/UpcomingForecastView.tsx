@@ -65,7 +65,6 @@ export default function UpcomingForecastsTable({
   data,
   pageSize = 10,
   hrefBase = "/forecasts",
-  newHref = "/forecasts/new",
 }: Props) {
   const router = useRouter();
 
