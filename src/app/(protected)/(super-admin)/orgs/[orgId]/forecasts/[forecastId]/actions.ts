@@ -10,9 +10,14 @@ import {
   formDataToString,
   validateFormData,
 } from "@/lib/server-action-utils";
-import { updateForecastSchema } from "@/schemas/forecasts";
+import {
+  setActualValueSchema,
+  updateForecastSchema,
+} from "@/schemas/forecasts";
 import {
   deleteForecast,
+  getForecastById,
+  setActualValue,
   updateForecast,
   validateForecastUpdate,
 } from "@/services/forecasts";
@@ -119,4 +124,53 @@ export async function deleteForecastAction(
 
   // 4. Redirect (throws NEXT_REDIRECT - this is normal!)
   redirect(Router.organizationForecasts(orgId));
+}
+
+type ActualValueFormData = {
+  actualValue: string;
+};
+
+export async function setActualValueAction(
+  orgId: string,
+  forecastId: string,
+  prevState: ActionState<ActualValueFormData> | undefined,
+  formData: FormData
+): Promise<ActionState<ActualValueFormData>> {
+  // 1. Verify permissions
+  await requireRole([Role.SUPER_ADMIN, Role.ORG_ADMIN]);
+
+  // 2. Get forecast to verify it exists and get its type
+  const existingForecast = await getForecastById(forecastId);
+  if (!existingForecast) {
+    return createErrorState({
+      _form: ["Forecast not found"],
+    });
+  }
+
+  // 3. Extract form data
+  const rawData = extractFormData(formData, ["actualValue"]);
+
+  const dataToValidate = {
+    id: forecastId,
+    type: existingForecast.type,
+    actualValue: formDataToString(rawData.actualValue),
+  };
+
+  // 4. Validate schema
+  const validation = validateFormData(setActualValueSchema, dataToValidate);
+  if (!validation.success) {
+    return createErrorState(validation.errors, {
+      actualValue: formDataToString(rawData.actualValue),
+    });
+  }
+
+  // 5. Perform operation
+  await setActualValue(validation.data);
+
+  // 6. Revalidate cache
+  revalidatePath(Router.forecastDetail(orgId, forecastId));
+  revalidatePath(Router.organizationForecasts(orgId));
+
+  // 7. Redirect
+  redirect(Router.forecastDetail(orgId, forecastId));
 }

@@ -2,35 +2,10 @@ import { ForecastType, Prisma } from "@/generated/prisma";
 import prisma from "@/lib/prisma";
 import type {
   CreateForecastInput,
+  SetActualValueInput,
   UpdateForecastInput,
 } from "@/schemas/forecasts";
-import slugify from "slugify";
-
-
-/** 
- * Generate a URL-friendly slug from a forecast title
- */
-export function baseSlug(title: string) {
-  return slugify(title, { lower: true, strict: true, trim: true });
-}
-
-async function getUniqueForecastSlug(title: string, organizationId: string) {
-  const base = baseSlug(title) || "forecast";
-  let slug = base;
-  let n = 1;
-
-  // If you have the compound unique index above, use findFirst with both fields
-  // Loop until no conflict for this org
-  while (true) {
-    const conflict = await prisma.forecast.findFirst({
-      where: { organizationId, slug },
-      select: { id: true },
-    });
-    if (!conflict) return slug;
-    n += 1;
-    slug = `${base}-${n}`;
-  }
-}
+import { PredictionMetricsService } from "./prediction-metrics";
 
 /**
  * Get a forecast by ID
@@ -122,12 +97,9 @@ export async function getForecasts({
  * Create a new forecast
  */
 export async function createForecast(data: CreateForecastInput) {
-  const slug = await getUniqueForecastSlug(data.title, data.organizationId);
-
-  return await prisma.forecast.create({
+  const forecast = await prisma.forecast.create({
     data: {
       title: data.title,
-      slug,
       description: data.description,
       type: data.type,
       dataType: data.dataType,
@@ -135,6 +107,7 @@ export async function createForecast(data: CreateForecastInput) {
       dataReleaseDate: data.dataReleaseDate
         ? new Date(data.dataReleaseDate)
         : null,
+      actualValue: data.actualValue,
       organizationId: data.organizationId,
       categoryId: data.categoryId,
       options: data.options || undefined,
@@ -148,13 +121,26 @@ export async function createForecast(data: CreateForecastInput) {
       },
     },
   });
+
+  // If actualValue is provided, recalculate metrics for all predictions
+  if (data.actualValue) {
+    await PredictionMetricsService.recalculateMetricsForForecast(forecast.id);
+  }
+
+  return forecast;
 }
 
 /**
  * Update a forecast
  */
 export async function updateForecast(data: UpdateForecastInput) {
-  return await prisma.forecast.update({
+  // Get the current forecast to check if actualValue changed
+  const currentForecast = await prisma.forecast.findUnique({
+    where: { id: data.id },
+    select: { actualValue: true },
+  });
+
+  const forecast = await prisma.forecast.update({
     where: { id: data.id },
     data: {
       title: data.title,
@@ -165,6 +151,7 @@ export async function updateForecast(data: UpdateForecastInput) {
       dataReleaseDate: data.dataReleaseDate
         ? new Date(data.dataReleaseDate)
         : null,
+      actualValue: data.actualValue,
       categoryId: data.categoryId,
       options: data.options || undefined,
     },
@@ -177,6 +164,62 @@ export async function updateForecast(data: UpdateForecastInput) {
       },
     },
   });
+
+  // If actualValue changed, recalculate metrics for all predictions
+  if (currentForecast?.actualValue !== data.actualValue) {
+    await PredictionMetricsService.recalculateMetricsForForecast(data.id);
+  }
+
+  return forecast;
+}
+
+/**
+ * Set the actual value for a forecast
+ * If the actual value is set before the due date or data release date,
+ * both dates are automatically updated to the current time
+ */
+export async function setActualValue(data: SetActualValueInput) {
+  const now = new Date();
+
+  // Get the current forecast
+  const currentForecast = await prisma.forecast.findUnique({
+    where: { id: data.id },
+    select: { dueDate: true, dataReleaseDate: true },
+  });
+
+  if (!currentForecast) {
+    throw new Error("Forecast not found");
+  }
+
+  // Check if we need to update dates
+  const needsDateUpdate =
+    now < currentForecast.dueDate ||
+    (currentForecast.dataReleaseDate && now < currentForecast.dataReleaseDate);
+
+  const forecast = await prisma.forecast.update({
+    where: { id: data.id },
+    data: {
+      actualValue: data.actualValue,
+      // Update dates if actual value is set before due date or data release date
+      ...(needsDateUpdate && {
+        dueDate: now,
+        dataReleaseDate: now,
+      }),
+    },
+    include: {
+      organization: {
+        select: { id: true, name: true },
+      },
+      category: {
+        select: { id: true, name: true, color: true },
+      },
+    },
+  });
+
+  // Recalculate metrics for all predictions
+  await PredictionMetricsService.recalculateMetricsForForecast(data.id);
+
+  return forecast;
 }
 
 /**

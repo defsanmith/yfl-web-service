@@ -6,9 +6,11 @@ import { redirect } from "next/navigation";
 
 import type { Prisma } from "@/generated/prisma";
 import { getUpcomingForecastsForUser } from "@/services/forecasts";
+import { getOrganizationLeaderboardWithSort } from "@/services/leaderboard";
 import type { UpcomingForecast } from "@/views/forecasts/UpcomingForecastView";
 import UpcomingForecastsTable from "@/views/forecasts/UpcomingForecastView";
 import UserDashboardView from "@/views/home/UserDashboardView";
+import LeaderboardView from "@/views/leaderboard/LeaderboardView";
 
 // Define type with relations for forecasts
 type ForecastWithRelations = Prisma.ForecastGetPayload<{
@@ -27,7 +29,7 @@ function toUpcomingForecasts(
   const now = new Date();
 
   return (forecasts ?? []).map((f): UpcomingForecast => {
-    const mine = f.predictions.find(p =>
+    const mine = f.predictions.find((p) =>
       currentUserId ? p.userId === currentUserId : true
     );
 
@@ -45,7 +47,11 @@ function toUpcomingForecasts(
 
     const due = f.dueDate ? new Date(f.dueDate) : null;
     const computedStatus: UpcomingForecast["status"] =
-      due && due < now ? "Completed" : prediction !== null ? "In Progress" : "Open";
+      due && due < now
+        ? "Completed"
+        : prediction !== null
+        ? "In Progress"
+        : "Open";
 
     return {
       id: f.id,
@@ -59,9 +65,18 @@ function toUpcomingForecasts(
   });
 }
 
-export default async function UserDashboardPage() {
+type PageProps = {
+  searchParams: Promise<{
+    sortBy?: string;
+    sortOrder?: string;
+  }>;
+};
+
+export default async function UserDashboardPage({ searchParams }: PageProps) {
   const session = await auth();
   if (!session) redirect(Router.SIGN_IN);
+
+  const { sortBy = "accuracyRate", sortOrder = "desc" } = await searchParams;
 
   const userId = session.user.id!;
   const dbUser = await prisma.user.findUnique({
@@ -94,6 +109,19 @@ export default async function UserDashboardPage() {
 
   const upcoming = toUpcomingForecasts(forecasts, userId);
 
+  // Fetch leaderboard data
+  const leaderboardData = await getOrganizationLeaderboardWithSort({
+    organizationId: orgId,
+    sortBy,
+    sortOrder: sortOrder as "asc" | "desc",
+  });
+
+  // Get organization name for leaderboard
+  const organization = await prisma.organization.findUnique({
+    where: { id: orgId },
+    select: { name: true },
+  });
+
   return (
     <div className="p-6 space-y-6">
       <UserDashboardView userName={displayName} />
@@ -111,6 +139,16 @@ export default async function UserDashboardPage() {
         <p className="text-sm text-muted-foreground">
           Showing {upcoming.length.toLocaleString()} upcoming forecasts
         </p>
+      </section>
+
+      {/* Leaderboard Section */}
+      <section className="space-y-3">
+        <LeaderboardView
+          data={leaderboardData}
+          organizationName={organization?.name || "Unknown"}
+          isOrgAdmin={false}
+          currentUserId={userId}
+        />
       </section>
     </div>
   );

@@ -1,18 +1,14 @@
 // prisma/seed.ts
-import "dotenv/config";
-import slugify from "slugify";
 import config from "../src/constants/config";
 import {
   DataType,
   ForecastType,
   LedgerKind,
-  Prisma,
   PrismaClient,
-  Role
+  Role,
 } from "../src/generated/prisma";
 
 const prisma = new PrismaClient();
-
 const CENTS = (d: number) => Math.round(d * 100);
 const addDays = (d: Date, days: number) => {
   const x = new Date(d);
@@ -20,79 +16,71 @@ const addDays = (d: Date, days: number) => {
   return x;
 };
 
-function makeSlug(base: string) {
-  return slugify(base, { lower: true, strict: true, trim: true }).slice(0, 160);
-}
-
-/**
- * Returns a unique slug for the org by suffixing -2, -3, ... if needed.
- * Deterministic if you call in a stable order.
- */
-async function nextAvailableSlug(orgId: string, base: string) {
-  const taken = await prisma.forecast.findMany({
-    where: { organizationId: orgId, slug: { startsWith: base } },
-    select: { slug: true },
-  });
-  const set = new Set(taken.map((t) => t.slug.toLowerCase()));
-  if (!set.has(base)) return base;
-  let n = 2;
-  while (set.has(`${base}-${n}`)) n++;
-  return `${base}-${n}`;
-}
-
 async function seedAdmin() {
   const adminEmail = config.nextAuth.adminEmail;
+
   if (!adminEmail) {
     console.error("❌ ADMIN_EMAIL is not set in environment variables");
     process.exit(1);
   }
 
-  console.log("🌱 Seeding admin user...");
-  const existing = await prisma.user.findUnique({ where: { email: adminEmail } });
-  if (existing) {
-    if (existing.role !== Role.SUPER_ADMIN) {
+  console.log(`🌱 Seeding admin user...`);
+
+  const existingAdmin = await prisma.user.findUnique({
+    where: { email: adminEmail },
+  });
+
+  if (existingAdmin) {
+    console.log(`✅ Admin user already exists: ${adminEmail}`);
+    if (existingAdmin.role !== Role.SUPER_ADMIN) {
       await prisma.user.update({
         where: { email: adminEmail },
         data: { role: Role.SUPER_ADMIN },
       });
-      console.log(`🔄 Updated role to SUPER_ADMIN for ${adminEmail}`);
-    } else {
-      console.log(`✅ Admin user already exists: ${adminEmail}`);
+      console.log(`🔄 Updated user role to SUPER_ADMIN`);
     }
-    return;
+  } else {
+    await prisma.user.create({
+      data: {
+        email: adminEmail,
+        role: Role.SUPER_ADMIN,
+        emailVerified: new Date(),
+        name: "Super Admin",
+      },
+    });
+    console.log(`✅ Created admin user: ${adminEmail}`);
   }
-
-  await prisma.user.create({
-    data: {
-      email: adminEmail,
-      role: Role.SUPER_ADMIN,
-      emailVerified: new Date(),
-      name: "Super Admin",
-    },
-  });
-  console.log(`✅ Created admin user: ${adminEmail}`);
 }
 
 async function seedRegularUser() {
   const userEmail = "edmiyatake@gmail.com";
-  console.log("🌱 Seeding regular user...");
+  console.log(`🌱 Seeding regular user...`);
 
-  // Create or find user
-  const user = await prisma.user.upsert({
+  let user = await prisma.user.findUnique({
     where: { email: userEmail },
-    update: {},
-    create: {
-      email: userEmail,
-      role: Role.USER,
-      name: "Edwin Miyatake",
-      emailVerified: new Date(),
-    },
   });
 
-  // Ledger (idempotent via memo)
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        email: userEmail,
+        role: Role.USER,
+        name: "Edwin Miyatake",
+        emailVerified: new Date(),
+      },
+    });
+    console.log(`✅ Created user: ${userEmail}`);
+  } else {
+    console.log(`✅ User already exists: ${userEmail}`);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Ledger seeding (idempotent by memo)
+  // ─────────────────────────────────────────────────────────────────────────────
   const ledgerAlready = await prisma.ledgerEntry.findFirst({
     where: { userId: user.id, memo: "SEED: Starting grant $10k" },
   });
+
   if (!ledgerAlready) {
     await prisma.ledgerEntry.createMany({
       data: [
@@ -121,9 +109,11 @@ async function seedRegularUser() {
     console.log(`⚠️  Ledger already seeded for ${userEmail}`);
   }
 
-  // Organization
-  const org = await prisma.organization.upsert({
-    where: { name: "Seeded Test Organization" }, // assumes name unique
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Organization + membership
+  // ─────────────────────────────────────────────────────────────────────────────
+  const organization = await prisma.organization.upsert({
+    where: { name: "Seeded Test Organization" },
     update: {},
     create: {
       name: "Seeded Test Organization",
@@ -131,136 +121,106 @@ async function seedRegularUser() {
     },
   });
 
-  // Link user to org
   await prisma.user.update({
     where: { id: user.id },
-    data: { organizationId: org.id },
+    data: { organizationId: organization.id },
   });
 
-  // Categories (requires @@unique([organizationId, name]) on ForecastCategory)
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Forecast Categories (composite unique: @@unique([organizationId, name]))
+  // ─────────────────────────────────────────────────────────────────────────────
   const [salesCat, marketingCat] = await Promise.all([
     prisma.forecastCategory.upsert({
       where: {
         organizationId_name: {
-          organizationId: org.id,
+          organizationId: organization.id,
           name: "Sales",
         },
       },
       update: {},
       create: {
-        organizationId: org.id,
         name: "Sales",
         color: "#22c55e",
+        organizationId: organization.id,
       },
     }),
     prisma.forecastCategory.upsert({
       where: {
         organizationId_name: {
-          organizationId: org.id,
+          organizationId: organization.id,
           name: "Marketing",
         },
       },
       update: {},
       create: {
-        organizationId: org.id,
         name: "Marketing",
         color: "#3b82f6",
+        organizationId: organization.id,
       },
     }),
   ]);
 
-  // Helper to upsert a forecast by (organizationId, slug)
-  async function upsertForecast(args: {
-    title: string;
-    description?: string;
-    type: ForecastType;
-    dataType?: DataType | null;
-    dueInDays: number;
-    releaseInDays?: number;
-    categoryId?: string | null;
-    options?: string[]; // <-- no `| null`
-  }) {
+  // Guard to avoid duplicating forecasts on repeated seeds
+  const existingAnchorForecast = await prisma.forecast.findFirst({
+    where: {
+      organizationId: organization.id,
+      title: "Will we close the MegaCorp deal by month-end?",
+    },
+  });
+
+  if (!existingAnchorForecast) {
+    // ───────────────────────────────────────────────────────────────────────────
+    // Forecasts (schema-aligned)
+    // ───────────────────────────────────────────────────────────────────────────
     const now = new Date();
-    const dueDate = addDays(now, args.dueInDays);
-    const dataReleaseDate = args.releaseInDays ? addDays(now, args.releaseInDays) : null;
 
-    const base = makeSlug(args.title);
-    const slug = await nextAvailableSlug(org.id, base);
-
-    // Build data objects without setting `options` unless present
-    const createData: Prisma.ForecastCreateInput = {
-      organization: { connect: { id: org.id } },
-      slug,
-      title: args.title,
-      description: args.description ?? null,
-      type: args.type,
-      dataType: args.dataType ?? null,
-      dueDate,
-      dataReleaseDate,
-      category: args.categoryId ? { connect: { id: args.categoryId } } : undefined,
-      ...(args.options ? { options: args.options as Prisma.InputJsonValue } : {}), // <-- include only if provided
-    };
-
-    const updateData: Prisma.ForecastUpdateInput = {
-      title: args.title,
-      description: args.description ?? null,
-      type: args.type,
-      dataType: args.dataType ?? null,
-      dueDate,
-      dataReleaseDate,
-      category: args.categoryId ? { connect: { id: args.categoryId } } : { disconnect: true },
-      ...(args.options ? { options: args.options as Prisma.InputJsonValue } : {}), // <-- same here
-    };
-
-    return prisma.forecast.upsert({
-      where: { organizationId_slug: { organizationId: org.id, slug } },
-      update: updateData,
-      create: createData,
+    const f1 = await prisma.forecast.create({
+      data: {
+        title: "Will we close the MegaCorp deal by month-end?",
+        description: "Binary forecast about a key enterprise contract.",
+        type: ForecastType.BINARY,
+        dueDate: addDays(now, 14),
+        dataReleaseDate: addDays(now, 16),
+        organizationId: organization.id,
+        categoryId: salesCat.id,
+      },
     });
-  }
 
-  // Seed 3 forecasts
-  const f1 = await upsertForecast({
-    title: "Will we close the MegaCorp deal by month-end?",
-    description: "Binary forecast about a key enterprise contract.",
-    type: ForecastType.BINARY,
-    dueInDays: 14,
-    releaseInDays: 16,
-    categoryId: salesCat.id,
-  });
+    const f2 = await prisma.forecast.create({
+      data: {
+        title: "Q1 Revenue (USD)",
+        description: "Continuous forecast of quarterly revenue.",
+        type: ForecastType.CONTINUOUS,
+        dataType: DataType.CURRENCY, // only for CONTINUOUS
+        dueDate: addDays(now, 30),
+        dataReleaseDate: addDays(now, 45),
+        organizationId: organization.id,
+        categoryId: salesCat.id,
+      },
+    });
 
-  const f2 = await upsertForecast({
-    title: "Q1 Revenue (USD)",
-    description: "Continuous forecast of quarterly revenue.",
-    type: ForecastType.CONTINUOUS,
-    dataType: DataType.CURRENCY,
-    dueInDays: 30,
-    releaseInDays: 45,
-    categoryId: salesCat.id,
-  });
+    const f3 = await prisma.forecast.create({
+      data: {
+        title: "Which channel wins Q1 CAC?",
+        description: "Categorical: pick the lowest CAC channel.",
+        type: ForecastType.CATEGORICAL,
+        options: ["Search Ads", "Social Ads", "Email", "Events"], // JSON array
+        dueDate: addDays(now, 21),
+        dataReleaseDate: addDays(now, 35),
+        organizationId: organization.id,
+        categoryId: marketingCat.id,
+      },
+    });
 
-  const f3 = await upsertForecast({
-    title: "Which channel wins Q1 CAC?",
-    description: "Categorical: pick the lowest CAC channel.",
-    type: ForecastType.CATEGORICAL,
-    options: ["Search Ads", "Social Ads", "Email", "Events"],
-    dueInDays: 21,
-    releaseInDays: 35,
-    categoryId: marketingCat.id,
-  });
-
-  // Add example predictions for the user (idempotent via findFirst)
-  const alreadyPred = await prisma.prediction.findFirst({
-    where: { userId: user.id, forecastId: f1.id },
-  });
-
-  if (!alreadyPred) {
+    // ───────────────────────────────────────────────────────────────────────────
+    // Predictions for your user (so the UI has “your prediction” data)
+    // ───────────────────────────────────────────────────────────────────────────
     await prisma.prediction.createMany({
       data: [
         {
           forecastId: f1.id,
           userId: user.id,
-          value: "true", // for BINARY store "true"/"false"
+          value: "true", // BINARY expects "true"/"false" as string
           confidence: 65,
           reasoning: "Late-stage negotiations; legal review nearly complete.",
           method: "Expert judgment",
@@ -278,7 +238,7 @@ async function seedRegularUser() {
         {
           forecastId: f3.id,
           userId: user.id,
-          value: "Search Ads", // must match options
+          value: "Search Ads", // must be one of the options
           confidence: 60,
           reasoning: "Better intent capture; improved QS from last quarter.",
           method: "Historical comparison",
@@ -286,17 +246,22 @@ async function seedRegularUser() {
         },
       ],
     });
-    console.log(`✅ Seeded categories, forecasts, and predictions for ${userEmail}`);
+
+    console.log(
+      `✅ Seeded categories, forecasts, and predictions for ${userEmail}`
+    );
   } else {
-    console.log("⚠️  Forecasts/predictions already seeded for this organization.");
+    console.log("⚠️  Forecasts already seeded for this organization.");
   }
 }
 
 async function main() {
-  console.log("🌱 Starting seed...");
+  console.log(`🌱 Starting seed...`);
+
   await seedAdmin();
   await seedRegularUser();
-  console.log("✅ Seeding completed!");
+
+  console.log(`✅ Seeding completed!`);
 }
 
 main()

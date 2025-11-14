@@ -3,6 +3,7 @@
 import { deleteForecastAction as orgAdminDeleteAction } from "@/app/(protected)/(org-admin)/forecasts/[forecastId]/actions";
 import { deleteForecastAction as superAdminDeleteAction } from "@/app/(protected)/(super-admin)/orgs/[orgId]/forecasts/[forecastId]/actions";
 import EditForecastModal from "@/components/forecasts/EditForecastModal";
+import SetActualValueDialog from "@/components/forecasts/SetActualValueDialog";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -25,7 +26,7 @@ import {
 import Router from "@/constants/router";
 import { DataType, Forecast, ForecastType } from "@/generated/prisma";
 import { format } from "date-fns";
-import { ArrowLeft, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Edit, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -89,6 +90,7 @@ export default function ForecastDetailView({
 }: ForecastDetailViewProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showActualValueDialog, setShowActualValueDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Determine the list path for back button
@@ -157,6 +159,13 @@ export default function ForecastDetailView({
           </div>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowActualValueDialog(true)}
+            >
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              {forecast.actualValue ? "Update" : "Set"} Actual Value
+            </Button>
             <Button variant="outline" onClick={() => setShowEditModal(true)}>
               <Edit className="mr-2 h-4 w-4" />
               Edit
@@ -392,6 +401,20 @@ export default function ForecastDetailView({
         onOpenChange={setShowEditModal}
         isOrgAdmin={isOrgAdmin}
         categories={categories}
+      />
+
+      {/* Set Actual Value Dialog */}
+      <SetActualValueDialog
+        forecastId={forecast.id}
+        organizationId={forecast.organizationId}
+        forecastType={forecast.type}
+        forecastTitle={forecast.title}
+        currentActualValue={forecast.actualValue}
+        dueDate={forecast.dueDate}
+        dataReleaseDate={forecast.dataReleaseDate}
+        open={showActualValueDialog}
+        onOpenChange={setShowActualValueDialog}
+        isOrgAdmin={isOrgAdmin}
       />
     </>
   );

@@ -170,10 +170,67 @@ See `lib/server-action-utils.ts` for detailed documentation.
 
 ## File Organization
 
+## File Organization
+
 ```text
 services/
-├── README.md            # This file
-├── users.ts            # User-related operations
-├── organizations.ts    # Organization-related operations
-└── forecasts.ts       # Forecast-related operations
+├── README.md                # This file
+├── users.ts                 # User-related operations
+├── organizations.ts         # Organization-related operations
+├── forecasts.ts             # Forecast-related operations
+├── predictions.ts           # Prediction-related operations
+└── prediction-metrics.ts    # Prediction metrics calculation service
 ```
+
+## Special Services
+
+### PredictionMetricsService
+
+A specialized service that calculates derived metrics for predictions based on forecast actual values.
+
+**Key Features:**
+
+- Automatically recalculates metrics when a forecast's `actualValue` is updated
+- Supports both BINARY and CONTINUOUS forecast types
+- Calculates financial metrics (ROI, ROE, ROF, profit per hour)
+- Calculates accuracy metrics (Brier score for binary, error percentages for continuous)
+
+**Main Method:**
+
+```typescript
+/**
+ * Recalculate metrics for all predictions of a forecast
+ * Called automatically when Forecast.actualValue is created or updated
+ */
+await PredictionMetricsService.recalculateMetricsForForecast(forecastId);
+```
+
+**Metrics Calculated:**
+
+For BINARY predictions:
+
+- `isCorrect` - Whether prediction matches actual outcome
+- `ppVariance` - Probability variance
+- `brierScore` - Brier score for accuracy
+- `roiScore` - ROI score based on Brier score
+- Financial metrics (roe, roePct, rof, rofPct, netProfitEquityPlusDebt, etc.)
+
+For CONTINUOUS predictions:
+
+- `error` - Forecast value minus actual value
+- `highLow` - Classification ("HIGH", "LOW", or "PERFECT")
+- `absoluteError` - Absolute value of error
+- `absoluteActualErrorPct` - Error as percentage of actual
+- `roiScore` - ROI score based on percentage error
+- Financial metrics (same as binary)
+
+**Integration:**
+
+The service is automatically called in:
+
+- `createForecast()` - When actualValue is provided
+- `updateForecast()` - When actualValue changes
+
+See `src/services/prediction-metrics.ts` and `tests/services/prediction-metrics.test.ts` for implementation details.
+
+````

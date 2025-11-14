@@ -1,0 +1,51 @@
+title,type,dataType,dueDate,dataReleaseDate,category
+"Will Tesla deliver over 500,000 vehicles in Q2 2025 (earnings announced in July)?",BINARY,,7/18/2025,8/1/2025,Automobiles
+Will Meta’s stock price (META) close above $800 on any trading day in July 2025?,BINARY,,7/18/2025,8/1/2025,Stock Market
+"Will Bitcoin trade above $140,000 at any point in July 2025?",BINARY,,7/18/2025,8/1/2025,Crypto
+Will the U.S. national average gas price exceed $3.25 per gallon by July 31,BINARY,,7/18/2025,8/1/2025,Gas
+"Will Mr. Beast have at least 92,452,000,000 views on July 31?",BINARY,,7/18/2025,8/1/2025,YouTube
+Will the Federal Reserve announce an interest rate cut during its July 2025 FOMC meeting?,BINARY,,7/18/2025,8/1/2025,Interest Rate
+"Will the S&P 500 index close above 6,500 on any trading day in July 2025?",BINARY,,7/18/2025,8/1/2025,Stock Market
+Will iPhone revenue exceed $46 billion in Q3 fiscal 2025?,BINARY,,7/18/2025,8/1/2025,iPhones
+"Will Hamilton reach attendance of over 4,703,375 by Aug 3?",BINARY,,7/18/2025,8/1/2025,Theater
+Will Netflix’s official YouTube channel view count surpass 1 billion views during July 2025?,BINARY,,7/18/2025,8/1/2025,YouTube
+F1: The Movie [Release June 27],CONTINUOUS,US Dollar $,6/26/2025,6/30/2025,Movies DBOWG
+Total Nonfarm Payroll Employment June 2025,CONTINUOUS,Number,6/27/2025,7/3/2025,Macroeconomics
+Delta Air Lines Inc. [Q2 2025],CONTINUOUS,US Dollar $,6/28/2025,7/10/2025,Corp. Earnings
+Total Job Openings May 2025 via JOLTS,CONTINUOUS,Number,6/29/2025,7/1/2025,Macroeconomics
+Cintas Corp. [Q4 2025],CONTINUOUS,US Dollar $,6/30/2025,7/9/2025,Corp. Earnings
+Jurassic World: Rebirth (2025) [Release July 2],CONTINUOUS,US Dollar $,7/1/2025,7/7/2025,Movies
+Total US Business Applications: June 2025,CONTINUOUS,Number,7/2/2025,7/10/2025,Macroeconomics
+Yield on 1-Year U.S. Treasury COM Following Friday,CONTINUOUS,Percentage,7/3/2025,7/11/2025,Interest Rates
+Dow Jones Industrial Average - Market Close 7/11/25,CONTINUOUS,Number,7/4/2025,7/11/2025,Stock Market
+"JPMorgan Chase & Co. (Q2, 2025)",CONTINUOUS,US Dollar $,7/5/2025,7/15/2025,Corp. Earnings
+Advance estimate of U.S. retail and food services sales for June 2025,CONTINUOUS,US Dollar $,7/6/2025,7/17/2025,Macroeconomics
+"Bank of America Corp [Q2,2025]",CONTINUOUS,US Dollar $,7/7/2025,7/16/2025,Corp. Earnings
+Netflix Inc. [Q2 2025],CONTINUOUS,US Dollar $,7/8/2025,7/17/2025,Corp. Earnings
+Wells Fargo Q2 2025,CONTINUOUS,US Dollar $,7/9/2025,7/15/2025,Corp. Earnings
+Superman (2025) [Release July 11],CONTINUOUS,US Dollar $,7/10/2025,7/14/2025,Movie
+New Residential Housing Starts June 2025,CONTINUOUS,Number,7/11/2025,7/18/2025,Macroeconomics
+Yield on 1-Year U.S. Treasury COM Following Friday,CONTINUOUS,Percentage,7/12/2025,7/18/2025,Interest Rates
+Dow Jones Industrial Average - Market Close 7/18/25,CONTINUOUS,Number,7/13/2025,7/18/2025,Stock Market
+New Home Sales June 2025,CONTINUOUS,Number,7/14/2025,7/24/2025,Macroeconomics
+JUJUTSU KAISEN [Release July 16],CONTINUOUS,US Dollar $,7/15/2025,7/21/2025,Movie
+Apple Inc. [Q3 2025],CONTINUOUS,US Dollar $,7/16/2025,7/23/2025,Corp. Earnings
+"Tesla (Q2, 2025)",CONTINUOUS,US Dollar $,7/17/2025,7/23/2025,Corp. Earnings
+McDonald's Corp. [Q2 2025],CONTINUOUS,US Dollar $,7/18/2025,7/23/2025,Corp. Earnings
+Dow Jones Industrial Average - Market Close 7/25/25,CONTINUOUS,Number,7/19/2025,7/25/2025,Stock Market
+"Intel Corp. (Q2, 2025)",CONTINUOUS,US Dollar $,7/20/2025,7/24/2025,Corp. Earnings
+"CVS Health Corp (Q2, 2025)",CONTINUOUS,US Dollar $,7/21/2025,7/30/2025,Corp. Earnings
+Total Job Openings June 2025 via JOLTS,CONTINUOUS,Number,7/22/2025,7/29/2025,Macroeconomics
+Amazon [Q2 2025],CONTINUOUS,US Dollar $,7/23/2025,7/31/2025,Corp. Earnings
+The Fantastic Four: First Steps [Release July 25],CONTINUOUS,US Dollar $,7/24/2025,7/28/2025,Movie
+Monthly Total Construction Spending June 2025,CONTINUOUS,US Dollar $,7/25/2025,8/1/2025,Macroeconomics
+Yield on 1-Year U.S. Treasury COM Following Friday,CONTINUOUS,Percentage,7/26/2025,8/1/2025,Interest Rates
+Dow Jones Industrial Average - Market Close 8/1/25,CONTINUOUS,Number,7/27/2025,8/1/2025,Stock Market
+Real Gross Domestic Product 1st Release - % Change From Prior Q,CONTINUOUS,Percentage,7/28/2025,7/30/2025,Macroeconomics
+Total Nonfarm Payroll Employment July 2025,CONTINUOUS,Number,7/29/2025,8/1/2025,Macroeconomics
+The Naked Gun [Release August 1],CONTINUOUS,US Dollar $,7/30/2025,8/4/2025,Movie
+Weapons [Release August 8],CONTINUOUS,US Dollar $,7/31/2025,8/11/2025,Movie
+Uber [Q2 2025],CONTINUOUS,US Dollar $,8/1/2025,8/5/2025,Corp. Earnings
+"Honda Motor Co. Ltd. (Q2, 2025)",CONTINUOUS,US Dollar $,8/2/2025,8/6/2025,Corp. Earnings
+Dow Jones Industrial Average - Market Close 8/8/25,CONTINUOUS,Number,8/3/2025,8/8/2025,Stock Market
+Projected Business Formation July 2025,CONTINUOUS,Number,8/4/2025,8/13/2025,Macroeconomics

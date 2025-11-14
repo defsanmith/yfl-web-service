@@ -26,6 +26,7 @@ export const createForecastSchema = z
       .nullable(),
     dueDate: z.string().min(1, "Due date is required"),
     dataReleaseDate: z.string().optional().nullable(),
+    actualValue: z.string().optional().nullable(),
     organizationId: z.string().cuid("Invalid organization ID"),
     categoryId: z.string().cuid("Invalid category ID").optional().nullable(),
     // For categorical forecasts only
@@ -129,6 +130,7 @@ export const updateForecastSchema = z
       .nullable(),
     dueDate: z.string().min(1, "Due date is required"),
     dataReleaseDate: z.string().optional().nullable(),
+    actualValue: z.string().optional().nullable(),
     categoryId: z.string().cuid("Invalid category ID").optional().nullable(),
     options: z
       .array(z.string().min(1, "Option cannot be empty"))
@@ -210,6 +212,46 @@ export const forecastFilterSchema = z.object({
   search: z.string().optional(),
 });
 
+/**
+ * Schema for setting actual value
+ */
+export const setActualValueSchema = z
+  .object({
+    id: z.string().cuid("Invalid forecast ID"),
+    actualValue: z.string().min(1, "Actual value is required"),
+    type: z.nativeEnum(ForecastType, {
+      message: "Invalid forecast type",
+    }),
+  })
+  .refine(
+    (data) => {
+      // For BINARY forecasts, actualValue must be "true" or "false"
+      if (data.type === ForecastType.BINARY) {
+        return data.actualValue === "true" || data.actualValue === "false";
+      }
+      return true;
+    },
+    {
+      message: "Binary forecast actual value must be 'true' or 'false'",
+      path: ["actualValue"],
+    }
+  )
+  .refine(
+    (data) => {
+      // For CONTINUOUS forecasts, actualValue must be a valid number
+      if (data.type === ForecastType.CONTINUOUS) {
+        const num = parseFloat(data.actualValue);
+        return !isNaN(num) && isFinite(num);
+      }
+      return true;
+    },
+    {
+      message: "Continuous forecast actual value must be a valid number",
+      path: ["actualValue"],
+    }
+  );
+
 export type CreateForecastInput = z.infer<typeof createForecastSchema>;
 export type UpdateForecastInput = z.infer<typeof updateForecastSchema>;
 export type ForecastFilterInput = z.infer<typeof forecastFilterSchema>;
+export type SetActualValueInput = z.infer<typeof setActualValueSchema>;
