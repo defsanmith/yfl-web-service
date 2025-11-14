@@ -105,6 +105,15 @@ export default function LeaderboardView({
   const columns = useMemo<ColumnDef<LeaderboardEntry>[]>(
     () => [
       {
+        id: "rank",
+        header: () => <div className="text-center font-medium">Rank</div>,
+        cell: ({ row }) => (
+          <div className="text-center font-medium">{row.index + 1}</div>
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+      {
         accessorKey: "userName",
         header: ({ column }) => (
           <button
@@ -138,7 +147,7 @@ export default function LeaderboardView({
         accessorKey: "totalPredictions",
         header: ({ column }) => (
           <button
-            className="flex"
+            className="flex justify-end w-full"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Total Predictions
@@ -155,7 +164,7 @@ export default function LeaderboardView({
         accessorKey: "correctPredictions",
         header: ({ column }) => (
           <button
-            className="flex"
+            className="flex justify-end w-full"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Correct
@@ -172,7 +181,7 @@ export default function LeaderboardView({
         accessorKey: "accuracyRate",
         header: ({ column }) => (
           <button
-            className="flex"
+            className="flex justify-end w-full"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Accuracy Rate
@@ -189,7 +198,7 @@ export default function LeaderboardView({
         accessorKey: "avgBrierScore",
         header: ({ column }) => (
           <button
-            className="flex"
+            className="flex justify-end w-full"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Avg Brier Score
@@ -206,7 +215,7 @@ export default function LeaderboardView({
         accessorKey: "avgAbsoluteError",
         header: ({ column }) => (
           <button
-            className="flex"
+            className="flex justify-end w-full"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Avg Absolute Error
@@ -223,7 +232,7 @@ export default function LeaderboardView({
         accessorKey: "avgAbsoluteActualErrorPct",
         header: ({ column }) => (
           <button
-            className="flex"
+            className="flex justify-end w-full"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Avg Absolute Actual Error %
@@ -240,7 +249,7 @@ export default function LeaderboardView({
         accessorKey: "avgAbsoluteForecastErrorPct",
         header: ({ column }) => (
           <button
-            className="flex"
+            className="flex justify-end w-full"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Avg Absolute Forecast Error %
@@ -257,7 +266,7 @@ export default function LeaderboardView({
         accessorKey: "avgRoiScore",
         header: ({ column }) => (
           <button
-            className="flex"
+            className="flex justify-end w-full"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Avg ROI Score
@@ -274,7 +283,7 @@ export default function LeaderboardView({
         accessorKey: "totalRoe",
         header: ({ column }) => (
           <button
-            className="flex"
+            className="flex justify-end w-full"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Total ROE
@@ -291,7 +300,7 @@ export default function LeaderboardView({
         accessorKey: "avgRoePct",
         header: ({ column }) => (
           <button
-            className="flex"
+            className="flex justify-end w-full"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Avg ROE %
@@ -308,7 +317,7 @@ export default function LeaderboardView({
         accessorKey: "totalRof",
         header: ({ column }) => (
           <button
-            className="flex"
+            className="flex justify-end w-full"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Total ROF
@@ -325,7 +334,7 @@ export default function LeaderboardView({
         accessorKey: "avgRofPct",
         header: ({ column }) => (
           <button
-            className="flex"
+            className="flex justify-end w-full"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Avg ROF %
@@ -342,7 +351,7 @@ export default function LeaderboardView({
         accessorKey: "totalNetProfit",
         header: ({ column }) => (
           <button
-            className="flex"
+            className="flex justify-end w-full"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Total Net Profit
@@ -359,7 +368,7 @@ export default function LeaderboardView({
         accessorKey: "avgRoiEquityPlusDebtPct",
         header: ({ column }) => (
           <button
-            className="flex"
+            className="flex justify-end w-full"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Avg ROI (Equity + Debt) %
@@ -376,7 +385,7 @@ export default function LeaderboardView({
         accessorKey: "avgProfitPerHour",
         header: ({ column }) => (
           <button
-            className="flex"
+            className="flex justify-end w-full"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Avg Profit Per Hour
@@ -393,7 +402,7 @@ export default function LeaderboardView({
         accessorKey: "totalInvestment",
         header: ({ column }) => (
           <button
-            className="flex"
+            className="flex justify-end w-full"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Total Investment
@@ -410,7 +419,7 @@ export default function LeaderboardView({
         accessorKey: "totalEquityInvestment",
         header: ({ column }) => (
           <button
-            className="flex"
+            className="flex justify-end w-full"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Total Equity Investment
@@ -427,7 +436,7 @@ export default function LeaderboardView({
         accessorKey: "totalDebtFinancing",
         header: ({ column }) => (
           <button
-            className="flex"
+            className="flex justify-end w-full"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Total Debt Financing
