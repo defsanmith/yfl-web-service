@@ -96,6 +96,7 @@ const authConfig: AuthOptions = {
   adapter: PrismaAdapter(prisma),
   pages: {
     signIn: "/signin",
+    error: "/unauthorized-email",
   },
   // Use JWT strategy for better performance (no DB query on every session access)
   session: {
@@ -117,21 +118,29 @@ const authConfig: AuthOptions = {
       // ⭐️ Custom email content while keeping everything else the same
       async sendVerificationRequest({ identifier, url, provider }) {
         const host = new URL(url).host;
-        await transporter.sendMail({
-          to: identifier,
-          from: provider.from,
-          subject: emailSubject(host),
-          text: emailText(url, host),
-          html: emailHtml({
-            url,
-            host,
-            product: "yFL",
-            accent: "#4f46e5",
-            // If you have a public base URL in your config, point to a hosted HTTPS asset
-            logoUrl: `${config.publicUrl ?? ""}/email/logo.png`, // optional
-          }),
-          headers: { "X-Entity-Ref-ID": Date.now().toString() }, // improves Gmail threading
-        });
+
+        try {
+          await transporter.sendMail({
+            to: identifier,
+            from: provider.from,
+            subject: emailSubject(host),
+            text: emailText(url, host),
+            html: emailHtml({
+              url,
+              host,
+              product: "yFL",
+              accent: "#4f46e5",
+              logoUrl: `${config.publicUrl ?? ""}/email/logo.png`,
+            }),
+            headers: { "X-Entity-Ref-ID": Date.now().toString() },
+          });
+
+          console.log("[NextAuth] Magic link sent to", identifier);
+        } catch (err) {
+          console.error("[NextAuth] Error sending magic link to", identifier, err);
+          // Re-throw so NextAuth shows EmailSignin
+          throw err;
+        }
       },
     }),
   ],
@@ -172,10 +181,25 @@ const authConfig: AuthOptions = {
     },
 
     // Sign-in callback: runs each time a user logs in
-    async signIn({ user }) {
-      // Fire-and-forget; ensures every user has seeded balances
-      ensureStartingBalancesForUser(user.id).catch(() => {});
-      return true; // must return true to continue sign-in
+    async signIn({ user}) {
+    // Email might be on user or on email param depending on stage
+      const emailAddress = user?.email;
+      if (!emailAddress) {
+        return false; // fail safely
+      }
+
+      const existingUser = await prisma.user.findUnique({
+        where: { email: emailAddress },
+      });
+
+      if (!existingUser) {
+        // ❌ Block sign-in → NextAuth redirects to pages.error (/unauthorized-email)
+        return false;
+      }
+
+      // ✅ Known user → allow login
+      ensureStartingBalancesForUser(existingUser.id).catch(() => {});
+      return true;
     },
 
     // Session callback: runs when session is created or checked

@@ -46,7 +46,9 @@ async function requestMagicLinkAction(
     if (!parsed.success) {
       return {
         data: { email },
-        errors: { email: [parsed.error.issues[0]?.message ?? "Invalid email."] },
+        errors: {
+          email: [parsed.error.issues[0]?.message ?? "Invalid email."],
+        },
       };
     }
 
@@ -59,6 +61,19 @@ async function requestMagicLinkAction(
       redirect: false,
     });
 
+    console.log("[requestMagicLinkAction] signIn error:", res?.error);
+
+    // 🔑 Treat unauthorized emails specially
+    if (res?.error === "AccessDenied" || res?.error === "EmailSignin") {
+      // Client-side navigation
+      if (typeof window !== "undefined") {
+        window.location.href = "/unauthorized-email";
+      }
+      // We won't render this state anyway because we're navigating away
+      return { success: true };
+    }
+
+    // Other errors → show generic message
     if (res?.error) {
       return {
         data: { email },
@@ -69,7 +84,8 @@ async function requestMagicLinkAction(
     }
 
     return { success: true };
-  } catch {
+  } catch (err) {
+    console.error("[requestMagicLinkAction] unexpected error:", err);
     return {
       errors: { _form: ["Something went wrong. Please try again."] },
     };
