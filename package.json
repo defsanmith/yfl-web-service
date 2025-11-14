@@ -9,6 +9,7 @@
     "lint": "eslint",
     "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio",
+    "import:forecasts": "tsx scripts/import-forecasts.ts",
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:run": "vitest run",
