@@ -38,7 +38,7 @@ class Router {
   static forecastDetailById = (id: string) => `${Router.FORECASTS}/${id}`;
 
   // User
-  static USER_FORECASTS = "/my-forecasts";
+  static USER_FORECASTS = "/f";
   static USER_FORECAST_DETAIL = (id: string) => `/f/${id}`;
   static FORECAST_LEADERBOARD = (id: string) => `/f/${id}/leaderboard`; // public leaderboard, super-admin leader, org-admin, player
 }
