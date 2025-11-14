@@ -18,7 +18,7 @@
     "test:run": "vitest run",
     "test:ui": "vitest --ui",
     "coverage": "vitest run --coverage",
-    "seed:demo": "tsx prisma/seeds/demo.ts"
+    "seed:demo": "tsx prisma/seeds/demo1.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
