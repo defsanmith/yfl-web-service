@@ -110,6 +110,7 @@ function convertDecimalsToNumbers(raw: RawLeaderboardEntry): LeaderboardEntry {
 /**
  * Get aggregated leaderboard data for an organization
  * Only includes predictions for forecasts that have actual values set
+ * Excludes ORG_ADMIN and SUPER_ADMIN users from leaderboard
  */
 export async function getOrganizationLeaderboard(
   organizationId: string
@@ -148,6 +149,7 @@ export async function getOrganizationLeaderboard(
     WHERE 
       u."organizationId" = ${organizationId}
       AND f."actualValue" IS NOT NULL
+      AND u.role = 'USER'
     GROUP BY u.id, u.name, u.email
     ORDER BY "accuracyRate" DESC NULLS LAST, "totalPredictions" DESC
   `;
@@ -233,6 +235,7 @@ export async function getOrganizationLeaderboardWithSort({
     WHERE 
       u."organizationId" = $1
       AND f."actualValue" IS NOT NULL
+      AND u.role = 'USER'
     GROUP BY u.id, u.name, u.email
     ORDER BY "${sortColumn}" ${direction} ${nullsPosition}
   `;
@@ -295,6 +298,7 @@ export async function getUserLeaderboardEntry(
 
 /**
  * Get count of users with predictions in the organization
+ * Only counts USER role (excludes ORG_ADMIN and SUPER_ADMIN)
  */
 export async function getLeaderboardParticipantCount(
   organizationId: string
@@ -307,6 +311,7 @@ export async function getLeaderboardParticipantCount(
     WHERE 
       u."organizationId" = ${organizationId}
       AND f."actualValue" IS NOT NULL
+      AND u.role = 'USER'
   `;
 
   return Number(result[0].count);
