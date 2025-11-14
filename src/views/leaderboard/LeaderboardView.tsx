@@ -69,6 +69,7 @@ const formatInteger = (value: number | null) => {
 export default function LeaderboardView({
   data,
   organizationName,
+  isOrgAdmin = false,
   currentUserId,
 }: LeaderboardViewProps) {
   const router = useRouter();
@@ -78,7 +79,7 @@ export default function LeaderboardView({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     // Default visible columns
     userName: true,
-    userEmail: true,
+    userEmail: isOrgAdmin, // Only show email for org admins
     totalPredictions: true,
     correctPredictions: true,
     accuracyRate: true,
@@ -106,13 +107,13 @@ export default function LeaderboardView({
       {
         accessorKey: "userName",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <button
+            className="flex"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Name
             <ChevronsUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </button>
         ),
         cell: ({ row }) => (
           <div className="font-medium">
@@ -123,29 +124,29 @@ export default function LeaderboardView({
       {
         accessorKey: "userEmail",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <button
+            className="flex"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Email
             <ChevronsUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </button>
         ),
         cell: ({ row }) => <div>{row.getValue("userEmail")}</div>,
       },
       {
         accessorKey: "totalPredictions",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <button
+            className="flex"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Total Predictions
             <ChevronsUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </button>
         ),
         cell: ({ row }) => (
-          <div className="text-center">
+          <div className="text-right">
             {formatInteger(row.getValue("totalPredictions"))}
           </div>
         ),
@@ -153,16 +154,16 @@ export default function LeaderboardView({
       {
         accessorKey: "correctPredictions",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <button
+            className="flex"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Correct
             <ChevronsUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </button>
         ),
         cell: ({ row }) => (
-          <div className="text-center">
+          <div className="text-right">
             {formatInteger(row.getValue("correctPredictions"))}
           </div>
         ),
@@ -170,16 +171,16 @@ export default function LeaderboardView({
       {
         accessorKey: "accuracyRate",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <button
+            className="flex"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Accuracy Rate
             <ChevronsUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </button>
         ),
         cell: ({ row }) => (
-          <div className="text-center font-medium">
+          <div className="text-right font-medium">
             {formatPercent(row.getValue("accuracyRate"))}
           </div>
         ),
@@ -187,16 +188,16 @@ export default function LeaderboardView({
       {
         accessorKey: "avgBrierScore",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <button
+            className="flex"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Avg Brier Score
             <ChevronsUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </button>
         ),
         cell: ({ row }) => (
-          <div className="text-center">
+          <div className="text-right">
             {formatDecimal(row.getValue("avgBrierScore"))}
           </div>
         ),
@@ -204,16 +205,16 @@ export default function LeaderboardView({
       {
         accessorKey: "avgAbsoluteError",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <button
+            className="flex"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Avg Absolute Error
             <ChevronsUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </button>
         ),
         cell: ({ row }) => (
-          <div className="text-center">
+          <div className="text-right">
             {formatDecimal(row.getValue("avgAbsoluteError"))}
           </div>
         ),
@@ -221,16 +222,16 @@ export default function LeaderboardView({
       {
         accessorKey: "avgAbsoluteActualErrorPct",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <button
+            className="flex"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Avg Absolute Actual Error %
             <ChevronsUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </button>
         ),
         cell: ({ row }) => (
-          <div className="text-center">
+          <div className="text-right">
             {formatPercent(row.getValue("avgAbsoluteActualErrorPct"))}
           </div>
         ),
@@ -238,16 +239,16 @@ export default function LeaderboardView({
       {
         accessorKey: "avgAbsoluteForecastErrorPct",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <button
+            className="flex"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Avg Absolute Forecast Error %
             <ChevronsUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </button>
         ),
         cell: ({ row }) => (
-          <div className="text-center">
+          <div className="text-right">
             {formatPercent(row.getValue("avgAbsoluteForecastErrorPct"))}
           </div>
         ),
@@ -255,16 +256,16 @@ export default function LeaderboardView({
       {
         accessorKey: "avgRoiScore",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <button
+            className="flex"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Avg ROI Score
             <ChevronsUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </button>
         ),
         cell: ({ row }) => (
-          <div className="text-center">
+          <div className="text-right">
             {formatDecimal(row.getValue("avgRoiScore"))}
           </div>
         ),
@@ -272,13 +273,13 @@ export default function LeaderboardView({
       {
         accessorKey: "totalRoe",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <button
+            className="flex"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Total ROE
             <ChevronsUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </button>
         ),
         cell: ({ row }) => (
           <div className="text-right">
@@ -289,16 +290,16 @@ export default function LeaderboardView({
       {
         accessorKey: "avgRoePct",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <button
+            className="flex"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Avg ROE %
             <ChevronsUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </button>
         ),
         cell: ({ row }) => (
-          <div className="text-center">
+          <div className="text-right">
             {formatPercent(row.getValue("avgRoePct"))}
           </div>
         ),
@@ -306,13 +307,13 @@ export default function LeaderboardView({
       {
         accessorKey: "totalRof",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <button
+            className="flex"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Total ROF
             <ChevronsUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </button>
         ),
         cell: ({ row }) => (
           <div className="text-right">
@@ -323,16 +324,16 @@ export default function LeaderboardView({
       {
         accessorKey: "avgRofPct",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <button
+            className="flex"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Avg ROF %
             <ChevronsUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </button>
         ),
         cell: ({ row }) => (
-          <div className="text-center">
+          <div className="text-right">
             {formatPercent(row.getValue("avgRofPct"))}
           </div>
         ),
@@ -340,13 +341,13 @@ export default function LeaderboardView({
       {
         accessorKey: "totalNetProfit",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <button
+            className="flex"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Total Net Profit
             <ChevronsUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </button>
         ),
         cell: ({ row }) => (
           <div className="text-right font-medium">
@@ -357,16 +358,16 @@ export default function LeaderboardView({
       {
         accessorKey: "avgRoiEquityPlusDebtPct",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <button
+            className="flex"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Avg ROI (Equity + Debt) %
             <ChevronsUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </button>
         ),
         cell: ({ row }) => (
-          <div className="text-center font-medium">
+          <div className="text-right font-medium">
             {formatPercent(row.getValue("avgRoiEquityPlusDebtPct"))}
           </div>
         ),
@@ -374,13 +375,13 @@ export default function LeaderboardView({
       {
         accessorKey: "avgProfitPerHour",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <button
+            className="flex"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Avg Profit Per Hour
             <ChevronsUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </button>
         ),
         cell: ({ row }) => (
           <div className="text-right">
@@ -391,13 +392,13 @@ export default function LeaderboardView({
       {
         accessorKey: "totalInvestment",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <button
+            className="flex"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Total Investment
             <ChevronsUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </button>
         ),
         cell: ({ row }) => (
           <div className="text-right">
@@ -408,13 +409,13 @@ export default function LeaderboardView({
       {
         accessorKey: "totalEquityInvestment",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <button
+            className="flex"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Total Equity Investment
             <ChevronsUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </button>
         ),
         cell: ({ row }) => (
           <div className="text-right">
@@ -425,13 +426,13 @@ export default function LeaderboardView({
       {
         accessorKey: "totalDebtFinancing",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <button
+            className="flex"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Total Debt Financing
             <ChevronsUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </button>
         ),
         cell: ({ row }) => (
           <div className="text-right">
@@ -528,6 +529,7 @@ export default function LeaderboardView({
             {table
               .getAllColumns()
               .filter((column) => column.getCanHide())
+              .filter((column) => isOrgAdmin || column.id !== "userEmail") // Hide email toggle for non-admins
               .map((column) => {
                 return (
                   <DropdownMenuCheckboxItem

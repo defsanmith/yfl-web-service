@@ -149,6 +149,12 @@ export default async function ProtectedRootPage({ searchParams }: PageProps) {
     sortOrder: sortOrder as "asc" | "desc",
   });
 
+  // Strip email addresses for regular users (privacy)
+  const sanitizedLeaderboardData = leaderboardData.map((entry) => ({
+    ...entry,
+    userEmail: "", // Remove email from response
+  }));
+
   const organization = await prisma.organization.findUnique({
     where: { id: orgId },
     select: { name: true },
@@ -174,7 +180,7 @@ export default async function ProtectedRootPage({ searchParams }: PageProps) {
       {/* Leaderboard Section */}
       <section className="space-y-3">
         <LeaderboardView
-          data={leaderboardData}
+          data={sanitizedLeaderboardData}
           organizationName={organization?.name || "Unknown"}
           isOrgAdmin={false}
           currentUserId={userId}
