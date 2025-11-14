@@ -29,6 +29,7 @@ export async function getForecastById(id: string) {
  */
 export async function getForecasts({
   organizationId,
+  userId,
   page = 1,
   limit = 10,
   search,
@@ -37,6 +38,7 @@ export async function getForecasts({
   sortOrder = "desc",
 }: {
   organizationId: string;
+  userId?: string;
   page?: number;
   limit?: number;
   search?: string;
@@ -49,6 +51,7 @@ export async function getForecasts({
   // Build where clause
   const where: Prisma.ForecastWhereInput = {
     organizationId,
+    ...(userId && { userId }),
     ...(type && { type }),
     ...(search && {
       title: {
@@ -234,35 +237,31 @@ export async function deleteForecast(id: string) {
  */
 export async function getUpcomingForecastsForUser({
   organizationId,
+  userId,
   limit = 10,
 }: {
   organizationId: string;
+  userId: string;
   limit?: number;
 }) {
   const now = new Date();
 
-  const forecasts = await prisma.forecast.findMany({
+  return prisma.forecast.findMany({
     where: {
       organizationId,
-      dueDate: {
-        gte: now,
-      },
+      dueDate: { gte: now },
     },
-    orderBy: {
-      dueDate: "asc",
-    },
+    orderBy: { dueDate: "asc" },
     take: limit,
     include: {
-      organization: {
-        select: { id: true, name: true },
-      },
-      category: {
-        select: { id: true, name: true, color: true },
+      organization: { select: { id: true, name: true } },
+      category: { select: { id: true, name: true, color: true } },
+      predictions: {
+        where: { userId }, // only this user's prediction
+        select: { id: true, userId: true, value: true },
       },
     },
   });
-
-  return forecasts;
 }
 
 /**
