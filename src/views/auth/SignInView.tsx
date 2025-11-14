@@ -53,7 +53,7 @@ async function requestMagicLinkAction(
     }
 
     const callbackUrl =
-      (formData.get("callbackUrl") as string | null) ?? Router.HOME;
+      (formData.get("callbackUrl") as string | null) ?? Router.DASHBOARD;
 
     const res = await signIn("email", {
       email: parsed.data,
@@ -102,7 +102,7 @@ function SparkIcon(props: React.SVGProps<SVGSVGElement>) {
 
 export default function SignInPage({ error }: SignInViewProps) {
   const sp = useSearchParams();
-  const callbackUrl = sp?.get("callbackUrl") ?? Router.HOME;
+  const callbackUrl = sp?.get("callbackUrl") ?? Router.DASHBOARD;
 
   const [state, formAction, isPending] = React.useActionState<
     ActionState,

@@ -65,7 +65,7 @@ const orgAdminNavItems: NavItem[] = [
 const userNavItems: NavItem[] = [
   {
     title: "Dashboard",
-    url: Router.HOME,
+    url: Router.DASHBOARD,
     icon: IconDashboard,
   },
   {

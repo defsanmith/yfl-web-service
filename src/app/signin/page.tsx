@@ -10,7 +10,7 @@ export default async function SignInPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const session = await auth();
-  if (session) redirect(Router.HOME);
+  if (session) redirect(Router.DASHBOARD);
 
   // Await searchParams before using it
   const params = await searchParams;
