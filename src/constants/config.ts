@@ -4,9 +4,7 @@ import { z } from "zod";
 const envSchema = z.object({
   // NextAuth
   NEXTAUTH_SECRET: z.string().min(1, "NEXTAUTH_SECRET is required"),
-  NEXTAUTH_URL: z
-    .string()
-    .url("NEXTAUTH_URL must be a valid URL"),
+  NEXTAUTH_URL: z.string().url("NEXTAUTH_URL must be a valid URL").optional(),
 
   // Admin
   ADMIN_EMAIL: z.email("ADMIN_EMAIL must be a valid email").optional(),
@@ -72,9 +70,7 @@ class Config {
   nodeEnv = env.NODE_ENV;
 
   publicUrl =
-    env.NEXT_PUBLIC_APP_URL ||
-    env.NEXTAUTH_URL ||
-    "http://localhost:3000";
+    env.NEXT_PUBLIC_APP_URL || env.NEXTAUTH_URL || "http://localhost:3000";
 }
 
 const config = new Config();
