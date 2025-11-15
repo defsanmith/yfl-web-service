@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint",
+    "postinstall": "prisma generate",
     "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio",
     "import:forecasts": "tsx scripts/import-forecasts.ts",
