@@ -38,7 +38,7 @@ export default function OrgAdminAction() {
         <IconUserPlus />
         <span>Create User</span>
       </SidebarMenuButton>
-      
+
       <SidebarMenuButton
         tooltip="Add Multiple Users"
         className="bg-secondary text-secondary-foreground hover:bg-secondary/90 hover:text-secondary-foreground active:bg-secondary/90 active:text-secondary-foreground min-w-8 duration-200 ease-linear"
@@ -50,4 +50,3 @@ export default function OrgAdminAction() {
     </div>
   );
 }
-

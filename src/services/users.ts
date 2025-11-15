@@ -1,8 +1,8 @@
 /**
  * User service - handles all user-related database operations
  */
-import prisma from "@/lib/prisma";
 import { Role } from "@/generated/prisma";
+import prisma from "@/lib/prisma";
 import { CreateUserInput, UpdateUserInput } from "@/schemas/users";
 
 export async function getUsers() {

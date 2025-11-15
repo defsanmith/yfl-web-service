@@ -12,9 +12,9 @@ import { PaginatedResult } from "@/lib/pagination";
 import { OrganizationUser } from "@/services/organizations";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import BulkUploadUsersModal from "./BulkUploadUsersModal";
 import OrgAdminCreateUserDialog from "./OrgAdminCreateUserDialog";
 import OrgAdminUsersTable from "./OrgAdminUsersTable";
-import BulkUploadUsersModal from "./BulkUploadUsersModal";
 
 type OrgAdminUsersViewProps = {
   organizationId: string;
