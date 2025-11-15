@@ -14,6 +14,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import OrgAdminCreateUserDialog from "./OrgAdminCreateUserDialog";
 import OrgAdminUsersTable from "./OrgAdminUsersTable";
+import BulkUploadUsersModal from "./BulkUploadUsersModal";
 
 type OrgAdminUsersViewProps = {
   organizationId: string;
@@ -27,6 +28,7 @@ type OrgAdminUsersViewProps = {
     sortBy?: string;
     sortOrder?: string;
     create?: string;
+    bulkUpload?: string;
   };
 };
 
@@ -39,20 +41,34 @@ export default function OrgAdminUsersView({
   const router = useRouter();
   const currentSearchParams = useSearchParams();
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
+  const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
 
-  // Open dialog if create=true in URL
+  // Open dialogs based on URL params
   useEffect(() => {
     if (searchParams.create === "true") {
       setIsCreateUserOpen(true);
     }
-  }, [searchParams.create]);
+    if (searchParams.bulkUpload === "true") {
+      setIsBulkUploadOpen(true);
+    }
+  }, [searchParams.create, searchParams.bulkUpload]);
 
-  // Close dialog and remove create param from URL
-  const handleOpenChange = (open: boolean) => {
+  // Close dialog and remove param from URL
+  const handleCreateUserOpenChange = (open: boolean) => {
     setIsCreateUserOpen(open);
     if (!open && searchParams.create === "true") {
       const params = new URLSearchParams(currentSearchParams.toString());
       params.delete("create");
+      router.replace(`?${params.toString()}`);
+    }
+  };
+
+  // Close bulk upload dialog and remove param from URL
+  const handleBulkUploadOpenChange = (open: boolean) => {
+    setIsBulkUploadOpen(open);
+    if (!open && searchParams.bulkUpload === "true") {
+      const params = new URLSearchParams(currentSearchParams.toString());
+      params.delete("bulkUpload");
       router.replace(`?${params.toString()}`);
     }
   };
@@ -77,9 +93,17 @@ export default function OrgAdminUsersView({
                 Manage users in your organization
               </CardDescription>
             </div>
-            <Button onClick={() => setIsCreateUserOpen(true)}>
-              Create User
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsBulkUploadOpen(true)}
+              >
+                Bulk Upload
+              </Button>
+              <Button onClick={() => setIsCreateUserOpen(true)}>
+                Create User
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -94,7 +118,13 @@ export default function OrgAdminUsersView({
       <OrgAdminCreateUserDialog
         organizationId={organizationId}
         open={isCreateUserOpen}
-        onOpenChange={handleOpenChange}
+        onOpenChange={handleCreateUserOpenChange}
+      />
+
+      {/* Bulk Upload Modal */}
+      <BulkUploadUsersModal
+        open={isBulkUploadOpen}
+        onOpenChange={handleBulkUploadOpenChange}
       />
     </div>
   );

@@ -28,7 +28,6 @@ import Router from "@/constants/router";
 import { Role } from "@/generated/prisma";
 import Link from "next/link";
 import SuperAdminAction from "./main-action";
-import OrgAdminAction from "./org-admin-action";
 
 const superAdminNavItems: NavItem[] = [
   {
@@ -119,11 +118,7 @@ export function AppSidebar({ role, user, ...props }: AppSidebarProps) {
           <SidebarGroupContent className="flex flex-col gap-2">
             <SidebarMenu>
               <SidebarMenuItem className="flex items-center gap-2">
-                {role === Role.SUPER_ADMIN ? (
-                  <SuperAdminAction />
-                ) : role === Role.ORG_ADMIN ? (
-                  <OrgAdminAction />
-                ) : null}
+                {role === Role.SUPER_ADMIN ? <SuperAdminAction /> : null}
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
