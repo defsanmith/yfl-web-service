@@ -47,7 +47,7 @@ async function requestMagicLinkAction(
       return {
         data: { email },
         errors: {
-          email: [parsed.error.issues[0]?.message ?? "Invalid email."],
+          email: [parsed.error.issues[0]?.message ?? "Please enter a valid email."],
         },
       };
     }
@@ -55,6 +55,46 @@ async function requestMagicLinkAction(
     const callbackUrl =
       (formData.get("callbackUrl") as string | null) ?? Router.HOME;
 
+    // 🔎 1) Check if the email exists in the database (via API route)
+    const checkRes = await fetch("/api/auth/check-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: parsed.data }),
+    });
+
+    if (!checkRes.ok) {
+      // API itself failed (server error, bad payload, etc.)
+      return {
+        data: { email },
+        errors: {
+          _form: ["We couldn't verify your email. Please try again."],
+        },
+      };
+    }
+
+    const check = await checkRes.json();
+
+    // API responded with ok:false
+    if (!check.ok) {
+      return {
+        data: { email },
+        errors: {
+          _form: [check.error ?? "We couldn't verify your email. Please try again."],
+        },
+      };
+    }
+
+    // Email is valid format, but no user exists for it
+    if (!check.exists) {
+      return {
+        data: { email },
+        errors: {
+          _form: ["No valid account was found for that email."],
+        },
+      };
+    }
+
+    // 2) Only now send the magic link
     const res = await signIn("email", {
       email: parsed.data,
       callbackUrl,
@@ -63,17 +103,6 @@ async function requestMagicLinkAction(
 
     console.log("[requestMagicLinkAction] signIn error:", res?.error);
 
-    // 🔑 Treat unauthorized emails specially
-    if (res?.error === "AccessDenied" || res?.error === "EmailSignin") {
-      // Client-side navigation
-      if (typeof window !== "undefined") {
-        window.location.href = "/unauthorized-email";
-      }
-      // We won't render this state anyway because we're navigating away
-      return { success: true };
-    }
-
-    // Other errors → show generic message
     if (res?.error) {
       return {
         data: { email },
@@ -83,7 +112,7 @@ async function requestMagicLinkAction(
       };
     }
 
-    return { success: true };
+    return { success: true, data: { email } };
   } catch (err) {
     console.error("[requestMagicLinkAction] unexpected error:", err);
     return {
