@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { useMemo } from "react";
 import {
@@ -46,30 +44,10 @@ type UserDashboardViewProps = {
   // forecasts?: Forecast[]  // keep/add if you actually use it
 };
 
-// Small helper for status badge styles
-function StatusBadge({ status }: { status: "Done" | "In Process" }) {
-  return (
-    <Badge
-      variant={status === "Done" ? "default" : "secondary"}
-      className={cn(
-        "rounded-full px-2.5 py-0.5",
-        status === "Done" ? "bg-foreground text-background" : ""
-      )}
-    >
-      <span
-        className={cn(
-          "inline-flex h-2 w-2 rounded-full mr-2",
-          status === "Done" ? "bg-background" : "bg-foreground/60"
-        )}
-      />
-      {status}
-    </Badge>
-  );
-}
-
 // ------------------------------------------------------------------
 // Component
 // ------------------------------------------------------------------
+
 
 export default function UserDashboardView({
   userName = "",
@@ -81,48 +59,7 @@ export default function UserDashboardView({
     []
   );
 
-  // Fallback demo stats if none provided
-  const demoStats: Stat[] = useMemo(
-    () =>
-      stats.length > 0
-        ? stats
-        : [
-            {
-              id: "open",
-              label: "Open Forecasts",
-              value: 24,
-              up: true,
-              delta: "12%",
-              subLabel: "vs last 30 days",
-            },
-            {
-              id: "due",
-              label: "Due Soon",
-              value: 5,
-              up: false,
-              delta: "−2",
-              subLabel: "next 7 days",
-            },
-            {
-              id: "acc",
-              label: "Avg. Accuracy",
-              value: "74%",
-              up: true,
-              delta: "3%",
-              subLabel: "rolling 90 days",
-            },
-            {
-              id: "rev",
-              label: "Ledger Balance",
-              value: "$48,300",
-              up: true,
-              delta: "$1.2k",
-              subLabel: "MTD",
-            },
-          ],
-    [stats]
-  );
-
+  const kpiStats = stats || [];
   // ----------------------------------------------------------------
   // Chart data: Prediction 1, 2, 3... vs MAPE (%)
   // ----------------------------------------------------------------
@@ -160,35 +97,41 @@ export default function UserDashboardView({
 
       {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {demoStats.map((kpi) => (
-          <Card key={kpi.id} className="shadow-sm">
-            <CardHeader className="pb-2">
-              <div className="text-sm text-muted-foreground flex items-center justify-between">
-                <span>{kpi.label}</span>
-                {(kpi.delta !== undefined || kpi.up !== undefined) && (
-                  <span className="inline-flex items-center gap-1 text-xs font-medium">
-                    {kpi.up ? (
-                      <ArrowUpRight className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <ArrowDownRight className="h-4 w-4 text-red-500" />
-                    )}
-                    {kpi.delta}
-                  </span>
+        {kpiStats.length === 0 ? (
+          <p className="text-sm text-muted-foreground col-span-full">
+            No KPI data available yet.
+          </p>
+        ) : (
+          kpiStats.map((kpi: Stat) => (
+            <Card key={kpi.id} className="shadow-sm">
+              <CardHeader className="pb-2">
+                <div className="text-sm text-muted-foreground flex items-center justify-between">
+                  <span>{kpi.label}</span>
+                  {(kpi.delta !== undefined || kpi.up !== undefined) && (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium">
+                      {kpi.up ? (
+                        <ArrowUpRight className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <ArrowDownRight className="h-4 w-4 text-red-500" />
+                      )}
+                      {kpi.delta}
+                    </span>
+                  )}
+                </div>
+                <CardTitle className="text-3xl font-semibold tracking-tight">
+                  {kpi.value}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                {kpi.subLabel && (
+                  <p className="text-xs text-muted-foreground">
+                    {kpi.subLabel}
+                  </p>
                 )}
-              </div>
-              <CardTitle className="text-3xl font-semibold tracking-tight">
-                {kpi.value}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {kpi.subLabel && (
-                <p className="text-xs text-muted-foreground">
-                  {kpi.subLabel}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
       {/* Prediction Error Chart */}

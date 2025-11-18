@@ -5,7 +5,13 @@ import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
 import type { Prisma } from "@/generated/prisma";
-import { getUpcomingForecastsForUser } from "@/services/forecasts";
+import { getUserBalance } from "@/services/finance";
+import {
+  getClosedForecastCountForUser,
+  getForecastsDueSoonCount,
+  getForecastsDueTodayCount,
+  getUpcomingForecastsForUser,
+} from "@/services/forecasts";
 import { getOrganizationLeaderboardWithSort } from "@/services/leaderboard";
 import type { UpcomingForecast } from "@/views/forecasts/UpcomingForecastView";
 import UserDashboardView from "@/views/home/UserDashboardView";
@@ -76,6 +82,10 @@ function toUpcomingForecasts(
   });
 }
 
+// ----------------------------------------------
+// Page Component
+// ----------------------------------------------
+
 type PageProps = {
   searchParams: Promise<{
     sortBy?: string;
@@ -106,6 +116,52 @@ export default async function UserDashboardPage({ searchParams }: PageProps) {
       </div>
     );
   }
+
+  const [closedForecasts, dueSoon, dueToday, balance] = await Promise.all([
+    getClosedForecastCountForUser({ organizationId: orgId, userId }),
+    getForecastsDueSoonCount({ organizationId: orgId, userId, days: 7 }),
+    getForecastsDueTodayCount({ organizationId: orgId, userId }),
+    getUserBalance(userId),
+  ]);
+
+  const stats = [
+    {
+      id: "closed",
+      label: "Closed Forecasts",
+      value: closedForecasts,
+      up: true,
+      delta: "",
+      subLabel: "All time",
+    },
+    {
+      id: "dueSoon",
+      label: "Due Soon",
+      value: dueSoon,
+      up: false,
+      delta: "",
+      subLabel: "Next 7 days",
+    },
+    {
+      id: "dueToday",
+      label: "Due Today",
+      value: dueToday,
+      up: false,
+      delta: "",
+      subLabel: "By midnight",
+    },
+    {
+      id: "balance",
+      label: "Balance",
+      value: `$${balance.toLocaleString()}`,
+      up: true,
+      delta: "",
+      subLabel: "Net account balance",
+    },
+  ];
+
+  // ----------------------------------------------------------
+  // Upcoming Forecasts List (Table)
+  // ----------------------------------------------------------
 
   // NOTE: pass userId now that the service filters predictions by user
   const forecasts = await getUpcomingForecastsForUser({
@@ -155,6 +211,7 @@ export default async function UserDashboardPage({ searchParams }: PageProps) {
       {/* 🔹 pass predictionMetrics into the view */}
       <UserDashboardView
         userName={displayName}
+        stats={stats}
         predictionMetrics={predictionMetrics}
       />
 
