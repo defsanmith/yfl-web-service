@@ -145,7 +145,7 @@ export default function LeaderboardFilters({
   // Select all forecasts
   const selectAllForecasts = () => {
     updateFilters({
-      forecastIds: forecasts.map((f) => f.id).join(","),
+      forecastIds: undefined,
     });
   };
 
@@ -157,7 +157,7 @@ export default function LeaderboardFilters({
   // Select all categories
   const selectAllCategories = () => {
     updateFilters({
-      categoryIds: categories.map((c) => c.id).join(","),
+      categoryIds: undefined,
     });
   };
 
@@ -169,7 +169,7 @@ export default function LeaderboardFilters({
   // Select all forecast types
   const selectAllForecastTypes = () => {
     updateFilters({
-      forecastTypes: FORECAST_TYPES.map((t) => t.value).join(","),
+      forecastTypes: undefined,
     });
   };
 
