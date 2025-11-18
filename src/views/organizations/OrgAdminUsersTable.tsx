@@ -1,5 +1,6 @@
 "use client";
 
+import DeleteUserDialog from "@/components/DeleteUserDialog";
 import { PaginationControls } from "@/components/pagination-controls";
 import { SearchBar } from "@/components/search-bar";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +23,7 @@ import {
 import { Role } from "@/generated/prisma";
 import { PaginatedResult } from "@/lib/pagination";
 import { OrganizationUser } from "@/services/organizations";
-import { ChevronDown, ChevronsUpDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronsUpDown, ChevronUp, Trash2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
 import OrgAdminEditUserDialog from "./OrgAdminEditUserDialog";
@@ -46,6 +47,9 @@ export default function OrgAdminUsersTable({
   const router = useRouter();
   const currentSearchParams = useSearchParams();
   const [editingUser, setEditingUser] = useState<OrganizationUser | null>(null);
+  const [deletingUser, setDeletingUser] = useState<OrganizationUser | null>(
+    null
+  );
 
   const currentQuery = searchParams.query || "";
   const currentRole = searchParams.role || "all";
@@ -140,6 +144,13 @@ export default function OrgAdminUsersTable({
     }
   };
 
+  const handleDeleteUser = async (userId: string) => {
+    const { deleteUserAction } = await import(
+      "@/app/(protected)/(org-admin)/users/actions"
+    );
+    return await deleteUserAction(userId);
+  };
+
   return (
     <div className="space-y-4">
       {/* Search and Filter */}
@@ -229,13 +240,24 @@ export default function OrgAdminUsersTable({
                       {new Date(user.createdAt).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditingUser(user)}
-                      >
-                        Edit
-                      </Button>
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingUser(user)}
+                          className="cursor-pointer"
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeletingUser(user)}
+                          className="text-destructive cursor-pointer hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -258,6 +280,18 @@ export default function OrgAdminUsersTable({
           user={editingUser}
           open={!!editingUser}
           onOpenChange={(open) => !open && setEditingUser(null)}
+        />
+      )}
+
+      {/* Delete User Dialog */}
+      {deletingUser && (
+        <DeleteUserDialog
+          open={!!deletingUser}
+          onOpenChange={(open) => !open && setDeletingUser(null)}
+          userId={deletingUser.id}
+          userName={deletingUser.name || "Unknown"}
+          userEmail={deletingUser.email}
+          onDelete={handleDeleteUser}
         />
       )}
     </div>

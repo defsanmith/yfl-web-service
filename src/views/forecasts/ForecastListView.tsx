@@ -1,5 +1,6 @@
 "use client";
 
+import DeleteForecastDialog from "@/components/DeleteForecastDialog";
 import CreateForecastModal from "@/components/forecasts/CreateForecastModal";
 import type { PaginationInfo } from "@/components/pagination-controls";
 import { PaginationControls } from "@/components/pagination-controls";
@@ -38,6 +39,7 @@ import {
   ChevronUp,
   Plus,
   Search,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -93,6 +95,8 @@ export default function ForecastListView({
     searchParams.get("search") || ""
   );
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [deletingForecast, setDeletingForecast] =
+    useState<ForecastWithOrg | null>(null);
 
   // Determine the base path for navigation
   const effectiveBasePath = basePath || Router.organizationForecasts(orgId);
@@ -141,6 +145,20 @@ export default function ForecastListView({
     if (currentSortBy !== column)
       return <ChevronsUpDown className="ml-2 h-4 w-4" />;
     return currentSortOrder === "asc" ? <ChevronUp /> : <ChevronDown />;
+  };
+
+  const handleDeleteForecast = async (forecastId: string) => {
+    const { deleteForecastAction } = await import(
+      "@/app/(protected)/(org-admin)/forecasts/actions"
+    );
+    const result = await deleteForecastAction(forecastId);
+
+    if (result.success) {
+      // Refresh the page to show updated list
+      router.refresh();
+    }
+
+    return result;
   };
 
   return (
@@ -257,13 +275,16 @@ export default function ForecastListView({
                   Created {getSortIcon("createdAt")}
                 </Button>
               </TableHead>
+              {isOrgAdmin && (
+                <TableHead className="text-right">Actions</TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
             {forecasts.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={4}
+                  colSpan={isOrgAdmin ? 5 : 4}
                   className="text-center text-muted-foreground"
                 >
                   No forecasts found
@@ -296,6 +317,18 @@ export default function ForecastListView({
                   <TableCell className="text-muted-foreground">
                     {format(new Date(forecast.createdAt), "MMM d, yyyy")}
                   </TableCell>
+                  {isOrgAdmin && (
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeletingForecast(forecast)}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}
@@ -331,6 +364,17 @@ export default function ForecastListView({
         onOpenChange={setShowCreateModal}
         isOrgAdmin={isOrgAdmin}
       />
+
+      {/* Delete Forecast Dialog */}
+      {deletingForecast && (
+        <DeleteForecastDialog
+          open={!!deletingForecast}
+          onOpenChange={(open) => !open && setDeletingForecast(null)}
+          forecastId={deletingForecast.id}
+          forecastTitle={deletingForecast.title}
+          onDelete={handleDeleteForecast}
+        />
+      )}
     </div>
   );
 }

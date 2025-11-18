@@ -199,23 +199,25 @@ export async function validateUserUpdate(
 /**
  * Create multiple users in bulk
  *
- * @param users - Array of user data to create
+ * @param users - Array of user data to create (name and email only)
  * @param organizationId - Organization ID to assign all users to
  * @returns Object with successful users, failed users with errors, and summary
+ *
+ * @remarks All users are automatically assigned the USER role for security reasons
  *
  * @example
  * ```typescript
  * const result = await bulkCreateUsers(
  *   [
- *     { name: "John Doe", email: "john@example.com", role: "USER" },
- *     { name: "Jane Smith", email: "jane@example.com", role: "ORG_ADMIN" }
+ *     { name: "John Doe", email: "john@example.com" },
+ *     { name: "Jane Smith", email: "jane@example.com" }
  *   ],
  *   "org123"
  * );
  * ```
  */
 export async function bulkCreateUsers(
-  users: Array<{ name: string; email: string; role: string }>,
+  users: Array<{ name: string; email: string }>,
   organizationId: string
 ): Promise<{
   successful: Array<{ row: number; user: { name: string; email: string } }>;
@@ -248,12 +250,12 @@ export async function bulkCreateUsers(
         continue;
       }
 
-      // Create the user
+      // Create the user with USER role (auto-assigned for bulk uploads)
       const createdUser = await prisma.user.create({
         data: {
           name: userData.name,
           email: userData.email,
-          role: userData.role as Role,
+          role: Role.USER, // Always USER for bulk uploads
           organizationId,
         },
         select: {
@@ -289,4 +291,24 @@ export async function bulkCreateUsers(
       failed: failed.length,
     },
   };
+}
+
+/**
+ * Delete a user
+ *
+ * @param id - User ID to delete
+ * @returns The deleted user
+ *
+ * @throws {Error} If database operation fails
+ *
+ * @example
+ * ```typescript
+ * // In a server action
+ * const deletedUser = await deleteUser(userId);
+ * ```
+ */
+export async function deleteUser(id: string) {
+  return await prisma.user.delete({
+    where: { id },
+  });
 }

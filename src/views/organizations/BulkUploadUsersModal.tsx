@@ -92,12 +92,7 @@ function BulkUploadForm() {
 
   // Download CSV template
   const downloadTemplate = () => {
-    const template = `name,email,role
-Michael Scott,michael.scott@example.com,USER
-Dwight Schrute,dwight.schrute@example.com,USER
-Pam Beasley,pam.beasley@example.com,USER
-Jim Halpert,jim.halpert@example.com,USER
-Angela Martin,angela.martin@example.com,USER`;
+    const template = `name,email`;
 
     const blob = new Blob([template], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
@@ -129,11 +124,7 @@ Angela Martin,angela.martin@example.com,USER`;
               <code className="bg-muted px-1.5 py-0.5 rounded text-xs">
                 email
               </code>
-              ,{" "}
-              <code className="bg-muted px-1.5 py-0.5 rounded text-xs">
-                role
-              </code>{" "}
-              (USER only)
+              .
             </p>
             <Button
               type="button"
@@ -283,7 +274,8 @@ Angela Martin,angela.martin@example.com,USER`;
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Accepts .csv files only • Max 100 users per upload
+                  Accepts .csv files only • Max 100 users per upload • All users
+                  assigned USER role
                 </p>
               </div>
             )}

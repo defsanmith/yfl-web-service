@@ -46,6 +46,7 @@ export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 
 /**
  * Schema for a single user row in bulk CSV upload
+ * Role is automatically set to USER, so CSV only needs name and email
  */
 export const bulkUserRowSchema = z.object({
   name: z
@@ -56,11 +57,6 @@ export const bulkUserRowSchema = z.object({
     .string()
     .email("Invalid email address")
     .max(255, "Email must not exceed 255 characters"),
-  role: z
-    .enum(["USER"], {
-      message: "Role must be USER (ORG_ADMIN cannot be added in bulk)",
-    })
-    .transform((val) => val as Role),
 });
 
 export type BulkUserRow = z.infer<typeof bulkUserRowSchema>;

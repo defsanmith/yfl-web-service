@@ -228,21 +228,18 @@ export async function bulkUploadUsersAction(
     const header = lines[0].split(",").map((h) => h.trim().toLowerCase());
     const nameIndex = header.indexOf("name");
     const emailIndex = header.indexOf("email");
-    const roleIndex = header.indexOf("role");
 
-    if (nameIndex === -1 || emailIndex === -1 || roleIndex === -1) {
+    if (nameIndex === -1 || emailIndex === -1) {
       return {
         success: false,
         errors: {
-          _form: [
-            "CSV must contain 'name', 'email', and 'role' columns in the header",
-          ],
+          _form: ["CSV must contain 'name' and 'email' columns in the header"],
         },
       };
     }
 
-    // Parse data rows
-    const users: Array<{ name: string; email: string; role: string }> = [];
+    // Parse data rows - role will be auto-assigned as USER
+    const users: Array<{ name: string; email: string }> = [];
     const parseErrors: Array<{ row: number; errors: string[] }> = [];
 
     for (let i = 1; i < lines.length; i++) {
@@ -256,10 +253,9 @@ export async function bulkUploadUsersAction(
 
       const name = values[nameIndex] || "";
       const email = values[emailIndex] || "";
-      const role = values[roleIndex] || "";
 
-      // Validate row using Zod schema
-      const validation = bulkUserRowSchema.safeParse({ name, email, role });
+      // Validate row using Zod schema (role not needed, auto-assigned as USER)
+      const validation = bulkUserRowSchema.safeParse({ name, email });
 
       if (!validation.success) {
         const errors = validation.error.issues.map((e) => e.message);
@@ -320,6 +316,56 @@ export async function bulkUploadUsersAction(
             : "An error occurred while processing the CSV file",
         ],
       },
+    };
+  }
+}
+
+/**
+ * Delete a user from the org admin's organization
+ */
+export async function deleteUserAction(userId: string): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  // 1. Verify permissions and get org admin's organization
+  const session = await requireOrgAdmin();
+  const orgId = session.user.organizationId!;
+
+  // 2. Verify the user belongs to the org admin's organization
+  const { getUserById, deleteUser } = await import("@/services/users");
+  const existingUser = await getUserById(userId);
+
+  if (!existingUser || existingUser.organizationId !== orgId) {
+    return {
+      success: false,
+      error: "You can only delete users in your own organization",
+    };
+  }
+
+  // 3. Prevent deleting yourself
+  if (existingUser.id === session.user.id) {
+    return {
+      success: false,
+      error: "You cannot delete your own account",
+    };
+  }
+
+  try {
+    // 4. Delete the user
+    await deleteUser(userId);
+
+    // 5. Revalidate cache
+    revalidatePath(Router.ORG_ADMIN_USERS);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Delete user error:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "An error occurred while deleting the user",
     };
   }
 }
