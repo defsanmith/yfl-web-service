@@ -8,7 +8,6 @@ import type { Prisma } from "@/generated/prisma";
 import { getUpcomingForecastsForUser } from "@/services/forecasts";
 import { getOrganizationLeaderboardWithSort } from "@/services/leaderboard";
 import type { UpcomingForecast } from "@/views/forecasts/UpcomingForecastView";
-import UpcomingForecastsTable from "@/views/forecasts/UpcomingForecastView";
 import UserDashboardView from "@/views/home/UserDashboardView";
 import LeaderboardView from "@/views/leaderboard/LeaderboardView";
 
@@ -17,9 +16,21 @@ type ForecastWithRelations = Prisma.ForecastGetPayload<{
   include: {
     organization: { select: { id: true; name: true } };
     category: { select: { id: true; name: true; color: true } };
-    predictions: { select: { id: true; userId: true; value: true } };
+    predictions: {
+      select: {
+        id: true;
+        userId: true;
+        value: true;
+      };
+    };
   };
 }>;
+
+// Optional: type for prediction metrics we pass to the view
+type PredictionMetricRow = {
+  id: string;
+  absoluteActualErrorPct: number | null;
+};
 
 // Map forecasts to table rows
 function toUpcomingForecasts(
@@ -42,7 +53,7 @@ function toUpcomingForecasts(
       } else if (f.type === "BINARY") {
         if (mine.value === "true") prediction = 1;
         else if (mine.value === "false") prediction = 0;
-      } // CATEGORICAL -> keep null since UI expects number
+      }
     }
 
     const due = f.dueDate ? new Date(f.dueDate) : null;
@@ -103,6 +114,23 @@ export default async function UserDashboardPage({ searchParams }: PageProps) {
     limit: 20,
   });
 
+  // 🔹 NEW: fetch this user's prediction metrics
+  const predictionMetrics: PredictionMetricRow[] =
+    await prisma.prediction.findMany({
+      where: {
+        userId,
+        forecast: { organizationId: orgId },
+        // Only include rows where we have a computed metric
+        absoluteActualErrorPct: { not: null },
+      },
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        absoluteActualErrorPct: true,
+      },
+      take: 50, // or whatever cap you want for the chart
+    });
+
   const displayName =
     session.user.name ??
     (session.user.email ? session.user.email.split("@")[0] : "Player");
@@ -124,22 +152,11 @@ export default async function UserDashboardPage({ searchParams }: PageProps) {
 
   return (
     <div className="p-6 space-y-6">
-      <UserDashboardView userName={displayName} />
-
-      <section className="space-y-3">
-        <h2 className="text-2xl font-semibold">Your Forecasts</h2>
-
-        <UpcomingForecastsTable
-          data={upcoming}
-          pageSize={10}
-          hrefBase="/forecasts"
-          newHref="/forecasts/new"
-        />
-
-        <p className="text-sm text-muted-foreground">
-          Showing {upcoming.length.toLocaleString()} upcoming forecasts
-        </p>
-      </section>
+      {/* 🔹 pass predictionMetrics into the view */}
+      <UserDashboardView
+        userName={displayName}
+        predictionMetrics={predictionMetrics}
+      />
 
       {/* Leaderboard Section */}
       <section className="space-y-3">
