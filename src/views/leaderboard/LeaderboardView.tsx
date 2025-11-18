@@ -9,17 +9,11 @@ import {
   type SortingState,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { ChevronDown, ChevronsUpDown, Settings2 } from "lucide-react";
+import { ChevronsUpDown } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import LeaderboardFilters from "@/components/leaderboard-filters";
 import {
   Table,
   TableBody,
@@ -30,11 +24,23 @@ import {
 } from "@/components/ui/table";
 import type { LeaderboardEntry } from "@/services/leaderboard";
 
+type Forecast = {
+  id: string;
+  title: string;
+};
+
+type Category = {
+  id: string;
+  name: string;
+};
+
 type LeaderboardViewProps = {
   data: LeaderboardEntry[];
   organizationName: string;
-  isOrgAdmin?: boolean; // Reserved for future role-specific features
+  isOrgAdmin?: boolean;
   currentUserId?: string;
+  forecasts: Forecast[];
+  categories: Category[];
 };
 
 // Format percentage values
@@ -71,6 +77,8 @@ export default function LeaderboardView({
   organizationName,
   isOrgAdmin = false,
   currentUserId,
+  forecasts = [],
+  categories = [],
 }: LeaderboardViewProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -521,43 +529,14 @@ export default function LeaderboardView({
         </div>
       </div>
 
-      {/* Column Visibility Controls */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Showing {table.getFilteredRowModel().rows.length} participant(s)
-        </p>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Settings2 className="mr-2 h-4 w-4" />
-              Columns
-              <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[200px]">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .filter((column) => isOrgAdmin || column.id !== "userEmail") // Hide email toggle for non-admins
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id
-                      .replace(/([A-Z])/g, " $1")
-                      .replace(/^./, (str) => str.toUpperCase())}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      {/* Filters and Column Visibility Controls */}
+      <LeaderboardFilters
+        forecasts={forecasts}
+        categories={categories}
+        table={table}
+        isOrgAdmin={isOrgAdmin}
+        participantCount={table.getFilteredRowModel().rows.length}
+      />
 
       {/* Table */}
       <div className="rounded-md border">

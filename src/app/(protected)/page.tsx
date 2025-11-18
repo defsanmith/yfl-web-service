@@ -1,72 +1,25 @@
 import { auth } from "@/auth";
 import Router from "@/constants/router";
-import type { Prisma } from "@/generated/prisma";
 import { Role } from "@/generated/prisma";
 import prisma from "@/lib/prisma";
-import { getUpcomingForecastsForUser } from "@/services/forecasts";
+import { getCategories } from "@/services/categories";
+import { getForecasts } from "@/services/forecasts";
 import { getOrganizationLeaderboardWithSort } from "@/services/leaderboard";
 import { getOrganizationById } from "@/services/organizations";
-import type { UpcomingForecast } from "@/views/forecasts/UpcomingForecastView";
 import LeaderboardView from "@/views/leaderboard/LeaderboardView";
 import { redirect } from "next/navigation";
-
-// Define type with relations for forecasts
-type ForecastWithRelations = Prisma.ForecastGetPayload<{
-  include: {
-    organization: { select: { id: true; name: true } };
-    category: { select: { id: true; name: true; color: true } };
-    predictions: { select: { id: true; userId: true; value: true } };
-  };
-}>;
-
-// Map forecasts to table rows
-function toUpcomingForecasts(
-  forecasts: ForecastWithRelations[] | undefined,
-  currentUserId?: string
-): UpcomingForecast[] {
-  const now = new Date();
-
-  return (forecasts ?? []).map((f): UpcomingForecast => {
-    const mine = f.predictions.find((p) =>
-      currentUserId ? p.userId === currentUserId : true
-    );
-
-    // ---- convert string -> number per forecast type ----
-    let prediction: number | null = null;
-    if (mine?.value != null) {
-      if (f.type === "CONTINUOUS") {
-        const n = Number(mine.value);
-        prediction = Number.isFinite(n) ? n : null;
-      } else if (f.type === "BINARY") {
-        if (mine.value === "true") prediction = 1;
-        else if (mine.value === "false") prediction = 0;
-      } // CATEGORICAL -> keep null since UI expects number
-    }
-
-    const due = f.dueDate ? new Date(f.dueDate) : null;
-    const computedStatus: UpcomingForecast["status"] =
-      due && due < now
-        ? "Completed"
-        : prediction !== null
-        ? "In Progress"
-        : "Open";
-
-    return {
-      id: f.id,
-      title: f.title,
-      type: f.type ?? null,
-      status: computedStatus,
-      org: f.organization?.name ?? null,
-      prediction,
-      reviewer: null,
-    };
-  });
-}
 
 type PageProps = {
   searchParams: Promise<{
     sortBy?: string;
     sortOrder?: string;
+    forecastIds?: string;
+    categoryIds?: string;
+    forecastTypes?: string;
+    recentCount?: string;
+    minForecasts?: string;
+    dateFrom?: string;
+    dateTo?: string;
   }>;
 };
 
@@ -77,7 +30,17 @@ export default async function ProtectedRootPage({ searchParams }: PageProps) {
     redirect(Router.SIGN_IN);
   }
 
-  const { sortBy = "accuracyRate", sortOrder = "desc" } = await searchParams;
+  const {
+    sortBy = "accuracyRate",
+    sortOrder = "desc",
+    forecastIds,
+    categoryIds,
+    forecastTypes,
+    recentCount,
+    minForecasts,
+    dateFrom,
+    dateTo,
+  } = await searchParams;
 
   // Super Admin - redirect to their dashboard
   if (session.user.role === Role.SUPER_ADMIN) {
@@ -95,11 +58,31 @@ export default async function ProtectedRootPage({ searchParams }: PageProps) {
       redirect(Router.UNAUTHORIZED);
     }
 
+    // Fetch leaderboard data with filters
     const leaderboardData = await getOrganizationLeaderboardWithSort({
       organizationId: session.user.organizationId,
       sortBy,
       sortOrder: sortOrder as "asc" | "desc",
+      forecastIds,
+      categoryIds,
+      forecastTypes,
+      recentCount: recentCount ? parseInt(recentCount, 10) : undefined,
+      minForecasts: minForecasts ? parseInt(minForecasts, 10) : undefined,
+      dateFrom,
+      dateTo,
     });
+
+    // Fetch forecasts and categories for filter options
+    const [forecastsResult, categoriesResult] = await Promise.all([
+      getForecasts({
+        organizationId: session.user.organizationId,
+        limit: 100,
+      }),
+      getCategories({
+        organizationId: session.user.organizationId,
+        limit: 100,
+      }),
+    ]);
 
     return (
       <div className="space-y-6">
@@ -107,6 +90,8 @@ export default async function ProtectedRootPage({ searchParams }: PageProps) {
           data={leaderboardData}
           organizationName={organization.name}
           isOrgAdmin={true}
+          forecasts={forecastsResult.forecasts}
+          categories={categoriesResult.categories}
         />
       </div>
     );
@@ -131,22 +116,17 @@ export default async function ProtectedRootPage({ searchParams }: PageProps) {
     );
   }
 
-  const forecasts = await getUpcomingForecastsForUser({
-    organizationId: orgId,
-    userId,
-    limit: 20,
-  });
-
-  const displayName =
-    session.user.name ??
-    (session.user.email ? session.user.email.split("@")[0] : "Player");
-
-  const upcoming = toUpcomingForecasts(forecasts, userId);
-
   const leaderboardData = await getOrganizationLeaderboardWithSort({
     organizationId: orgId,
     sortBy,
     sortOrder: sortOrder as "asc" | "desc",
+    forecastIds,
+    categoryIds,
+    forecastTypes,
+    recentCount: recentCount ? parseInt(recentCount, 10) : undefined,
+    minForecasts: minForecasts ? parseInt(minForecasts, 10) : undefined,
+    dateFrom,
+    dateTo,
   });
 
   // Strip email addresses for regular users (privacy)
@@ -155,10 +135,21 @@ export default async function ProtectedRootPage({ searchParams }: PageProps) {
     userEmail: "", // Remove email from response
   }));
 
-  const organization = await prisma.organization.findUnique({
-    where: { id: orgId },
-    select: { name: true },
-  });
+  // Fetch forecasts and categories for filter options
+  const [organization, forecastsResult, categoriesResult] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { name: true },
+    }),
+    getForecasts({
+      organizationId: orgId,
+      limit: 100,
+    }),
+    getCategories({
+      organizationId: orgId,
+      limit: 100,
+    }),
+  ]);
 
   return (
     <div>
@@ -184,6 +175,8 @@ export default async function ProtectedRootPage({ searchParams }: PageProps) {
           organizationName={organization?.name || "Unknown"}
           isOrgAdmin={false}
           currentUserId={userId}
+          forecasts={forecastsResult.forecasts}
+          categories={categoriesResult.categories}
         />
       </section>
     </div>

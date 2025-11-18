@@ -158,17 +158,31 @@ export async function getOrganizationLeaderboard(
 }
 
 /**
- * Get detailed leaderboard with sortable columns
- * This version allows custom sorting
+ * Get detailed leaderboard with sortable columns and filters
+ * This version allows custom sorting and filtering by forecast/category
  */
 export async function getOrganizationLeaderboardWithSort({
   organizationId,
   sortBy = "accuracyRate",
   sortOrder = "desc",
+  forecastIds,
+  categoryIds,
+  forecastTypes,
+  recentCount,
+  minForecasts,
+  dateFrom,
+  dateTo,
 }: {
   organizationId: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
+  forecastIds?: string; // Comma-separated IDs
+  categoryIds?: string; // Comma-separated IDs
+  forecastTypes?: string; // Comma-separated types
+  recentCount?: number;
+  minForecasts?: number;
+  dateFrom?: string;
+  dateTo?: string;
 }): Promise<LeaderboardEntry[]> {
   // Map frontend column names to SQL column aliases (what we SELECT AS)
   const validSortColumns = [
@@ -201,6 +215,82 @@ export async function getOrganizationLeaderboardWithSort({
   const direction = sortOrder.toUpperCase() === "ASC" ? "ASC" : "DESC";
   const nullsPosition = direction === "DESC" ? "NULLS LAST" : "NULLS FIRST";
 
+  // Build WHERE clause conditions
+  const conditions = [
+    'u."organizationId" = $1',
+    'f."actualValue" IS NOT NULL',
+    "u.role = 'USER'",
+  ];
+  const params: (string | number)[] = [organizationId];
+
+  // Filter by forecast IDs
+  if (forecastIds) {
+    const ids = forecastIds.split(",").filter(Boolean);
+    if (ids.length > 0) {
+      const placeholders = ids
+        .map((_, i) => `$${params.length + i + 1}`)
+        .join(", ");
+      conditions.push(`f.id IN (${placeholders})`);
+      params.push(...ids);
+    }
+  }
+
+  // Filter by category IDs
+  if (categoryIds) {
+    const ids = categoryIds.split(",").filter(Boolean);
+    if (ids.length > 0) {
+      const placeholders = ids
+        .map((_, i) => `$${params.length + i + 1}`)
+        .join(", ");
+      conditions.push(`f."categoryId" IN (${placeholders})`);
+      params.push(...ids);
+    }
+  }
+
+  // Filter by forecast types
+  if (forecastTypes) {
+    const types = forecastTypes.split(",").filter(Boolean);
+    if (types.length > 0) {
+      const placeholders = types
+        .map((_, i) => `$${params.length + i + 1}::"ForecastType"`)
+        .join(", ");
+      conditions.push(`f.type IN (${placeholders})`);
+      params.push(...types);
+    }
+  }
+
+  // Filter by date range (dataReleaseDate)
+  if (dateFrom) {
+    conditions.push(`f."dataReleaseDate" >= $${params.length + 1}::timestamp`);
+    params.push(dateFrom);
+  }
+  if (dateTo) {
+    conditions.push(`f."dataReleaseDate" <= $${params.length + 1}::timestamp`);
+    params.push(dateTo);
+  }
+
+  // Build subquery for recent forecasts filter
+  let forecastSubquery = "";
+  if (recentCount) {
+    forecastSubquery = `
+      AND f.id IN (
+        SELECT id FROM "Forecast"
+        WHERE "organizationId" = $1
+        AND "actualValue" IS NOT NULL
+        ORDER BY "dataReleaseDate" DESC NULLS LAST
+        LIMIT ${recentCount}
+      )
+    `;
+  }
+
+  const whereClause = conditions.join(" AND ") + forecastSubquery;
+
+  // Build HAVING clause for minimum forecasts filter
+  let havingClause = "";
+  if (minForecasts) {
+    havingClause = `HAVING COUNT(p.id) >= ${minForecasts}`;
+  }
+
   // Use $queryRawUnsafe for dynamic ORDER BY
   const query = `
     SELECT 
@@ -232,17 +322,15 @@ export async function getOrganizationLeaderboardWithSort({
     FROM "User" u
     INNER JOIN "Prediction" p ON p."userId" = u.id
     INNER JOIN "Forecast" f ON f.id = p."forecastId"
-    WHERE 
-      u."organizationId" = $1
-      AND f."actualValue" IS NOT NULL
-      AND u.role = 'USER'
+    WHERE ${whereClause}
     GROUP BY u.id, u.name, u.email
+    ${havingClause}
     ORDER BY "${sortColumn}" ${direction} ${nullsPosition}
   `;
 
   const result = await prisma.$queryRawUnsafe<RawLeaderboardEntry[]>(
     query,
-    organizationId
+    ...params
   );
 
   return result.map(convertDecimalsToNumbers);
