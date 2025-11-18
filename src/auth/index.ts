@@ -181,26 +181,28 @@ const authConfig: AuthOptions = {
     },
 
     // Sign-in callback: runs each time a user logs in
-    async signIn({ user}) {
-    // Email might be on user or on email param depending on stage
-      const emailAddress = user?.email;
+    async signIn({ user, account, email }) {
+    // We only want to restrict the *email magic-link request* step.
+    // For Email provider, NextAuth calls this twice:
+    // 1) When requesting the magic link  -> email.verificationRequest === true
+    // 2) When clicking the magic link   -> email.verificationRequest is undefined
+    if (account?.provider === "email" && email?.verificationRequest) {
+      const emailAddress = user?.email?.toLowerCase();
       if (!emailAddress) {
-        return false; // fail safely
+        return false; // fail safely, no magic link
       }
-
       const existingUser = await prisma.user.findUnique({
         where: { email: emailAddress },
       });
 
       if (!existingUser) {
-        // ❌ Block sign-in → NextAuth redirects to pages.error (/unauthorized-email)
         return false;
       }
+    }
 
-      // ✅ Known user → allow login
-      ensureStartingBalancesForUser(existingUser.id).catch(() => {});
-      return true;
-    },
+    // For all other cases (OAuth, actual sign-in after clicking the link, etc.)
+    return true;
+  },
 
     // Session callback: runs when session is created or checked
     async session({ session, token }) {

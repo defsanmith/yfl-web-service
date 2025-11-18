@@ -2,7 +2,7 @@
 
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import React from "react";
+import React, { useEffect } from "react";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Router from "@/constants/router";
-import { useEffect } from "react";
 import { toast, Toaster } from "sonner";
 
 // --- Validation ---
@@ -55,54 +54,26 @@ async function requestMagicLinkAction(
     const callbackUrl =
       (formData.get("callbackUrl") as string | null) ?? Router.HOME;
 
-    // 🔎 1) Check if the email exists in the database (via API route)
-    const checkRes = await fetch("/api/auth/check-email", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: parsed.data }),
-    });
-
-    if (!checkRes.ok) {
-      // API itself failed (server error, bad payload, etc.)
-      return {
-        data: { email },
-        errors: {
-          _form: ["We couldn't verify your email. Please try again."],
-        },
-      };
-    }
-
-    const check = await checkRes.json();
-
-    // API responded with ok:false
-    if (!check.ok) {
-      return {
-        data: { email },
-        errors: {
-          _form: [check.error ?? "We couldn't verify your email. Please try again."],
-        },
-      };
-    }
-
-    // Email is valid format, but no user exists for it
-    if (!check.exists) {
-      return {
-        data: { email },
-        errors: {
-          _form: ["No valid account was found for that email."],
-        },
-      };
-    }
-
-    // 2) Only now send the magic link
+    // 🔐 Let NextAuth + callbacks.signIn decide if a magic link should be sent
     const res = await signIn("email", {
       email: parsed.data,
       callbackUrl,
-      redirect: false,
+      redirect: false, // so we get res.error instead of a full redirect
     });
 
-    console.log("[requestMagicLinkAction] signIn error:", res?.error);
+    console.log("[requestMagicLinkAction] signIn result:", res);
 
+    // This comes from callbacks.signIn returning false → AccessDenied
+    if (res?.error === "AccessDenied") {
+      return {
+        data: { email },
+        errors: {
+          _form: ["This email is not registered."],
+        },
+      };
+    }
+
+    // Other errors (email server, config, etc.)
     if (res?.error) {
       return {
         data: { email },
@@ -138,7 +109,7 @@ export default function SignInPage({ error }: SignInViewProps) {
     FormData
   >(requestMagicLinkAction, initialActionState);
 
-  // Success side-effect (like closing dialog in your example)
+  // ✅ Success toast (magic link sent)
   useEffect(() => {
     if (state?.success) {
       toast.success("Magic link sent", {
@@ -147,6 +118,17 @@ export default function SignInPage({ error }: SignInViewProps) {
       });
     }
   }, [state?.success]);
+
+  // ✅ "Not registered" toast when signIn callback denied the email
+  useEffect(() => {
+    const msg = state?.errors?._form?.[0];
+    if (msg === "This email is not registered.") {
+      toast.error("Not registered", {
+        description:
+          "This email is not registered. Please contact your administrator or use a different email.",
+      });
+    }
+  }, [state?.errors?._form]);
 
   return (
     <>
