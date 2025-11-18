@@ -2,6 +2,7 @@ import config from "@/constants/config";
 import { Role } from "@/generated/prisma";
 import prisma from "@/lib/prisma";
 import { ensureStartingBalancesForUser } from "@/services/finance";
+import { userEmailExists } from "@/services/users";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import type {
   GetServerSidePropsContext,
@@ -181,24 +182,13 @@ const authConfig: AuthOptions = {
     },
 
     // Sign-in callback: runs each time a user logs in
-    async signIn({ user}) {
-    // Email might be on user or on email param depending on stage
-      const emailAddress = user?.email;
-      if (!emailAddress) {
-        return false; // fail safely
+    async signIn({ user, account, email }) {
+      if (account?.provider === "email" && email?.verificationRequest) {
+        if (!user?.email) return false;
+        const exists = await userEmailExists(user.email);
+        if (!exists) return false;
       }
 
-      const existingUser = await prisma.user.findUnique({
-        where: { email: emailAddress },
-      });
-
-      if (!existingUser) {
-        // ❌ Block sign-in → NextAuth redirects to pages.error (/unauthorized-email)
-        return false;
-      }
-
-      // ✅ Known user → allow login
-      ensureStartingBalancesForUser(existingUser.id).catch(() => {});
       return true;
     },
 

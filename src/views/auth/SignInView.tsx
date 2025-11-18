@@ -2,7 +2,7 @@
 
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import React from "react";
+import React, { useEffect } from "react";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Router from "@/constants/router";
-import { useEffect } from "react";
 import { toast, Toaster } from "sonner";
 
 // --- Validation ---
@@ -47,7 +46,7 @@ async function requestMagicLinkAction(
       return {
         data: { email },
         errors: {
-          email: [parsed.error.issues[0]?.message ?? "Invalid email."],
+          email: [parsed.error.issues[0]?.message ?? "Please enter a valid email."],
         },
       };
     }
@@ -55,25 +54,26 @@ async function requestMagicLinkAction(
     const callbackUrl =
       (formData.get("callbackUrl") as string | null) ?? Router.HOME;
 
+    // 🔐 Let NextAuth + callbacks.signIn decide if a magic link should be sent
     const res = await signIn("email", {
       email: parsed.data,
       callbackUrl,
-      redirect: false,
+      redirect: false, // so we get res.error instead of a full redirect
     });
 
-    console.log("[requestMagicLinkAction] signIn error:", res?.error);
+    console.log("[requestMagicLinkAction] signIn result:", res);
 
-    // 🔑 Treat unauthorized emails specially
-    if (res?.error === "AccessDenied" || res?.error === "EmailSignin") {
-      // Client-side navigation
-      if (typeof window !== "undefined") {
-        window.location.href = "/unauthorized-email";
-      }
-      // We won't render this state anyway because we're navigating away
-      return { success: true };
+    // This comes from callbacks.signIn returning false → AccessDenied
+    if (res?.error === "AccessDenied") {
+      return {
+        data: { email },
+        errors: {
+          _form: ["This email is not registered."],
+        },
+      };
     }
 
-    // Other errors → show generic message
+    // Other errors (email server, config, etc.)
     if (res?.error) {
       return {
         data: { email },
@@ -83,7 +83,7 @@ async function requestMagicLinkAction(
       };
     }
 
-    return { success: true };
+    return { success: true, data: { email } };
   } catch (err) {
     console.error("[requestMagicLinkAction] unexpected error:", err);
     return {
@@ -109,7 +109,7 @@ export default function SignInPage({ error }: SignInViewProps) {
     FormData
   >(requestMagicLinkAction, initialActionState);
 
-  // Success side-effect (like closing dialog in your example)
+  // ✅ Success toast (magic link sent)
   useEffect(() => {
     if (state?.success) {
       toast.success("Magic link sent", {
@@ -118,6 +118,17 @@ export default function SignInPage({ error }: SignInViewProps) {
       });
     }
   }, [state?.success]);
+
+  // ✅ "Not registered" toast when signIn callback denied the email
+  useEffect(() => {
+    const msg = state?.errors?._form?.[0];
+    if (msg === "This email is not registered.") {
+      toast.error("Not registered", {
+        description:
+          "This email is not registered. Please contact your administrator or use a different email.",
+      });
+    }
+  }, [state?.errors?._form]);
 
   return (
     <>

@@ -1,4 +1,7 @@
 // src/app/signin/page.tsx
+
+// Note: This only handles full-page loads like /signin?error=EmailSignin.
+// The magic-link form uses signIn({ redirect: false }) and handles errors client-side.
 import { auth } from "@/auth";
 import Router from "@/constants/router";
 import SignInView from "@/views/auth/SignInView";
@@ -22,7 +25,7 @@ export default async function SignInPage({
       ? rawError[0]
       : undefined;
 
-  // ⬇️ This is the key change: handle EmailSignin as "unauthorized email"
+  // This is the key change: handle EmailSignin as "unauthorized email"
   if (error) {
     console.log("🔍 [SignInPage] NextAuth error code:", error);
   }
