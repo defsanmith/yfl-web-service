@@ -360,3 +360,100 @@ export async function validateForecastUpdate(
 
   return { valid: true };
 }
+
+// Helper function to add days to a date
+function addDays(base: Date, days: number) {
+  const d = new Date(base);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+/**
+ * Get the count of closed forecasts for a user in an organization.
+ * "Closed" here means dueDate has passed.
+ */
+export async function getClosedForecastCountForUser(params: {
+  organizationId: string;
+  userId: string;
+}) {
+  const { organizationId, userId } = params;
+  const now = new Date();
+
+  const count = await prisma.forecast.count({
+    where: {
+      organizationId,
+      dueDate: {
+        lt: now,
+      },
+      predictions: {
+        some: { userId },
+      },
+    },
+  });
+
+  return count;
+}
+
+/**
+ * Get the count of forecasts due soon for an organization.
+ * Optionally filter to forecasts the user has participated in.
+ *
+ * "Due soon" = dueDate between now and now + `days` (default 7).
+ */
+export async function getForecastsDueSoonCount(params: {
+  organizationId: string;
+  days?: number;
+  userId?: string;
+}) {
+  const { organizationId, days = 7, userId } = params;
+  const now = new Date();
+  const soon = addDays(now, days);
+
+  const where: Prisma.ForecastWhereInput = {
+    organizationId,
+    dueDate: {
+      gte: now,
+      lte: soon,
+    },
+  };
+
+  if (userId) {
+    where.predictions = {
+      some: { userId },
+    };
+  }
+
+  const count = await prisma.forecast.count({ where });
+  return count;
+}
+
+/**
+ * Get the count of forecasts due within the rest of the day.
+ * Optionally filter to forecasts the user has participated in.
+ */
+export async function getForecastsDueTodayCount(params: {
+  organizationId: string;
+  userId?: string;
+}) {
+  const { organizationId, userId } = params;
+  const now = new Date();
+  const endOfDay = new Date(now);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const where: Prisma.ForecastWhereInput = {
+    organizationId,
+    dueDate: {
+      gte: now,
+      lte: endOfDay,
+    },
+  };
+
+  if (userId) {
+    where.predictions = {
+      some: { userId },
+    };
+  }
+
+  const count = await prisma.forecast.count({ where });
+  return count;
+}

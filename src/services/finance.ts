@@ -38,3 +38,24 @@ export async function ensureStartingBalancesForUser(userId: string) {
     ],
   });
 }
+
+export async function getUserBalance(userId: string) {
+  // Fetch all ledger entries for this user
+  const entries = await prisma.ledgerEntry.findMany({
+    where: { userId },
+    select: { amountCents: true, kind: true },
+  });
+
+  let totalCents = 0;
+
+  for (const e of entries) {
+    if (e.kind === "PAYMENT" || e.kind === "REVENUE") {
+      totalCents += e.amountCents;
+    } else if (e.kind === "EXPENSE" || e.kind === "DEBT") {
+      totalCents -= e.amountCents;
+    }
+  }
+
+  // Convert to dollars
+  return totalCents / 100;
+}
