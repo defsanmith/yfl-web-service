@@ -2,6 +2,7 @@ import config from "@/constants/config";
 import { Role } from "@/generated/prisma";
 import prisma from "@/lib/prisma";
 import { ensureStartingBalancesForUser } from "@/services/finance";
+import { userEmailExists } from "@/services/users";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import type {
   GetServerSidePropsContext,
@@ -182,27 +183,14 @@ const authConfig: AuthOptions = {
 
     // Sign-in callback: runs each time a user logs in
     async signIn({ user, account, email }) {
-    // We only want to restrict the *email magic-link request* step.
-    // For Email provider, NextAuth calls this twice:
-    // 1) When requesting the magic link  -> email.verificationRequest === true
-    // 2) When clicking the magic link   -> email.verificationRequest is undefined
-    if (account?.provider === "email" && email?.verificationRequest) {
-      const emailAddress = user?.email?.toLowerCase();
-      if (!emailAddress) {
-        return false; // fail safely, no magic link
+      if (account?.provider === "email" && email?.verificationRequest) {
+        if (!user?.email) return false;
+        const exists = await userEmailExists(user.email);
+        if (!exists) return false;
       }
-      const existingUser = await prisma.user.findUnique({
-        where: { email: emailAddress },
-      });
 
-      if (!existingUser) {
-        return false;
-      }
-    }
-
-    // For all other cases (OAuth, actual sign-in after clicking the link, etc.)
-    return true;
-  },
+      return true;
+    },
 
     // Session callback: runs when session is created or checked
     async session({ session, token }) {
