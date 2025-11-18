@@ -222,256 +222,13 @@ export default function LeaderboardFilters({
 
   return (
     <div className="space-y-4">
-      {/* Filters Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Forecast Multi-Select */}
-        <div>
-          <label className="text-sm font-medium mb-2 block">
-            Filter by Forecast
-          </label>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full justify-between">
-                {selectedForecastIds.length === 0
-                  ? "All forecasts"
-                  : selectedForecastIds.length === 1
-                  ? forecasts.find((f) => f.id === selectedForecastIds[0])
-                      ?.title || "1 forecast"
-                  : `${selectedForecastIds.length} forecasts`}
-                <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-64">
-              <DropdownMenuLabel>Select Forecasts</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <div className="flex gap-2 px-2 py-1.5">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 flex-1"
-                  onClick={selectAllForecasts}
-                >
-                  Select All
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 flex-1"
-                  onClick={clearAllForecasts}
-                >
-                  Clear All
-                </Button>
-              </div>
-              <DropdownMenuSeparator />
-              <div className="max-h-64 overflow-y-auto">
-                {forecasts.map((forecast) => (
-                  <DropdownMenuCheckboxItem
-                    key={forecast.id}
-                    checked={selectedForecastIds.includes(forecast.id)}
-                    onCheckedChange={() => toggleForecast(forecast.id)}
-                  >
-                    {forecast.title}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        {/* Category Multi-Select */}
-        <div>
-          <label className="text-sm font-medium mb-2 block">
-            Filter by Category
-          </label>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full justify-between">
-                {selectedCategoryIds.length === 0
-                  ? "All categories"
-                  : selectedCategoryIds.length === 1
-                  ? categories.find((c) => c.id === selectedCategoryIds[0])
-                      ?.name || "1 category"
-                  : `${selectedCategoryIds.length} categories`}
-                <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-64">
-              <DropdownMenuLabel>Select Categories</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <div className="flex gap-2 px-2 py-1.5">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 flex-1"
-                  onClick={selectAllCategories}
-                >
-                  Select All
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 flex-1"
-                  onClick={clearAllCategories}
-                >
-                  Clear All
-                </Button>
-              </div>
-              <DropdownMenuSeparator />
-              <div className="max-h-64 overflow-y-auto">
-                {categories.map((category) => (
-                  <DropdownMenuCheckboxItem
-                    key={category.id}
-                    checked={selectedCategoryIds.includes(category.id)}
-                    onCheckedChange={() => toggleCategory(category.id)}
-                  >
-                    {category.name}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        {/* Prediction Type Multi-Select */}
-        <div>
-          <label className="text-sm font-medium mb-2 block">
-            Prediction Type
-          </label>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full justify-between">
-                {selectedForecastTypes.length === 0
-                  ? "All types"
-                  : selectedForecastTypes.length === 1
-                  ? FORECAST_TYPES.find(
-                      (t) => t.value === selectedForecastTypes[0]
-                    )?.label || "1 type"
-                  : `${selectedForecastTypes.length} types`}
-                <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-64">
-              <DropdownMenuLabel>Select Types</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <div className="flex gap-2 px-2 py-1.5">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 flex-1"
-                  onClick={selectAllForecastTypes}
-                >
-                  Select All
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 flex-1"
-                  onClick={clearAllForecastTypes}
-                >
-                  Clear All
-                </Button>
-              </div>
-              <DropdownMenuSeparator />
-              {FORECAST_TYPES.map((type) => (
-                <DropdownMenuCheckboxItem
-                  key={type.value}
-                  checked={selectedForecastTypes.includes(type.value)}
-                  onCheckedChange={() => toggleForecastType(type.value)}
-                >
-                  {type.label}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        {/* Recent Filter */}
-        <div>
-          <label className="text-sm font-medium mb-2 block">Recent</label>
-          <Select
-            value={recentCount}
-            onValueChange={(value) => updateFilters({ recentCount: value })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="All" />
-            </SelectTrigger>
-            <SelectContent>
-              {RECENT_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Minimum Forecasts Filter */}
-        <div>
-          <label className="text-sm font-medium mb-2 block">
-            Minimum Forecasts
-          </label>
-          <Select
-            value={minForecasts}
-            onValueChange={(value) => updateFilters({ minForecasts: value })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="All" />
-            </SelectTrigger>
-            <SelectContent>
-              {MIN_FORECASTS_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Date Range Filter */}
-        <div>
-          <label className="text-sm font-medium mb-2 block">Date Range</label>
-          <div className="flex gap-2">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "flex-1 justify-start text-left font-normal",
-                    !dateRange?.from && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formatDateRange()}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="range"
-                  defaultMonth={dateRange?.from}
-                  selected={dateRange}
-                  onSelect={handleDateRangeChange}
-                  numberOfMonths={2}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            {(dateRange?.from || dateRange?.to) && (
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handleDateRangeChange(undefined)}
-                className="flex-shrink-0"
-              >
-                <FilterX className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Actions Row: Clear Filters, Participant Count, Column Selector */}
-      <div className="flex items-center justify-between gap-4">
-        <div>
+      {/* Header Row */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Filters & Display Options</h3>
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-muted-foreground">
+            Showing {participantCount} participant(s)
+          </p>
           {hasActiveFilters && (
             <Button
               variant="outline"
@@ -480,45 +237,345 @@ export default function LeaderboardFilters({
               className="gap-2"
             >
               <FilterX className="h-4 w-4" />
-              Clear All Filters
+              Clear Filters
             </Button>
           )}
         </div>
-        <div className="flex items-center gap-4">
-          <p className="text-sm text-muted-foreground">
-            Showing {participantCount} participant(s)
-          </p>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Settings2 className="mr-2 h-4 w-4" />
-                Columns
-                <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[200px]">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .filter((column) => isOrgAdmin || column.id !== "userEmail")
-                .map((column) => {
-                  return (
+      </div>
+
+      {/* Filters and Column Selector Grid */}
+      <div className="rounded-lg border p-4 space-y-4">
+        {/* Filters Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Forecast Multi-Select */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">
+              Filter by Forecast
+            </label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full justify-between">
+                  {selectedForecastIds.length === 0
+                    ? "All forecasts"
+                    : selectedForecastIds.length === 1
+                    ? forecasts.find((f) => f.id === selectedForecastIds[0])
+                        ?.title || "1 forecast"
+                    : `${selectedForecastIds.length} forecasts`}
+                  <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-64">
+                <DropdownMenuLabel>Select Forecasts</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="flex gap-2 px-2 py-1.5">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 flex-1"
+                    onClick={selectAllForecasts}
+                  >
+                    Select All
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 flex-1"
+                    onClick={clearAllForecasts}
+                  >
+                    Clear All
+                  </Button>
+                </div>
+                <DropdownMenuSeparator />
+                <div className="max-h-64 overflow-y-auto">
+                  {forecasts.map((forecast) => (
                     <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
+                      key={forecast.id}
+                      checked={selectedForecastIds.includes(forecast.id)}
+                      onCheckedChange={() => toggleForecast(forecast.id)}
                     >
-                      {column.id
-                        .replace(/([A-Z])/g, " $1")
-                        .replace(/^./, (str) => str.toUpperCase())}
+                      {forecast.title}
                     </DropdownMenuCheckboxItem>
-                  );
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  ))}
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Category Multi-Select */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">
+              Filter by Category
+            </label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full justify-between">
+                  {selectedCategoryIds.length === 0
+                    ? "All categories"
+                    : selectedCategoryIds.length === 1
+                    ? categories.find((c) => c.id === selectedCategoryIds[0])
+                        ?.name || "1 category"
+                    : `${selectedCategoryIds.length} categories`}
+                  <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-64">
+                <DropdownMenuLabel>Select Categories</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="flex gap-2 px-2 py-1.5">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 flex-1"
+                    onClick={selectAllCategories}
+                  >
+                    Select All
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 flex-1"
+                    onClick={clearAllCategories}
+                  >
+                    Clear All
+                  </Button>
+                </div>
+                <DropdownMenuSeparator />
+                <div className="max-h-64 overflow-y-auto">
+                  {categories.map((category) => (
+                    <DropdownMenuCheckboxItem
+                      key={category.id}
+                      checked={selectedCategoryIds.includes(category.id)}
+                      onCheckedChange={() => toggleCategory(category.id)}
+                    >
+                      {category.name}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Prediction Type Multi-Select */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">
+              Prediction Type
+            </label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full justify-between">
+                  {selectedForecastTypes.length === 0
+                    ? "All types"
+                    : selectedForecastTypes.length === 1
+                    ? FORECAST_TYPES.find(
+                        (t) => t.value === selectedForecastTypes[0]
+                      )?.label || "1 type"
+                    : `${selectedForecastTypes.length} types`}
+                  <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-64">
+                <DropdownMenuLabel>Select Types</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="flex gap-2 px-2 py-1.5">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 flex-1"
+                    onClick={selectAllForecastTypes}
+                  >
+                    Select All
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 flex-1"
+                    onClick={clearAllForecastTypes}
+                  >
+                    Clear All
+                  </Button>
+                </div>
+                <DropdownMenuSeparator />
+                {FORECAST_TYPES.map((type) => (
+                  <DropdownMenuCheckboxItem
+                    key={type.value}
+                    checked={selectedForecastTypes.includes(type.value)}
+                    onCheckedChange={() => toggleForecastType(type.value)}
+                  >
+                    {type.label}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Recent Filter */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">Recent</label>
+            <Select
+              value={recentCount}
+              onValueChange={(value) => updateFilters({ recentCount: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                {RECENT_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Minimum Forecasts Filter */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">
+              Minimum Forecasts
+            </label>
+            <Select
+              value={minForecasts}
+              onValueChange={(value) => updateFilters({ minForecasts: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                {MIN_FORECASTS_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Date Range Filter */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">Date Range</label>
+            <div className="flex gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "flex-1 justify-start text-left font-normal",
+                      !dateRange?.from && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formatDateRange()}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="range"
+                    defaultMonth={dateRange?.from}
+                    selected={dateRange}
+                    onSelect={handleDateRangeChange}
+                    numberOfMonths={2}
+                    autoFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              {(dateRange?.from || dateRange?.to) && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleDateRangeChange(undefined)}
+                  className="flex-shrink-0"
+                >
+                  <FilterX className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Column Selector - Part of the unified panel */}
+        <div className="pt-4 border-t">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium">Visible Columns</label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Settings2 className="mr-2 h-4 w-4" />
+                  Columns
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[200px]">
+                <DropdownMenuLabel>Visible Columns</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="flex gap-2 px-2 py-1.5">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 flex-1"
+                    onClick={() => {
+                      table
+                        .getAllColumns()
+                        .filter((column) => column.getCanHide())
+                        .filter(
+                          (column) => isOrgAdmin || column.id !== "userEmail"
+                        )
+                        .filter(
+                          (column) =>
+                            column.id !== "rank" && column.id !== "userName"
+                        )
+                        .forEach((column) => column.toggleVisibility(true));
+                    }}
+                  >
+                    Select All
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 flex-1"
+                    onClick={() => {
+                      table
+                        .getAllColumns()
+                        .filter((column) => column.getCanHide())
+                        .filter(
+                          (column) => isOrgAdmin || column.id !== "userEmail"
+                        )
+                        .filter(
+                          (column) =>
+                            column.id !== "rank" && column.id !== "userName"
+                        )
+                        .forEach((column) => column.toggleVisibility(false));
+                    }}
+                  >
+                    Clear All
+                  </Button>
+                </div>
+                <DropdownMenuSeparator />
+                {table
+                  .getAllColumns()
+                  .filter((column) => column.getCanHide())
+                  .filter((column) => isOrgAdmin || column.id !== "userEmail")
+                  .filter(
+                    (column) => column.id !== "rank" && column.id !== "userName"
+                  )
+                  .map((column) => {
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(value) =>
+                          column.toggleVisibility(!!value)
+                        }
+                      >
+                        {column.id
+                          .replace(/([A-Z])/g, " $1")
+                          .replace(/^./, (str) => str.toUpperCase())}
+                      </DropdownMenuCheckboxItem>
+                    );
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
     </div>
