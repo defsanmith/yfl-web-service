@@ -72,6 +72,9 @@ model User {
   // back-relation to ledger
   ledgerEntries LedgerEntry[]
 
+  // Saved leaderboard views
+  leaderboardViews LeaderboardView[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -168,7 +171,7 @@ model Forecast {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
-  @@unique([organizationId, title])
+  // @@unique([organizationId, title])
   @@index([organizationId])
   @@index([categoryId])
   @@index([type])
@@ -225,6 +228,29 @@ model Prediction {
 
   @@unique([forecastId, userId])
   @@index([forecastId])
+  @@index([userId])
+}
+
+model LeaderboardView {
+  id     String @id @default(cuid())
+  name   String
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Filter settings stored as JSON
+  filters Json
+
+  // Sorting configuration
+  sortBy    String?
+  sortOrder String? // "asc" or "desc"
+
+  // Column visibility stored as JSON (key-value pairs of columnId: boolean)
+  columnVisibility Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name])
   @@index([userId])
 }
 

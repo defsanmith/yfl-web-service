@@ -28,6 +28,7 @@ import { CalendarIcon, ChevronDown, FilterX, Settings2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { type DateRange } from "react-day-picker";
+import ViewsManager from "./views-manager";
 
 type Forecast = {
   id: string;
@@ -219,6 +220,84 @@ export default function LeaderboardFilters({
     minForecasts !== "all" ||
     dateRange?.from ||
     dateRange?.to;
+
+  // Handle applying a saved view
+  const handleApplyView = (view: {
+    filters: Record<string, unknown>;
+    sortBy: string | null;
+    sortOrder: string | null;
+    columnVisibility: Record<string, boolean>;
+  }) => {
+    const filters = view.filters as {
+      forecastIds?: string[];
+      categoryIds?: string[];
+      forecastTypes?: string[];
+      recentCount?: string;
+      minForecasts?: string;
+      dateFrom?: string;
+      dateTo?: string;
+    };
+
+    // Build URL params from saved filters
+    const params = new URLSearchParams();
+
+    if (filters.forecastIds?.length) {
+      params.set("forecastIds", filters.forecastIds.join(","));
+    }
+    if (filters.categoryIds?.length) {
+      params.set("categoryIds", filters.categoryIds.join(","));
+    }
+    if (filters.forecastTypes?.length) {
+      params.set("forecastTypes", filters.forecastTypes.join(","));
+    }
+    if (filters.recentCount && filters.recentCount !== "all") {
+      params.set("recentCount", filters.recentCount);
+    }
+    if (filters.minForecasts && filters.minForecasts !== "all") {
+      params.set("minForecasts", filters.minForecasts);
+    }
+    if (filters.dateFrom) {
+      params.set("dateFrom", filters.dateFrom);
+    }
+    if (filters.dateTo) {
+      params.set("dateTo", filters.dateTo);
+    }
+
+    // Apply column visibility
+    table.getAllColumns().forEach((column) => {
+      if (column.id in view.columnVisibility) {
+        column.toggleVisibility(view.columnVisibility[column.id]);
+      }
+    });
+
+    // Update date range state
+    setDateRange({
+      from: filters.dateFrom ? new Date(filters.dateFrom) : undefined,
+      to: filters.dateTo ? new Date(filters.dateTo) : undefined,
+    });
+
+    // Navigate with new filters
+    router.push(`?${params.toString()}`);
+  };
+
+  // Get current filters for saving
+  const getCurrentFilters = () => {
+    return {
+      ...(selectedForecastIds.length > 0 && {
+        forecastIds: selectedForecastIds,
+      }),
+      ...(selectedCategoryIds.length > 0 && {
+        categoryIds: selectedCategoryIds,
+      }),
+      ...(selectedForecastTypes.length > 0 && {
+        forecastTypes: selectedForecastTypes,
+      }),
+      ...(recentCount !== "all" && { recentCount }),
+      ...(minForecasts !== "all" && { minForecasts }),
+      ...(dateFromStr && { dateFrom: dateFromStr }),
+      ...(dateToStr && { dateTo: dateToStr }),
+    };
+  };
 
   return (
     <div className="space-y-4">
@@ -496,85 +575,100 @@ export default function LeaderboardFilters({
         <div className="pt-4 border-t">
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium">Visible Columns</label>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Settings2 className="mr-2 h-4 w-4" />
-                  Columns
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[200px]">
-                <DropdownMenuLabel>Visible Columns</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <div className="flex gap-2 px-2 py-1.5">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 flex-1"
-                    onClick={() => {
-                      table
-                        .getAllColumns()
-                        .filter((column) => column.getCanHide())
-                        .filter(
-                          (column) => isOrgAdmin || column.id !== "userEmail"
-                        )
-                        .filter(
-                          (column) =>
-                            column.id !== "rank" && column.id !== "userName"
-                        )
-                        .forEach((column) => column.toggleVisibility(true));
-                    }}
-                  >
-                    Select All
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 flex-1"
-                    onClick={() => {
-                      table
-                        .getAllColumns()
-                        .filter((column) => column.getCanHide())
-                        .filter(
-                          (column) => isOrgAdmin || column.id !== "userEmail"
-                        )
-                        .filter(
-                          (column) =>
-                            column.id !== "rank" && column.id !== "userName"
-                        )
-                        .forEach((column) => column.toggleVisibility(false));
-                    }}
-                  >
-                    Clear All
-                  </Button>
-                </div>
-                <DropdownMenuSeparator />
-                {table
+            <div className="flex gap-2">
+              <ViewsManager
+                currentFilters={getCurrentFilters()}
+                currentSorting={[]}
+                currentColumnVisibility={table
                   .getAllColumns()
-                  .filter((column) => column.getCanHide())
-                  .filter((column) => isOrgAdmin || column.id !== "userEmail")
-                  .filter(
-                    (column) => column.id !== "rank" && column.id !== "userName"
-                  )
-                  .map((column) => {
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={column.id}
-                        className="capitalize"
-                        checked={column.getIsVisible()}
-                        onCheckedChange={(value) =>
-                          column.toggleVisibility(!!value)
-                        }
-                      >
-                        {column.id
-                          .replace(/([A-Z])/g, " $1")
-                          .replace(/^./, (str) => str.toUpperCase())}
-                      </DropdownMenuCheckboxItem>
-                    );
-                  })}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  .filter((col) => col.getCanHide())
+                  .reduce((acc, col) => {
+                    acc[col.id] = col.getIsVisible();
+                    return acc;
+                  }, {} as Record<string, boolean>)}
+                onApplyView={handleApplyView}
+              />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Settings2 className="mr-2 h-4 w-4" />
+                    Columns
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[200px]">
+                  <DropdownMenuLabel>Visible Columns</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <div className="flex gap-2 px-2 py-1.5">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 flex-1"
+                      onClick={() => {
+                        table
+                          .getAllColumns()
+                          .filter((column) => column.getCanHide())
+                          .filter(
+                            (column) => isOrgAdmin || column.id !== "userEmail"
+                          )
+                          .filter(
+                            (column) =>
+                              column.id !== "rank" && column.id !== "userName"
+                          )
+                          .forEach((column) => column.toggleVisibility(true));
+                      }}
+                    >
+                      Select All
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 flex-1"
+                      onClick={() => {
+                        table
+                          .getAllColumns()
+                          .filter((column) => column.getCanHide())
+                          .filter(
+                            (column) => isOrgAdmin || column.id !== "userEmail"
+                          )
+                          .filter(
+                            (column) =>
+                              column.id !== "rank" && column.id !== "userName"
+                          )
+                          .forEach((column) => column.toggleVisibility(false));
+                      }}
+                    >
+                      Clear All
+                    </Button>
+                  </div>
+                  <DropdownMenuSeparator />
+                  {table
+                    .getAllColumns()
+                    .filter((column) => column.getCanHide())
+                    .filter((column) => isOrgAdmin || column.id !== "userEmail")
+                    .filter(
+                      (column) =>
+                        column.id !== "rank" && column.id !== "userName"
+                    )
+                    .map((column) => {
+                      return (
+                        <DropdownMenuCheckboxItem
+                          key={column.id}
+                          className="capitalize"
+                          checked={column.getIsVisible()}
+                          onCheckedChange={(value) =>
+                            column.toggleVisibility(!!value)
+                          }
+                        >
+                          {column.id
+                            .replace(/([A-Z])/g, " $1")
+                            .replace(/^./, (str) => str.toUpperCase())}
+                        </DropdownMenuCheckboxItem>
+                      );
+                    })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
       </div>

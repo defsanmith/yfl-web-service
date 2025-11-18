@@ -5,7 +5,11 @@ import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
 import type { Prisma } from "@/generated/prisma";
-import { getUpcomingForecastsForUser } from "@/services/forecasts";
+import { getCategories } from "@/services/categories";
+import {
+  getForecasts,
+  getUpcomingForecastsForUser,
+} from "@/services/forecasts";
 import { getOrganizationLeaderboardWithSort } from "@/services/leaderboard";
 import type { UpcomingForecast } from "@/views/forecasts/UpcomingForecastView";
 import UpcomingForecastsTable from "@/views/forecasts/UpcomingForecastView";
@@ -116,11 +120,21 @@ export default async function UserDashboardPage({ searchParams }: PageProps) {
     sortOrder: sortOrder as "asc" | "desc",
   });
 
-  // Get organization name for leaderboard
-  const organization = await prisma.organization.findUnique({
-    where: { id: orgId },
-    select: { name: true },
-  });
+  // Get organization name and filter options for leaderboard
+  const [organization, forecastsResult, categoriesResult] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { name: true },
+    }),
+    getForecasts({
+      organizationId: orgId,
+      limit: 100,
+    }),
+    getCategories({
+      organizationId: orgId,
+      limit: 100,
+    }),
+  ]);
 
   return (
     <div className="p-6 space-y-6">
@@ -148,6 +162,8 @@ export default async function UserDashboardPage({ searchParams }: PageProps) {
           organizationName={organization?.name || "Unknown"}
           isOrgAdmin={false}
           currentUserId={userId}
+          forecasts={forecastsResult.forecasts}
+          categories={categoriesResult.categories}
         />
       </section>
     </div>
