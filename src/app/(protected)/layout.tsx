@@ -1,9 +1,11 @@
+// src/app/(protected)/layout.tsx
 import { auth } from "@/auth";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import Router from "@/constants/router";
 import { redirect } from "next/navigation";
+import React from "react";
 
 export default async function ProtectedLayout({
   children,
@@ -13,7 +15,7 @@ export default async function ProtectedLayout({
   const session = await auth();
 
   if (!session) {
-    return redirect(Router.SIGN_IN);
+    redirect(Router.SIGN_IN);
   }
 
   return (

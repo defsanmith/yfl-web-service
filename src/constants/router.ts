@@ -4,9 +4,6 @@ class Router {
   static SIGN_IN = "/signin";
   static UNAUTHORIZED = "/unauthorized";
 
-  // Role-specific dashboards
-  static DASHBOARD = "/dashboard";
-
   // Legal
   static TERMS = "/terms";
   static PRIVACY = "/privacy";

@@ -52,7 +52,7 @@ async function requestMagicLinkAction(
     }
 
     const callbackUrl =
-      (formData.get("callbackUrl") as string | null) ?? Router.DASHBOARD;
+      (formData.get("callbackUrl") as string | null) ?? Router.HOME;
 
     // 🔐 Let NextAuth + callbacks.signIn decide if a magic link should be sent
     const res = await signIn("email", {
@@ -102,7 +102,7 @@ function SparkIcon(props: React.SVGProps<SVGSVGElement>) {
 
 export default function SignInPage({ error }: SignInViewProps) {
   const sp = useSearchParams();
-  const callbackUrl = sp?.get("callbackUrl") ?? Router.DASHBOARD;
+  const callbackUrl = sp?.get("callbackUrl") ?? Router.HOME;
 
   const [state, formAction, isPending] = React.useActionState<
     ActionState,
