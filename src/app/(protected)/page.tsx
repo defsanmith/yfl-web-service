@@ -1,34 +1,17 @@
 import { auth } from "@/auth";
 import Router from "@/constants/router";
-import { Role } from "@/generated/prisma";
 import { redirect } from "next/navigation";
 
-type PageProps = {
-  searchParams: Promise<{
-    sortBy?: string;
-    sortOrder?: string;
-  }>;
-};
-
-export default async function ProtectedRootPage({ searchParams }: PageProps) {
+export default async function ProtectedRootPage() {
   const session = await auth();
 
+  // Not authenticated → go to sign in
   if (!session) {
     redirect(Router.SIGN_IN);
   }
 
   console.log("[ProtectedRootPage] session.user =", session.user);
 
-  // Super Admin → their dashboard
-  if (session.user.role === Role.SUPER_ADMIN) {
-    redirect(Router.DASHBOARD_SUPER_ADMIN);
-  }
-
-  // Org Admin → org admin dashboard
-  if (session.user.role === Role.ORG_ADMIN) {
-    redirect(Router.DASHBOARD_ORG_ADMIN);
-  }
-
-  // Regular user → user dashboard view
-  redirect(Router.DASHBOARD_USER);
+  // All roles now use the same dashboard entry point
+  redirect(Router.DASHBOARD);
 }
