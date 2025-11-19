@@ -42,12 +42,12 @@ export default async function ProtectedRootPage({ searchParams }: PageProps) {
     dateTo,
   } = await searchParams;
 
-  // Super Admin - redirect to their dashboard
+  // Super Admin → their dashboard
   if (session.user.role === Role.SUPER_ADMIN) {
     redirect(Router.DASHBOARD_SUPER_ADMIN);
   }
 
-  // Org Admin - show dashboard with leaderboard
+  // Org Admin → org admin dashboard
   if (session.user.role === Role.ORG_ADMIN) {
     if (!session.user.organizationId) {
       redirect(Router.UNAUTHORIZED);
