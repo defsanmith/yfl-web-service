@@ -100,6 +100,7 @@ model Forecast {
   description    String?
   type           ForecastType
   dueDate        DateTime
+  releaseDate    DateTime
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   predictions    Prediction[]
@@ -111,6 +112,7 @@ model Forecast {
   @@index([organizationId])
   @@index([type])
   @@index([dueDate])
+  @@index([releaseDate])
 }
 
 model Prediction {

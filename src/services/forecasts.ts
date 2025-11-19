@@ -92,6 +92,7 @@ export async function createForecast(data: CreateForecastInput) {
       description: data.description,
       type: data.type,
       dueDate: new Date(data.dueDate),
+      releaseDate: new Date(data.releaseDate),
       organizationId: data.organizationId,
       options: data.options || undefined,
     },
@@ -114,6 +115,7 @@ export async function updateForecast(data: UpdateForecastInput) {
       description: data.description,
       type: data.type,
       dueDate: new Date(data.dueDate),
+      releaseDate: new Date(data.releaseDate),
       options: data.options || undefined,
     },
     include: {

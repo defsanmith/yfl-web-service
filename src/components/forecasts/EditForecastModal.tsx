@@ -3,7 +3,7 @@
 import { updateForecastAction as orgAdminUpdateAction } from "@/app/(protected)/(org-admin)/forecasts/[forecastId]/actions";
 import { updateForecastAction as superAdminUpdateAction } from "@/app/(protected)/(super-admin)/orgs/[orgId]/forecasts/[forecastId]/actions";
 import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
+import { DateTimePicker } from "@/components/ui/datetime-picker";
 import {
   Dialog,
   DialogContent,
@@ -72,6 +72,12 @@ export default function EditForecastModal({
     state?.data?.dueDate
       ? new Date(state.data.dueDate)
       : new Date(forecast.dueDate)
+  );
+
+  const [releaseDate, setReleaseDate] = useState<Date | undefined>(
+    state?.data?.releaseDate
+      ? new Date(state.data.releaseDate)
+      : new Date(forecast.releaseDate)
   );
 
   // Handler to change type and clear options if switching away from CATEGORICAL
@@ -323,22 +329,51 @@ export default function EditForecastModal({
               <Separator />
             </div>
 
+            {/* Release Date */}
+            <div className="space-y-2">
+              <Label htmlFor="releaseDate" className="text-sm font-medium">
+                Release Date & Time <span className="text-destructive">*</span>
+              </Label>
+              <DateTimePicker
+                date={releaseDate}
+                onSelect={setReleaseDate}
+                placeholder="Select when the outcome will be known"
+                disabled={isPending}
+              />
+              {/* Hidden input to submit the datetime value */}
+              <input
+                type="hidden"
+                name="releaseDate"
+                value={releaseDate ? releaseDate.toISOString() : ""}
+              />
+              {state?.errors?.releaseDate && (
+                <p className="text-sm text-destructive flex items-center gap-1.5">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {state.errors.releaseDate.join(", ")}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                When the actual data/event will be released (e.g., Q3 earnings
+                announcement date)
+              </p>
+            </div>
+
             {/* Due Date */}
             <div className="space-y-2">
               <Label htmlFor="dueDate" className="text-sm font-medium">
-                Due Date <span className="text-destructive">*</span>
+                Due Date & Time<span className="text-destructive">*</span>
               </Label>
-              <DatePicker
+              <DateTimePicker
                 date={dueDate}
                 onSelect={setDueDate}
                 placeholder="Select when this forecast is due"
                 disabled={isPending}
               />
-              {/* Hidden input to submit the date value */}
+              {/* Hidden input to submit the datetime value */}
               <input
                 type="hidden"
                 name="dueDate"
-                value={dueDate ? dueDate.toISOString().split("T")[0] : ""}
+                value={dueDate ? dueDate.toISOString() : ""}
               />
               {state?.errors?.dueDate && (
                 <p className="text-sm text-destructive flex items-center gap-1.5">
@@ -347,7 +382,7 @@ export default function EditForecastModal({
                 </p>
               )}
               <p className="text-xs text-muted-foreground">
-                The date when predictions will be evaluated
+                When predictions close (must be before or same as release date)
               </p>
             </div>
           </div>

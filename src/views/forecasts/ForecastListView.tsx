@@ -269,6 +269,15 @@ export default function ForecastListView({
               <TableHead>
                 <Button
                   variant="ghost"
+                  onClick={() => handleSort("releaseDate")}
+                  className="h-auto p-0 font-semibold hover:bg-transparent"
+                >
+                  Release {getSortIcon("releaseDate")}
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button
+                  variant="ghost"
                   onClick={() => handleSort("createdAt")}
                   className="h-auto p-0 font-semibold hover:bg-transparent"
                 >
@@ -284,7 +293,7 @@ export default function ForecastListView({
             {forecasts.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={isOrgAdmin ? 5 : 4}
+                  colSpan={isOrgAdmin ? 6 : 5}
                   className="text-center text-muted-foreground"
                 >
                   No forecasts found
@@ -312,10 +321,28 @@ export default function ForecastListView({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {format(new Date(forecast.dueDate), "MMM d, yyyy")}
+                    <div className="text-sm">
+                      {format(new Date(forecast.dueDate), "MMM d, yyyy")}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {format(new Date(forecast.dueDate), "h:mm a")}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      {format(new Date(forecast.releaseDate), "MMM d, yyyy")}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {format(new Date(forecast.releaseDate), "h:mm a")}
+                    </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {format(new Date(forecast.createdAt), "MMM d, yyyy")}
+                    <div className="text-sm">
+                      {format(new Date(forecast.createdAt), "MMM d, yyyy")}
+                    </div>
+                    <div className="text-xs">
+                      {format(new Date(forecast.createdAt), "h:mm a")}
+                    </div>
                   </TableCell>
                   {isOrgAdmin && (
                     <TableCell className="text-right">

@@ -19,6 +19,7 @@ export const createForecastSchema = z
       message: "Invalid forecast type",
     }),
     dueDate: z.string().min(1, "Due date is required"),
+    releaseDate: z.string().min(1, "Release date is required"),
     organizationId: z.string().cuid("Invalid organization ID"),
     // For categorical forecasts only
     options: z
@@ -52,6 +53,18 @@ export const createForecastSchema = z
       message: "Options are only allowed for categorical forecasts",
       path: ["options"],
     }
+  )
+  .refine(
+    (data) => {
+      // Due date must be before or equal to release date
+      const releaseDate = new Date(data.releaseDate);
+      const dueDate = new Date(data.dueDate);
+      return dueDate <= releaseDate;
+    },
+    {
+      message: "Due date must be before or equal to release date",
+      path: ["dueDate"],
+    }
   );
 
 /**
@@ -73,6 +86,7 @@ export const updateForecastSchema = z
       message: "Invalid forecast type",
     }),
     dueDate: z.string().min(1, "Due date is required"),
+    releaseDate: z.string().min(1, "Release date is required"),
     options: z
       .array(z.string().min(1, "Option cannot be empty"))
       .min(2, "Categorical forecasts require at least 2 options")
@@ -101,6 +115,18 @@ export const updateForecastSchema = z
     {
       message: "Options are only allowed for categorical forecasts",
       path: ["options"],
+    }
+  )
+  .refine(
+    (data) => {
+      // Due date must be before or equal to release date
+      const releaseDate = new Date(data.releaseDate);
+      const dueDate = new Date(data.dueDate);
+      return dueDate <= releaseDate;
+    },
+    {
+      message: "Due date must be before or equal to release date",
+      path: ["dueDate"],
     }
   );
 

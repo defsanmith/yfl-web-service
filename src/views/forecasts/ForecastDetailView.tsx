@@ -303,7 +303,22 @@ export default function ForecastDetailView({
                     {format(new Date(forecast.dueDate), "MMMM d, yyyy")}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {format(new Date(forecast.dueDate), "EEEE")}
+                    {format(new Date(forecast.dueDate), "EEEE 'at' h:mm a")}
+                  </p>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                    <Calendar className="h-3.5 w-3.5" />
+                    Release Date
+                  </div>
+                  <p className="text-lg font-semibold">
+                    {format(new Date(forecast.releaseDate), "MMMM d, yyyy")}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {format(new Date(forecast.releaseDate), "EEEE 'at' h:mm a")}
                   </p>
                 </div>
 

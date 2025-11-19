@@ -25,6 +25,7 @@ type ForecastFormData = {
   description: string | null;
   type: string;
   dueDate: string;
+  releaseDate: string;
   options: string[];
 };
 
@@ -63,6 +64,7 @@ export async function updateForecastAction(
     "description",
     "type",
     "dueDate",
+    "releaseDate",
   ]);
 
   // Handle options array for categorical forecasts
@@ -86,6 +88,7 @@ export async function updateForecastAction(
       description: formDataToString(rawData.description) || null,
       type: formDataToString(rawData.type),
       dueDate: formDataToString(rawData.dueDate),
+      releaseDate: formDataToString(rawData.releaseDate),
       options: options || [],
     });
   }
@@ -98,6 +101,7 @@ export async function updateForecastAction(
       description: validation.data.description || null,
       type: validation.data.type,
       dueDate: validation.data.dueDate,
+      releaseDate: validation.data.releaseDate,
       options: validation.data.options || [],
     });
   }
