@@ -39,6 +39,7 @@ import { toast } from "sonner";
 type SavedView = {
   id: string;
   name: string;
+  viewType: string;
   filters: Record<string, unknown>;
   sortBy: string | null;
   sortOrder: string | null;
@@ -51,6 +52,7 @@ type ViewsManagerProps = {
   currentSorting: { id: string; desc: boolean }[];
   currentColumnVisibility: Record<string, boolean>;
   onApplyView: (view: SavedView) => void;
+  viewType?: "USER" | "PREDICTION" | "CATEGORY";
 };
 
 export default function ViewsManager({
@@ -58,6 +60,7 @@ export default function ViewsManager({
   currentSorting,
   currentColumnVisibility,
   onApplyView,
+  viewType = "USER",
 }: ViewsManagerProps) {
   const [views, setViews] = useState<SavedView[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -67,13 +70,13 @@ export default function ViewsManager({
   const [viewName, setViewName] = useState("");
   const [isPending, startTransition] = useTransition();
 
-  // Load views on mount
+  // Load views on mount filtered by viewType
   useEffect(() => {
     startTransition(async () => {
-      const loadedViews = await getViewsAction();
+      const loadedViews = await getViewsAction(viewType);
       setViews(loadedViews as SavedView[]);
     });
-  }, []);
+  }, [viewType]);
 
   // Handle create view
   const handleCreateView = async () => {
@@ -84,6 +87,7 @@ export default function ViewsManager({
 
     const viewData: CreateLeaderboardViewInput = {
       name: viewName.trim(),
+      viewType: viewType,
       filters: currentFilters,
       sortBy: currentSorting[0]?.id,
       sortOrder: currentSorting[0]?.desc ? "desc" : "asc",

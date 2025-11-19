@@ -41,6 +41,12 @@ enum LedgerKind {
   DEBT // liability records (do NOT change cash)
 }
 
+enum LeaderboardViewType {
+  USER // Aggregated by user (for end users)
+  PREDICTION // Aggregated by prediction/forecast (for org admins)
+  CATEGORY // Aggregated by category (for org admins)
+}
+
 model Organization {
   id          String             @id @default(cuid())
   name        String             @unique
@@ -232,10 +238,11 @@ model Prediction {
 }
 
 model LeaderboardView {
-  id     String @id @default(cuid())
-  name   String
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       String              @id @default(cuid())
+  name     String
+  viewType LeaderboardViewType @default(USER)
+  userId   String
+  user     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Filter settings stored as JSON
   filters Json
@@ -250,8 +257,9 @@ model LeaderboardView {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([userId, name])
+  @@unique([userId, name, viewType])
   @@index([userId])
+  @@index([userId, viewType])
 }
 
 // Optional for WebAuthn support

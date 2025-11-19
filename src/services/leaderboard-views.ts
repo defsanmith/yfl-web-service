@@ -1,18 +1,25 @@
 import prisma from "@/lib/prisma";
 import type {
   CreateLeaderboardViewInput,
+  LeaderboardViewType,
   UpdateLeaderboardViewInput,
 } from "@/schemas/leaderboard-views";
 
-// Maximum number of views per user
-const MAX_VIEWS_PER_USER = 3;
+// Maximum number of views per user per view type
+const MAX_VIEWS_PER_TYPE = 3;
 
 /**
- * Get all leaderboard views for a user
+ * Get all leaderboard views for a user, optionally filtered by viewType
  */
-export async function getLeaderboardViewsForUser(userId: string) {
+export async function getLeaderboardViewsForUser(
+  userId: string,
+  viewType?: LeaderboardViewType
+) {
   return await prisma.leaderboardView.findMany({
-    where: { userId },
+    where: {
+      userId,
+      ...(viewType && { viewType }),
+    },
     orderBy: { createdAt: "asc" },
   });
 }
@@ -27,20 +34,23 @@ export async function getLeaderboardViewById(id: string, userId: string) {
 }
 
 /**
- * Check if a view name already exists for a user
+ * Check if a view name already exists for a user within a specific view type
  * @param name - View name to check
  * @param userId - User ID
+ * @param viewType - View type (USER, PREDICTION, or CATEGORY)
  * @param excludeId - Optional view ID to exclude (for updates)
  */
 export async function viewNameExists(
   name: string,
   userId: string,
+  viewType: LeaderboardViewType,
   excludeId?: string
 ) {
   const view = await prisma.leaderboardView.findFirst({
     where: {
       name: { equals: name, mode: "insensitive" },
       userId,
+      viewType,
       ...(excludeId && { id: { not: excludeId } }),
     },
   });
@@ -56,24 +66,24 @@ export async function validateViewCreation(
 ): Promise<
   { valid: true } | { valid: false; errors: Record<string, string[]> }
 > {
-  // Check view limit
+  // Check view limit per view type
   const viewCount = await prisma.leaderboardView.count({
-    where: { userId },
+    where: { userId, viewType: data.viewType },
   });
 
-  if (viewCount >= MAX_VIEWS_PER_USER) {
+  if (viewCount >= MAX_VIEWS_PER_TYPE) {
     return {
       valid: false,
       errors: {
         _form: [
-          `You can only save up to ${MAX_VIEWS_PER_USER} views. Please delete an existing view first.`,
+          `You can only save up to ${MAX_VIEWS_PER_TYPE} views per type. Please delete an existing view first.`,
         ],
       },
     };
   }
 
-  // Check for duplicate name
-  const nameExists = await viewNameExists(data.name, userId);
+  // Check for duplicate name within the same view type
+  const nameExists = await viewNameExists(data.name, userId, data.viewType);
   if (nameExists) {
     return {
       valid: false,
@@ -105,8 +115,13 @@ export async function validateViewUpdate(
     };
   }
 
-  // Check for duplicate name (excluding current view)
-  const nameExists = await viewNameExists(data.name, userId, data.id);
+  // Check for duplicate name within the same view type (excluding current view)
+  const nameExists = await viewNameExists(
+    data.name,
+    userId,
+    view.viewType as LeaderboardViewType,
+    data.id
+  );
   if (nameExists) {
     return {
       valid: false,
@@ -127,6 +142,7 @@ export async function createLeaderboardView(
   return await prisma.leaderboardView.create({
     data: {
       name: data.name,
+      viewType: data.viewType,
       userId,
       filters: data.filters,
       sortBy: data.sortBy,

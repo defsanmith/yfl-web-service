@@ -47,6 +47,7 @@ type LeaderboardFiltersProps = {
   table: Table<any>;
   isOrgAdmin?: boolean;
   participantCount: number;
+  viewType?: "USER" | "PREDICTION" | "CATEGORY";
 };
 
 const FORECAST_TYPES = [
@@ -77,6 +78,7 @@ export default function LeaderboardFilters({
   table,
   isOrgAdmin = false,
   participantCount,
+  viewType = "USER",
 }: LeaderboardFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -587,6 +589,7 @@ export default function LeaderboardFilters({
                     return acc;
                   }, {} as Record<string, boolean>)}
                 onApplyView={handleApplyView}
+                viewType={viewType}
               />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

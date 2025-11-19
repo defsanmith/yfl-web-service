@@ -58,43 +58,7 @@ export default async function ProtectedRootPage({ searchParams }: PageProps) {
       redirect(Router.UNAUTHORIZED);
     }
 
-    // Fetch leaderboard data with filters
-    const leaderboardData = await getOrganizationLeaderboardWithSort({
-      organizationId: session.user.organizationId,
-      sortBy,
-      sortOrder: sortOrder as "asc" | "desc",
-      forecastIds,
-      categoryIds,
-      forecastTypes,
-      recentCount: recentCount ? parseInt(recentCount, 10) : undefined,
-      minForecasts: minForecasts ? parseInt(minForecasts, 10) : undefined,
-      dateFrom,
-      dateTo,
-    });
-
-    // Fetch forecasts and categories for filter options
-    const [forecastsResult, categoriesResult] = await Promise.all([
-      getForecasts({
-        organizationId: session.user.organizationId,
-        limit: 100,
-      }),
-      getCategories({
-        organizationId: session.user.organizationId,
-        limit: 100,
-      }),
-    ]);
-
-    return (
-      <div className="space-y-6">
-        <LeaderboardView
-          data={leaderboardData}
-          organizationName={organization.name}
-          isOrgAdmin={true}
-          forecasts={forecastsResult.forecasts}
-          categories={categoriesResult.categories}
-        />
-      </div>
-    );
+    return null;
   }
 
   // Regular User - show dashboard with forecasts and leaderboard

@@ -20,15 +20,17 @@ import {
 import { revalidatePath } from "next/cache";
 
 /**
- * Get all saved views for the current user
+ * Get all saved views for the current user, optionally filtered by viewType
  */
-export async function getViewsAction() {
+export async function getViewsAction(
+  viewType?: "USER" | "PREDICTION" | "CATEGORY"
+) {
   const session = await auth();
   if (!session?.user?.id) {
     return [];
   }
 
-  return await getLeaderboardViewsForUser(session.user.id);
+  return await getLeaderboardViewsForUser(session.user.id, viewType);
 }
 
 /**
@@ -72,6 +74,7 @@ export async function createViewAction(
       success: true,
       data: {
         ...view,
+        viewType: view.viewType,
         filters: view.filters as Record<string, unknown>,
         columnVisibility: view.columnVisibility as Record<string, boolean>,
       },

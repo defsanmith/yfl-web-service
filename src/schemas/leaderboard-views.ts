@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+// View type enum matching Prisma schema
+export const leaderboardViewTypeSchema = z.enum([
+  "USER",
+  "PREDICTION",
+  "CATEGORY",
+]);
+
 // Schema for leaderboard filters
 export const leaderboardFiltersSchema = z.object({
   forecastIds: z.array(z.string()).optional(),
@@ -21,6 +28,7 @@ export const createLeaderboardViewSchema = z.object({
     .min(1, "View name is required")
     .max(50, "View name must be 50 characters or less")
     .trim(),
+  viewType: leaderboardViewTypeSchema.default("USER"),
   filters: leaderboardFiltersSchema,
   sortBy: z.string().optional(),
   sortOrder: z.enum(["asc", "desc"]).optional(),
@@ -43,6 +51,7 @@ export const deleteLeaderboardViewSchema = z.object({
 });
 
 // Type exports
+export type LeaderboardViewType = z.infer<typeof leaderboardViewTypeSchema>;
 export type LeaderboardFilters = z.infer<typeof leaderboardFiltersSchema>;
 export type CreateLeaderboardViewInput = z.infer<
   typeof createLeaderboardViewSchema
