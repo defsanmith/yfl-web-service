@@ -4,6 +4,7 @@ import Router from "@/constants/router";
 import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
+import { getCategories } from "@/services/categories";
 import { getUserBalance } from "@/services/finance";
 import {
   getClosedForecastCountForUser,
