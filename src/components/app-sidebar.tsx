@@ -49,7 +49,25 @@ const orgAdminNavItems: NavItem[] = [
     url: Router.HOME,
     icon: IconDashboard,
   },
-
+  {
+    title: "Leaderboard",
+    url: "/leaderboard",
+    icon: IconListDetails,
+    items: [
+      {
+        title: "Users",
+        url: "/leaderboard/users",
+      },
+      {
+        title: "Predictions",
+        url: "/leaderboard/predictions",
+      },
+      {
+        title: "Categories",
+        url: "/leaderboard/categories",
+      },
+    ],
+  },
   {
     title: "Forecasts",
     url: Router.FORECASTS,
@@ -79,6 +97,11 @@ export interface NavItem {
   title: string;
   url: string;
   icon?: React.ForwardRefExoticComponent<IconProps & React.RefAttributes<Icon>>;
+  items?: {
+    title: string;
+    url: string;
+  }[];
+  isActive?: boolean;
 }
 
 export interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
