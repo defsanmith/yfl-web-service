@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { getUserBalance } from "@/services/finance";
 import {
   getClosedForecastCountForUser,
+  getForecasts,
   getForecastsDueSoonCount,
   getForecastsDueTodayCount,
 } from "@/services/forecasts";
@@ -124,11 +125,21 @@ export default async function UserDashboardPage({ searchParams }: PageProps) {
     sortOrder: sortOrder as "asc" | "desc",
   });
 
-  // Get organization name for leaderboard
-  const organization = await prisma.organization.findUnique({
-    where: { id: orgId },
-    select: { name: true },
-  });
+  // Get organization name and filter options for leaderboard
+  const [organization, forecastsResult, categoriesResult] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { name: true },
+    }),
+    getForecasts({
+      organizationId: orgId,
+      limit: 100,
+    }),
+    getCategories({
+      organizationId: orgId,
+      limit: 100,
+    }),
+  ]);
 
   return (
     <div className="p-6 space-y-6">
@@ -144,6 +155,8 @@ export default async function UserDashboardPage({ searchParams }: PageProps) {
           organizationName={organization?.name || "Unknown"}
           isOrgAdmin={false}
           currentUserId={userId}
+          forecasts={forecastsResult.forecasts}
+          categories={categoriesResult.categories}
         />
       </section>
     </div>

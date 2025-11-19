@@ -9,17 +9,11 @@ import {
   type SortingState,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { ChevronDown, ChevronsUpDown, Settings2 } from "lucide-react";
+import { ChevronsUpDown } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import LeaderboardFilters from "@/components/leaderboard-filters";
 import {
   Table,
   TableBody,
@@ -30,11 +24,23 @@ import {
 } from "@/components/ui/table";
 import type { LeaderboardEntry } from "@/services/leaderboard";
 
+type Forecast = {
+  id: string;
+  title: string;
+};
+
+type Category = {
+  id: string;
+  name: string;
+};
+
 type LeaderboardViewProps = {
   data: LeaderboardEntry[];
   organizationName: string;
-  isOrgAdmin?: boolean; // Reserved for future role-specific features
+  isOrgAdmin?: boolean;
   currentUserId?: string;
+  forecasts: Forecast[];
+  categories: Category[];
 };
 
 // Format percentage values
@@ -71,6 +77,8 @@ export default function LeaderboardView({
   organizationName,
   isOrgAdmin = false,
   currentUserId,
+  forecasts = [],
+  categories = [],
 }: LeaderboardViewProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -80,25 +88,73 @@ export default function LeaderboardView({
     // Default visible columns
     userName: true,
     userEmail: isOrgAdmin, // Only show email for org admins
-    totalPredictions: true,
-    correctPredictions: true,
+
+    // Counts & accuracy - NEW FIELDS VISIBLE
+    totalCompletedPredictions: false,
+    completedBinaryPredictions: false,
+    completedContinuousPredictions: false,
+    correctPredictions: false,
+    incorrectPredictions: false,
     accuracyRate: true,
-    avgAbsoluteActualErrorPct: true,
-    avgRoiScore: true,
-    avgRoePct: true,
-    avgRofPct: true,
+    incorrectRate: true,
+    avgProbabilityBinary: true,
+    highPercentContinuous: true,
+    lowPercentContinuous: true,
+    perfectPercentContinuous: true,
+
+    // Capital & profit - NEW FIELDS VISIBLE
+    totalEquityInvestment: true,
+    totalDebtFinancing: true,
+    totalInvestment: true,
     totalNetProfit: true,
-    avgRoiEquityPlusDebtPct: true,
-    // Default hidden columns
-    avgBrierScore: false,
-    avgAbsoluteError: false,
-    avgAbsoluteForecastErrorPct: false,
+    fundBalance: true,
+    profitFromEquity: true,
+    profitFromFinancing: true,
+
+    // Overall ROI - NEW FIELDS VISIBLE
+    roiReal: true,
+    roiAverage: true,
+    roiMedian: true,
+
+    // Equity returns - NEW FIELDS VISIBLE
+    roeReal: true,
+    roeAverage: true,
+    roeMedian: true,
+
+    // Financing returns - NEW FIELDS VISIBLE
+    interestPaymentOnDebt: true,
+    rofReal: true,
+    rofAverage: true,
+    rofMedian: true,
+
+    // Error metrics - NEW FIELDS VISIBLE
+    avgActualError: true,
+    medianActualError: true,
+    avgForecastError: true,
+    medianForecastError: true,
+
+    // Time & productivity - NEW FIELDS VISIBLE
+    totalForecastTimeMinutes: true,
+    avgTimePerForecastMinutes: true,
+    weightedAvgHourlyProfit: true,
+    simpleAvgHourlyProfit: true,
+
+    // Legacy fields - HIDDEN
+    totalPredictions: false,
+    highCountContinuous: false,
+    lowCountContinuous: false,
+    perfectCountContinuous: false,
+    avgRoiEquityPlusDebtPct: false,
     totalRoe: false,
+    avgRoePct: false,
     totalRof: false,
+    avgRofPct: false,
+    avgAbsoluteError: false,
+    avgAbsoluteActualErrorPct: false,
+    avgAbsoluteForecastErrorPct: false,
     avgProfitPerHour: false,
-    totalInvestment: false,
-    totalEquityInvestment: false,
-    totalDebtFinancing: false,
+    avgBrierScore: false,
+    avgRoiScore: false,
   });
 
   // Define columns
@@ -449,6 +505,568 @@ export default function LeaderboardView({
           </div>
         ),
       },
+      // NEW COLUMNS BELOW
+      {
+        accessorKey: "totalCompletedPredictions",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Total Completed
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatInteger(row.getValue("totalCompletedPredictions"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "completedBinaryPredictions",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Binary Completed
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatInteger(row.getValue("completedBinaryPredictions"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "completedContinuousPredictions",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Continuous Completed
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatInteger(row.getValue("completedContinuousPredictions"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "incorrectPredictions",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Incorrect
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatInteger(row.getValue("incorrectPredictions"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "incorrectRate",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Incorrect Rate %
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatPercent(row.getValue("incorrectRate"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "avgProbabilityBinary",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Avg Probability (Binary)
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatPercent(row.getValue("avgProbabilityBinary"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "highCountContinuous",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            HIGH Count
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatInteger(row.getValue("highCountContinuous"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "lowCountContinuous",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            LOW Count
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatInteger(row.getValue("lowCountContinuous"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "perfectCountContinuous",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            PERFECT Count
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatInteger(row.getValue("perfectCountContinuous"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "highPercentContinuous",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            % HIGH
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatPercent(row.getValue("highPercentContinuous"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "lowPercentContinuous",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            % LOW
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatPercent(row.getValue("lowPercentContinuous"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "perfectPercentContinuous",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            % PERFECT
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatPercent(row.getValue("perfectPercentContinuous"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "fundBalance",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Fund Balance
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right font-medium">
+            {formatCurrency(row.getValue("fundBalance"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "profitFromEquity",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Profit from Equity
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatCurrency(row.getValue("profitFromEquity"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "profitFromFinancing",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Profit from Financing
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatCurrency(row.getValue("profitFromFinancing"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "roiReal",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            ROI (Real) %
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right font-medium">
+            {formatPercent(row.getValue("roiReal"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "roiAverage",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            ROI (Average) %
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatPercent(row.getValue("roiAverage"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "roiMedian",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            ROI (Median) %
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatPercent(row.getValue("roiMedian"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "roeReal",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            ROE (Real) %
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatPercent(row.getValue("roeReal"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "roeAverage",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            ROE (Average) %
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatPercent(row.getValue("roeAverage"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "roeMedian",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            ROE (Median) %
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatPercent(row.getValue("roeMedian"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "interestPaymentOnDebt",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Interest Payment on Debt
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatCurrency(row.getValue("interestPaymentOnDebt"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "rofReal",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            ROF (Real) %
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatPercent(row.getValue("rofReal"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "rofAverage",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            ROF (Average) %
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatPercent(row.getValue("rofAverage"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "rofMedian",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            ROF (Median) %
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatPercent(row.getValue("rofMedian"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "avgActualError",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Avg Actual Error %
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatPercent(row.getValue("avgActualError"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "medianActualError",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Median Actual Error %
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatPercent(row.getValue("medianActualError"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "avgForecastError",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Avg Forecast Error %
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatPercent(row.getValue("avgForecastError"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "medianForecastError",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Median Forecast Error %
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatPercent(row.getValue("medianForecastError"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "totalForecastTimeMinutes",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Total Time (min)
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatDecimal(row.getValue("totalForecastTimeMinutes"), 0)}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "avgTimePerForecastMinutes",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Avg Time per Forecast (min)
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatDecimal(row.getValue("avgTimePerForecastMinutes"), 1)}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "weightedAvgHourlyProfit",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Weighted Avg Hourly Profit
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatCurrency(row.getValue("weightedAvgHourlyProfit"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "simpleAvgHourlyProfit",
+        header: ({ column }) => (
+          <button
+            className="flex justify-end w-full"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Simple Avg Hourly Profit
+            <ChevronsUpDown className="ml-2 h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            {formatCurrency(row.getValue("simpleAvgHourlyProfit"))}
+          </div>
+        ),
+      },
     ],
     []
   );
@@ -521,43 +1139,14 @@ export default function LeaderboardView({
         </div>
       </div>
 
-      {/* Column Visibility Controls */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Showing {table.getFilteredRowModel().rows.length} participant(s)
-        </p>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Settings2 className="mr-2 h-4 w-4" />
-              Columns
-              <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[200px]">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .filter((column) => isOrgAdmin || column.id !== "userEmail") // Hide email toggle for non-admins
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id
-                      .replace(/([A-Z])/g, " $1")
-                      .replace(/^./, (str) => str.toUpperCase())}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      {/* Filters and Column Visibility Controls */}
+      <LeaderboardFilters
+        forecasts={forecasts}
+        categories={categories}
+        table={table}
+        isOrgAdmin={isOrgAdmin}
+        participantCount={table.getFilteredRowModel().rows.length}
+      />
 
       {/* Table */}
       <div className="rounded-md border">
