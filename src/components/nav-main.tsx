@@ -55,7 +55,7 @@ export function NavMain({ items }: NavMainProps) {
                     </SidebarMenuButton>
                     {isOpen && (
                       <SidebarMenuSub>
-                        {item.items.map((subItem) => (
+                        {item.items?.map((subItem) => (
                           <SidebarMenuSubItem key={subItem.title}>
                             <SidebarMenuSubButton
                               asChild
