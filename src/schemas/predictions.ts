@@ -28,10 +28,16 @@ export const createPredictionSchema = z
       .int()
       .min(0, "Estimated time must be at least 0")
       .optional(),
-    equityInvestment: z.coerce
+
+    // 🔐 Equity constraints: non-negative, integer, max 20M, optional
+    equityInvestment: z
+      .coerce
       .number()
+      .int("Equity investment must be a whole-dollar amount (no decimals).")
       .min(0, "Equity investment must be at least 0")
+      .max(20_000_000, "Equity investment cannot exceed 20,000,000")
       .optional(),
+
     debtFinancing: z.coerce
       .number()
       .min(0, "Debt financing must be at least 0")
@@ -92,10 +98,16 @@ export const updatePredictionSchema = z
       .int()
       .min(0, "Estimated time must be at least 0")
       .optional(),
-    equityInvestment: z.coerce
+
+    // 🔐 Same equity rules for updates
+    equityInvestment: z
+      .coerce
       .number()
+      .int("Equity investment must be a whole-dollar amount (no decimals).")
       .min(0, "Equity investment must be at least 0")
+      .max(20_000_000, "Equity investment cannot exceed 20,000,000")
       .optional(),
+
     debtFinancing: z.coerce
       .number()
       .min(0, "Debt financing must be at least 0")
