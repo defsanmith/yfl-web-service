@@ -97,7 +97,7 @@ const authConfig: AuthOptions = {
   adapter: PrismaAdapter(prisma),
   pages: {
     signIn: "/signin",
-    error: "/unauthorized-email",
+    error: "/invalid-email", // Error code passed in query string as ?error=
   },
   // Use JWT strategy for better performance (no DB query on every session access)
   session: {
