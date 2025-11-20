@@ -3,7 +3,6 @@
 import Router from "@/constants/router";
 import { Role } from "@/generated/prisma";
 import { requireRole } from "@/lib/guards";
-import prisma from "@/lib/prisma";
 import {
   ActionState,
   createErrorState,
@@ -15,15 +14,6 @@ import { createForecastSchema } from "@/schemas/forecasts";
 import { createForecast, validateForecastCreation } from "@/services/forecasts";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-
-// Predefined categories mapping
-const PREDEFINED_CATEGORIES: Record<string, { name: string; color: string }> = {
-  "cat-movies": { name: "Movies", color: "#E11D48" },
-  "cat-crypto": { name: "Crypto", color: "#F59E0B" },
-  "cat-automobiles": { name: "Automobiles", color: "#3B82F6" },
-  "cat-stock-market": { name: "Stock Market", color: "#10B981" },
-  "cat-corp-earnings": { name: "Corp. Earnings", color: "#8B5CF6" },
-};
 
 type ForecastFormData = {
   title: string;
@@ -112,44 +102,13 @@ export async function createForecastAction(
     });
   }
 
-  // 5. Handle predefined categories - create them if they don't exist
-  let finalCategoryId = validation.data.categoryId;
-  if (finalCategoryId && PREDEFINED_CATEGORIES[finalCategoryId]) {
-    const predefinedCategory = PREDEFINED_CATEGORIES[finalCategoryId];
+  // 5. Perform operation (category ID is already validated by schema)
+  const forecast = await createForecast(validation.data);
 
-    // Check if category already exists for this organization
-    let category = await prisma.forecastCategory.findFirst({
-      where: {
-        organizationId: orgId,
-        name: predefinedCategory.name,
-      },
-    });
-
-    // Create it if it doesn't exist
-    if (!category) {
-      category = await prisma.forecastCategory.create({
-        data: {
-          name: predefinedCategory.name,
-          color: predefinedCategory.color,
-          organizationId: orgId,
-        },
-      });
-    }
-
-    // Use the actual database ID
-    finalCategoryId = category.id;
-  }
-
-  // 6. Perform operation with the resolved category ID
-  const forecast = await createForecast({
-    ...validation.data,
-    categoryId: finalCategoryId,
-  });
-
-  // 7. Revalidate cache
+  // 6. Revalidate cache
   revalidatePath(Router.ORG_ADMIN_FORECASTS);
 
-  // 8. Redirect (throws NEXT_REDIRECT - this is normal!)
+  // 7. Redirect (throws NEXT_REDIRECT - this is normal!)
   redirect(Router.orgAdminForecastDetail(forecast.id));
 }
 

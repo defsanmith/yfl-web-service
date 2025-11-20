@@ -29,12 +29,43 @@ import {
  * ```
  */
 export async function createOrganization(data: CreateOrganizationInput) {
-  return await prisma.organization.create({
-    data: {
-      name: data.name,
-      description: data.description,
-    },
+  // Create organization and predefined categories in a transaction
+  const organization = await prisma.$transaction(async (tx) => {
+    // Create the organization
+    const org = await tx.organization.create({
+      data: {
+        name: data.name,
+        description: data.description,
+      },
+    });
+
+    // Create predefined categories for the new organization
+    // Note: We can't use createPredefinedCategories here since it uses prisma directly
+    // Instead, we'll create them inline within the transaction
+    const PREDEFINED_CATEGORIES = [
+      { name: "Movies", color: "#E11D48" },
+      { name: "Crypto", color: "#F59E0B" },
+      { name: "Automobiles", color: "#3B82F6" },
+      { name: "Stock Market", color: "#10B981" },
+      { name: "Corp. Earnings", color: "#8B5CF6" },
+    ];
+
+    await Promise.all(
+      PREDEFINED_CATEGORIES.map((category) =>
+        tx.forecastCategory.create({
+          data: {
+            name: category.name,
+            color: category.color,
+            organizationId: org.id,
+          },
+        })
+      )
+    );
+
+    return org;
   });
+
+  return organization;
 }
 
 /**

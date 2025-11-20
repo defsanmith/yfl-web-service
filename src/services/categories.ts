@@ -79,6 +79,53 @@ export async function createCategory(data: CreateCategoryInput) {
 }
 
 /**
+ * Predefined categories to create for new organizations
+ */
+const PREDEFINED_CATEGORIES = [
+  { name: "Movies", color: "#E11D48" },
+  { name: "Crypto", color: "#F59E0B" },
+  { name: "Automobiles", color: "#3B82F6" },
+  { name: "Stock Market", color: "#10B981" },
+  { name: "Corp. Earnings", color: "#8B5CF6" },
+];
+
+/**
+ * Create predefined categories for an organization
+ * @param organizationId - Organization ID to create categories for
+ * @returns Array of created categories
+ */
+export async function createPredefinedCategories(organizationId: string) {
+  return await prisma.$transaction(
+    PREDEFINED_CATEGORIES.map((category) =>
+      prisma.forecastCategory.create({
+        data: {
+          name: category.name,
+          color: category.color,
+          organizationId,
+        },
+      })
+    )
+  );
+}
+
+/**
+ * Get a category by name for an organization
+ * @param name - Category name
+ * @param organizationId - Organization ID
+ */
+export async function getCategoryByNameForOrg(
+  name: string,
+  organizationId: string
+) {
+  return await prisma.forecastCategory.findFirst({
+    where: {
+      name: { equals: name, mode: "insensitive" },
+      organizationId,
+    },
+  });
+}
+
+/**
  * Update a category
  */
 export async function updateCategory(data: UpdateCategoryInput) {

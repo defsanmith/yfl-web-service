@@ -3,6 +3,7 @@
 import Router from "@/constants/router";
 import { ForecastType, Role } from "@/generated/prisma";
 import { requireRole } from "@/lib/guards";
+import { getCategories } from "@/services/categories";
 import { getForecasts } from "@/services/forecasts";
 import { getOrganizationById } from "@/services/organizations";
 import ForecastListView from "@/views/forecasts/ForecastListView";
@@ -47,16 +48,19 @@ export default async function ForecastsPage({ searchParams }: PageProps) {
   const pageSizeNum = parseInt(pageSize, 10);
   const forecastType = type ? (type as ForecastType) : undefined;
 
-  // Fetch forecasts only for this organization
-  const result = await getForecasts({
-    organizationId: session.user.organizationId,
-    page: pageNum,
-    limit: pageSizeNum,
-    search,
-    type: forecastType,
-    sortBy,
-    sortOrder: sortOrder as "asc" | "desc",
-  });
+  // Fetch forecasts and categories for this organization
+  const [result, categoriesResult] = await Promise.all([
+    getForecasts({
+      organizationId: session.user.organizationId,
+      page: pageNum,
+      limit: pageSizeNum,
+      search,
+      type: forecastType,
+      sortBy,
+      sortOrder: sortOrder as "asc" | "desc",
+    }),
+    getCategories({ organizationId: session.user.organizationId }),
+  ]);
 
   return (
     <ForecastListView
@@ -74,6 +78,7 @@ export default async function ForecastsPage({ searchParams }: PageProps) {
       basePath={Router.ORG_ADMIN_FORECASTS}
       showBreadcrumbs={false}
       isOrgAdmin={true}
+      categories={categoriesResult.categories}
     />
   );
 }

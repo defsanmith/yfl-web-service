@@ -37,7 +37,7 @@ import {
   Plus,
   Settings,
 } from "lucide-react";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 
 type Category = {
   id: string;
@@ -93,20 +93,15 @@ export default function CreateForecastModal({
       : undefined
   );
 
-  // Category management
-  const predefinedCategories: Category[] = [
-    { id: "cat-movies", name: "Movies", color: "#E11D48" },
-    { id: "cat-crypto", name: "Crypto", color: "#F59E0B" },
-    { id: "cat-automobiles", name: "Automobiles", color: "#3B82F6" },
-    { id: "cat-stock-market", name: "Stock Market", color: "#10B981" },
-    { id: "cat-corp-earnings", name: "Corp. Earnings", color: "#8B5CF6" },
-  ];
-
-  const [localCategories, setLocalCategories] = useState<Category[]>([
-    ...predefinedCategories,
-    ...categories,
-  ]);
+  // Category management - use categories from database
+  const [localCategories, setLocalCategories] =
+    useState<Category[]>(categories);
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
+
+  // Sync localCategories with categories prop when it changes
+  useEffect(() => {
+    setLocalCategories(categories);
+  }, [categories]);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [categoryError, setCategoryError] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
