@@ -34,7 +34,6 @@ import {
   CheckCircle2,
   Clock,
   Edit,
-  FileText,
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
@@ -214,134 +213,134 @@ export default function ForecastDetailView({
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <dt className="text-sm font-medium text-muted-foreground">
-                  Type
-                </dt>
-                <dd className="mt-1">
-                  <Badge variant={FORECAST_TYPE_COLORS[forecast.type]}>
-                    {FORECAST_TYPE_LABELS[forecast.type]}
-                  </Badge>
-                </dd>
-              </div>
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <dt className="text-sm font-medium text-muted-foreground">
+                    Type
+                  </dt>
+                  <dd className="mt-1">
+                    <Badge variant={FORECAST_TYPE_COLORS[forecast.type]}>
+                      {FORECAST_TYPE_LABELS[forecast.type]}
+                    </Badge>
+                  </dd>
+                </div>
 
-              {forecast.type === ForecastType.CONTINUOUS &&
-                forecast.dataType && (
+                {forecast.type === ForecastType.CONTINUOUS &&
+                  forecast.dataType && (
+                    <div>
+                      <dt className="text-sm font-medium text-muted-foreground">
+                        Data Type
+                      </dt>
+                      <dd className="mt-1">
+                        <Badge variant="outline">
+                          {DATA_TYPE_LABELS[forecast.dataType]}
+                        </Badge>
+                      </dd>
+                    </div>
+                  )}
+
+                {forecast.category && (
                   <div>
                     <dt className="text-sm font-medium text-muted-foreground">
-                      Data Type
+                      Category
                     </dt>
-                    <dd className="mt-1">
-                      <Badge variant="outline">
-                        {DATA_TYPE_LABELS[forecast.dataType]}
-                      </Badge>
+                    <dd className="mt-1 flex items-center gap-2">
+                      {forecast.category.color && (
+                        <div
+                          className="h-3 w-3 rounded-full"
+                          style={{ backgroundColor: forecast.category.color }}
+                        />
+                      )}
+                      <span>{forecast.category.name}</span>
                     </dd>
                   </div>
                 )}
 
-              {forecast.category && (
                 <div>
                   <dt className="text-sm font-medium text-muted-foreground">
-                    Category
-                  </dt>
-                  <dd className="mt-1 flex items-center gap-2">
-                    {forecast.category.color && (
-                      <div
-                        className="h-3 w-3 rounded-full"
-                        style={{ backgroundColor: forecast.category.color }}
-                      />
-                    )}
-                    <span>{forecast.category.name}</span>
-                  </dd>
-                </div>
-              )}
-
-              <div>
-                <dt className="text-sm font-medium text-muted-foreground">
-                  Due Date
-                </dt>
-                <dd className="mt-1 text-lg font-semibold">
-                  {format(
-                    new Date(forecast.dueDate),
-                    "MMMM d, yyyy 'at' h:mm a"
-                  )}
-                </dd>
-              </div>
-
-              {forecast.dataReleaseDate && (
-                <div>
-                  <dt className="text-sm font-medium text-muted-foreground">
-                    Data Release Date
+                    Due Date
                   </dt>
                   <dd className="mt-1 text-lg font-semibold">
                     {format(
-                      new Date(forecast.dataReleaseDate),
+                      new Date(forecast.dueDate),
                       "MMMM d, yyyy 'at' h:mm a"
                     )}
                   </dd>
                 </div>
-              )}
 
-              <div>
-                <dt className="text-sm font-medium text-muted-foreground">
-                  Organization
-                </dt>
-                <dd className="mt-1">
-                  <Link
-                    href={Router.organizationDetail(forecast.organization.id)}
-                    className="text-primary hover:underline"
-                  >
-                    {forecast.organization.name}
-                  </Link>
-                </dd>
-              </div>
+                {forecast.dataReleaseDate && (
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">
+                      Data Release Date
+                    </dt>
+                    <dd className="mt-1 text-lg font-semibold">
+                      {format(
+                        new Date(forecast.dataReleaseDate),
+                        "MMMM d, yyyy 'at' h:mm a"
+                      )}
+                    </dd>
+                  </div>
+                )}
 
-              <div>
-                <dt className="text-sm font-medium text-muted-foreground">
-                  Created
-                </dt>
-                <dd className="mt-1 text-sm">
-                  {format(
-                    new Date(forecast.createdAt),
-                    "MMM d, yyyy 'at' h:mm a"
-                  )}
-                </dd>
-              </div>
+                <div>
+                  <dt className="text-sm font-medium text-muted-foreground">
+                    Organization
+                  </dt>
+                  <dd className="mt-1">
+                    <Link
+                      href={Router.organizationDetail(forecast.organization.id)}
+                      className="text-primary hover:underline"
+                    >
+                      {forecast.organization.name}
+                    </Link>
+                  </dd>
+                </div>
 
-              <div>
-                <dt className="text-sm font-medium text-muted-foreground">
-                  Last Updated
-                </dt>
-                <dd className="mt-1 text-sm">
-                  {format(
-                    new Date(forecast.updatedAt),
-                    "MMM d, yyyy 'at' h:mm a"
-                  )}
-                </dd>
-              </div>
-            </CardContent>
-          </Card>
+                <div>
+                  <dt className="text-sm font-medium text-muted-foreground">
+                    Created
+                  </dt>
+                  <dd className="mt-1 text-sm">
+                    {format(
+                      new Date(forecast.createdAt),
+                      "MMM d, yyyy 'at' h:mm a"
+                    )}
+                  </dd>
+                </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Description</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {forecast.description ? (
-                <p className="text-sm">{forecast.description}</p>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No description provided
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                <div>
+                  <dt className="text-sm font-medium text-muted-foreground">
+                    Last Updated
+                  </dt>
+                  <dd className="mt-1 text-sm">
+                    {format(
+                      new Date(forecast.updatedAt),
+                      "MMM d, yyyy 'at' h:mm a"
+                    )}
+                  </dd>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Description</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {forecast.description ? (
+                  <p className="text-sm">{forecast.description}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No description provided
+                  </p>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Forecast Options Card */}
             {forecast.type === ForecastType.CATEGORICAL &&
@@ -437,18 +436,36 @@ export default function ForecastDetailView({
 
                 <Separator />
 
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-muted-foreground text-xs font-medium uppercase tracking-wide">
-                    <Calendar className="h-3.5 w-3.5" />
-                    Release Date
+                {forecast.dataReleaseDate ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                      <Calendar className="h-3.5 w-3.5" />
+                      Release Date
+                    </div>
+                    <p className="text-lg font-semibold">
+                      {format(
+                        new Date(forecast.dataReleaseDate),
+                        "MMMM d, yyyy"
+                      )}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {format(
+                        new Date(forecast.dataReleaseDate),
+                        "EEEE 'at' h:mm a"
+                      )}
+                    </p>
                   </div>
-                  <p className="text-lg font-semibold">
-                    {format(new Date(forecast.releaseDate), "MMMM d, yyyy")}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {format(new Date(forecast.releaseDate), "EEEE 'at' h:mm a")}
-                  </p>
-                </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                      <Calendar className="h-3.5 w-3.5" />
+                      Release Date
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Not scheduled
+                    </p>
+                  </div>
+                )}
 
                 <Separator />
 

@@ -52,6 +52,7 @@ export default function CreateForecastModal({
   categories = [],
 }: CreateForecastModalProps) {
   // Use different action based on context
+  // Wrap and cast the action so it matches the expected signature for useActionState
   const [state, formAction, isPending] = useActionState(
     isOrgAdmin
       ? orgAdminCreateAction
@@ -201,113 +202,115 @@ export default function CreateForecastModal({
               <Separator />
             </div>
 
-          {/* Type */}
-          <div className="space-y-2">
-            <Label htmlFor="type">
-              Forecast Type <span className="text-destructive">*</span>
-            </Label>
-            <Select
-              name="type"
-              value={selectedType}
-              onValueChange={(value) => handleTypeChange(value as ForecastType)}
-              disabled={isPending}
-            >
-              <SelectTrigger aria-invalid={!!state?.errors?.type}>
-                <SelectValue placeholder="Select forecast type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ForecastType.BINARY}>Binary</SelectItem>
-                <SelectItem value={ForecastType.CONTINUOUS}>
-                  Continuous
-                </SelectItem>
-                <SelectItem value={ForecastType.CATEGORICAL}>
-                  Categorical
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            {state?.errors?.type && (
-              <p className="text-sm text-destructive">
-                {state.errors.type.join(", ")}
-              </p>
-            )}
-            <p className="text-sm text-muted-foreground">
-              {selectedType === ForecastType.BINARY &&
-                "Binary forecasts have true/false outcomes"}
-              {selectedType === ForecastType.CONTINUOUS &&
-                "Continuous forecasts accept numerical values"}
-              {selectedType === ForecastType.CATEGORICAL &&
-                "Categorical forecasts have predefined options"}
-            </p>
-          </div>
-
-          {/* Data Type - Only for Continuous */}
-          {selectedType === ForecastType.CONTINUOUS && (
+            {/* Type */}
             <div className="space-y-2">
-              <Label htmlFor="dataType">
-                Data Type <span className="text-destructive">*</span>
+              <Label htmlFor="type">
+                Forecast Type <span className="text-destructive">*</span>
               </Label>
               <Select
-                name="dataType"
-                value={selectedDataType}
+                name="type"
+                value={selectedType}
                 onValueChange={(value) =>
-                  setSelectedDataType(value as DataType)
+                  handleTypeChange(value as ForecastType)
                 }
                 disabled={isPending}
               >
-                <SelectTrigger aria-invalid={!!state?.errors?.dataType}>
-                  <SelectValue placeholder="Select data type" />
+                <SelectTrigger aria-invalid={!!state?.errors?.type}>
+                  <SelectValue placeholder="Select forecast type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={DataType.NUMBER}>Number</SelectItem>
-                  <SelectItem value={DataType.CURRENCY}>Currency</SelectItem>
-                  <SelectItem value={DataType.PERCENT}>Percent</SelectItem>
-                  <SelectItem value={DataType.DECIMAL}>Decimal</SelectItem>
-                  <SelectItem value={DataType.INTEGER}>Integer</SelectItem>
+                  <SelectItem value={ForecastType.BINARY}>Binary</SelectItem>
+                  <SelectItem value={ForecastType.CONTINUOUS}>
+                    Continuous
+                  </SelectItem>
+                  <SelectItem value={ForecastType.CATEGORICAL}>
+                    Categorical
+                  </SelectItem>
                 </SelectContent>
               </Select>
-              {state?.errors?.dataType && (
+              {state?.errors?.type && (
                 <p className="text-sm text-destructive">
-                  {state.errors.dataType.join(", ")}
+                  {state.errors.type.join(", ")}
                 </p>
               )}
               <p className="text-sm text-muted-foreground">
-                Specify the type of numerical data for proper formatting
+                {selectedType === ForecastType.BINARY &&
+                  "Binary forecasts have true/false outcomes"}
+                {selectedType === ForecastType.CONTINUOUS &&
+                  "Continuous forecasts accept numerical values"}
+                {selectedType === ForecastType.CATEGORICAL &&
+                  "Categorical forecasts have predefined options"}
               </p>
             </div>
-          )}
 
-          {/* Category */}
-          {categories.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="categoryId">Category</Label>
-              <Select name="categoryId" disabled={isPending}>
-                <SelectTrigger aria-invalid={!!state?.errors?.categoryId}>
-                  <SelectValue placeholder="Select a category (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">No category</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      <div className="flex items-center gap-2">
-                        {category.color && (
-                          <div
-                            className="h-3 w-3 rounded-full"
-                            style={{ backgroundColor: category.color }}
-                          />
-                        )}
-                        {category.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {state?.errors?.categoryId && (
-                <p className="text-sm text-destructive">
-                  {state.errors.categoryId.join(", ")}
+            {/* Data Type - Only for Continuous */}
+            {selectedType === ForecastType.CONTINUOUS && (
+              <div className="space-y-2">
+                <Label htmlFor="dataType">
+                  Data Type <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  name="dataType"
+                  value={selectedDataType}
+                  onValueChange={(value) =>
+                    setSelectedDataType(value as DataType)
+                  }
+                  disabled={isPending}
+                >
+                  <SelectTrigger aria-invalid={!!state?.errors?.dataType}>
+                    <SelectValue placeholder="Select data type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={DataType.NUMBER}>Number</SelectItem>
+                    <SelectItem value={DataType.CURRENCY}>Currency</SelectItem>
+                    <SelectItem value={DataType.PERCENT}>Percent</SelectItem>
+                    <SelectItem value={DataType.DECIMAL}>Decimal</SelectItem>
+                    <SelectItem value={DataType.INTEGER}>Integer</SelectItem>
+                  </SelectContent>
+                </Select>
+                {state?.errors?.dataType && (
+                  <p className="text-sm text-destructive">
+                    {state.errors.dataType.join(", ")}
+                  </p>
+                )}
+                <p className="text-sm text-muted-foreground">
+                  Specify the type of numerical data for proper formatting
                 </p>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+
+            {/* Category */}
+            {categories.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="categoryId">Category</Label>
+                <Select name="categoryId" disabled={isPending}>
+                  <SelectTrigger aria-invalid={!!state?.errors?.categoryId}>
+                    <SelectValue placeholder="Select a category (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No category</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        <div className="flex items-center gap-2">
+                          {category.color && (
+                            <div
+                              className="h-3 w-3 rounded-full"
+                              style={{ backgroundColor: category.color }}
+                            />
+                          )}
+                          {category.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {state?.errors?.categoryId && (
+                  <p className="text-sm text-destructive">
+                    {state.errors.categoryId.join(", ")}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Categorical Options */}
             {selectedType === ForecastType.CATEGORICAL && (
@@ -395,27 +398,28 @@ export default function CreateForecastModal({
               <Separator />
             </div>
 
-            {/* Release Date */}
+            {/* Data Release Date */}
             <div className="space-y-2">
-              <Label htmlFor="releaseDate" className="text-sm font-medium">
-                Release Date & Time <span className="text-destructive">*</span>
+              <Label htmlFor="dataReleaseDate" className="text-sm font-medium">
+                Data Release Date & Time{" "}
+                <span className="text-destructive">*</span>
               </Label>
               <DateTimePicker
-                date={releaseDate}
-                onSelect={setReleaseDate}
+                date={dataReleaseDate}
+                onSelect={setDataReleaseDate}
                 placeholder="Select when the outcome will be known"
                 disabled={isPending}
               />
               {/* Hidden input to submit the datetime value */}
               <input
                 type="hidden"
-                name="releaseDate"
-                value={releaseDate ? releaseDate.toISOString() : ""}
+                name="dataReleaseDate"
+                value={dataReleaseDate ? dataReleaseDate.toISOString() : ""}
               />
-              {state?.errors?.releaseDate && (
+              {state?.errors?.dataReleaseDate && (
                 <p className="text-sm text-destructive flex items-center gap-1.5">
                   <AlertCircle className="h-3.5 w-3.5" />
-                  {state.errors.releaseDate.join(", ")}
+                  {state.errors.dataReleaseDate.join(", ")}
                 </p>
               )}
               <p className="text-xs text-muted-foreground">
@@ -424,54 +428,55 @@ export default function CreateForecastModal({
               </p>
             </div>
 
-          {/* Due Date */}
-          <div className="space-y-2">
-            <Label htmlFor="dueDate">
-              Due Date & Time <span className="text-destructive">*</span>
-            </Label>
-            <DateTimePicker
-              date={dueDate}
-              onSelect={setDueDate}
-              placeholder="Select due date and time"
-              disabled={isPending}
-            />
-            {/* Hidden input to submit the datetime value */}
-            <input
-              type="hidden"
-              name="dueDate"
-              value={dueDate ? dueDate.toISOString() : ""}
-            />
-            {state?.errors?.dueDate && (
-              <p className="text-sm text-destructive">
-                {state.errors.dueDate.join(", ")}
-              </p>
-            )}
-          </div>
+            {/* Due Date */}
+            <div className="space-y-2">
+              <Label htmlFor="dueDate">
+                Due Date & Time <span className="text-destructive">*</span>
+              </Label>
+              <DateTimePicker
+                date={dueDate}
+                onSelect={setDueDate}
+                placeholder="Select due date and time"
+                disabled={isPending}
+              />
+              {/* Hidden input to submit the datetime value */}
+              <input
+                type="hidden"
+                name="dueDate"
+                value={dueDate ? dueDate.toISOString() : ""}
+              />
+              {state?.errors?.dueDate && (
+                <p className="text-sm text-destructive">
+                  {state.errors.dueDate.join(", ")}
+                </p>
+              )}
+            </div>
 
-          {/* Data Release Date */}
-          <div className="space-y-2">
-            <Label htmlFor="dataReleaseDate">Data Release Date & Time</Label>
-            <DateTimePicker
-              date={dataReleaseDate}
-              onSelect={setDataReleaseDate}
-              placeholder="Select data release date and time (optional)"
-              disabled={isPending}
-            />
-            {/* Hidden input to submit the datetime value */}
-            <input
-              type="hidden"
-              name="dataReleaseDate"
-              value={dataReleaseDate ? dataReleaseDate.toISOString() : ""}
-            />
-            {state?.errors?.dataReleaseDate && (
-              <p className="text-sm text-destructive">
-                {state.errors.dataReleaseDate.join(", ")}
+            {/* Data Release Date */}
+            <div className="space-y-2">
+              <Label htmlFor="dataReleaseDate">Data Release Date & Time</Label>
+              <DateTimePicker
+                date={dataReleaseDate}
+                onSelect={setDataReleaseDate}
+                placeholder="Select data release date and time (optional)"
+                disabled={isPending}
+              />
+              {/* Hidden input to submit the datetime value */}
+              <input
+                type="hidden"
+                name="dataReleaseDate"
+                value={dataReleaseDate ? dataReleaseDate.toISOString() : ""}
+              />
+              {state?.errors?.dataReleaseDate && (
+                <p className="text-sm text-destructive">
+                  {state.errors.dataReleaseDate.join(", ")}
+                </p>
+              )}
+              <p className="text-sm text-muted-foreground">
+                When the actual data will be released (must be on or after due
+                date)
               </p>
-            )}
-            <p className="text-sm text-muted-foreground">
-              When the actual data will be released (must be on or after due
-              date)
-            </p>
+            </div>
           </div>
 
           {/* Actions */}

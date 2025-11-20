@@ -182,7 +182,6 @@ model Forecast {
   @@index([categoryId])
   @@index([type])
   @@index([dueDate])
-  @@index([releaseDate])
 }
 
 model Prediction {
