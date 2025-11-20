@@ -6,6 +6,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -39,17 +40,24 @@ export default function PredictionDialog({
   existingPrediction,
 }: PredictionDialogProps) {
   const [open, setOpen] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const isUpdate = !!existingPrediction;
 
-  // Close dialog after a delay when success is achieved
   const handleSuccess = () => {
-    setTimeout(() => {
-      setOpen(false);
-    }, 1500); // Give user time to see success message
+    // Switch dialog into "success" mode and wait for user to close
+    setShowSuccess(true);
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    // Reset success state whenever the dialog is fully closed
+    if (!nextOpen) {
+      setShowSuccess(false);
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button>
           {isUpdate ? (
@@ -65,26 +73,52 @@ export default function PredictionDialog({
           )}
         </Button>
       </DialogTrigger>
+
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {isUpdate ? "Update Your Prediction" : "Submit Your Prediction"}
-          </DialogTitle>
-          <DialogDescription>
-            {isUpdate
-              ? `Update your prediction for "${forecastTitle}". You can change your prediction anytime before the deadline.`
-              : `Submit your prediction for "${forecastTitle}". You can update it later if needed.`}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="mt-4">
-          <PredictionForm
-            forecastId={forecastId}
-            forecastType={forecastType}
-            categoricalOptions={categoricalOptions}
-            existingPrediction={existingPrediction}
-            onSuccess={handleSuccess}
-          />
-        </div>
+        {showSuccess ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Prediction submitted</DialogTitle>
+              <DialogDescription>
+                Your prediction for &quot;{forecastTitle}&quot; has been saved
+                successfully. You can close this dialog or reopen it later to
+                edit your prediction before the deadline.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="mt-4">
+              <Button
+                onClick={() => {
+                  setShowSuccess(false);
+                  setOpen(false);
+                }}
+              >
+                Close
+              </Button>
+            </DialogFooter>
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>
+                {isUpdate ? "Update Your Prediction" : "Submit Your Prediction"}
+              </DialogTitle>
+              <DialogDescription>
+                {isUpdate
+                  ? `Update your prediction for "${forecastTitle}". You can change your prediction anytime before the deadline.`
+                  : `Submit your prediction for "${forecastTitle}". You can update it later if needed.`}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-4">
+              <PredictionForm
+                forecastId={forecastId}
+                forecastType={forecastType}
+                categoricalOptions={categoricalOptions}
+                existingPrediction={existingPrediction}
+                onSuccess={handleSuccess}
+              />
+            </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

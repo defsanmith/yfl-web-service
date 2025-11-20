@@ -36,6 +36,32 @@ type PredictionFormProps = {
   onSuccess?: () => void;
 };
 
+// Central list of method options for the dropdown
+export const METHOD_OPTIONS = [
+  "Guess / POOMA",
+  "Intuitive / Educated Guess / Feeling / SWAG",
+  "Visual Extrapolation",
+  "Experiential Judgment (Internal Source)",
+  "Experiential Judgment (External / 3rd Party Source)",
+  "Subject Matter Experts (Internal Source)",
+  "Subject Matter Experts (External / 3rd Party Source)",
+  "Survey / Interview / Dialogue",
+  "Focus Group / Strategic Polylogue",
+  "Blind Software Output",
+  "Simple Statistics (Averages, Medians, etc.)",
+  "Moving Averages / Weighted Moving Averages",
+  "Exponential Smoothing",
+  "Percentile Distributions",
+  "ARIMA",
+  "Bivariate Linear Regression",
+  "Multivariate Regression",
+  "Analogue / Other",
+  "Ensemble – Multiple QUAL Methods / Scenarios",
+  "Ensemble – Multiple QUANT Methods / Scenarios",
+  "Ensemble – QUANT + QUAL Methods / Scenarios",
+  "AI / Machine Learning Model",
+] as const;
+
 export default function PredictionForm({
   forecastId,
   forecastType,
@@ -60,7 +86,7 @@ export default function PredictionForm({
 
   // Show success message if submission was successful
   if (state?.success) {
-    // Call onSuccess callback if provided (e.g., to close dialog)
+    // Call onSuccess callback if provided (e.g., to switch dialog into success mode)
     if (onSuccess) {
       onSuccess();
     }
@@ -188,22 +214,31 @@ export default function PredictionForm({
         </p>
       </div>
 
-      {/* Method (Optional) */}
+      {/* Method -> DROPDOWN */}
       <div className="space-y-2">
         <Label htmlFor="method">
           Method <span className="text-muted-foreground">(Optional)</span>
         </Label>
-        <Input
-          type="text"
-          id="method"
+        <Select
           name="method"
-          placeholder="e.g., Statistical analysis, Expert judgment"
-          maxLength={500}
-          defaultValue={state?.data?.method || existingPrediction?.method || ""}
+          defaultValue={
+            state?.data?.method || existingPrediction?.method || ""
+          }
           disabled={isReadOnly || isPending}
-          aria-invalid={!!state?.errors?.method}
-          className={state?.errors?.method ? "border-destructive" : ""}
-        />
+        >
+          <SelectTrigger
+            className={state?.errors?.method ? "border-destructive" : ""}
+          >
+            <SelectValue placeholder="Select a method" />
+          </SelectTrigger>
+          <SelectContent>
+            {METHOD_OPTIONS.map((m) => (
+              <SelectItem key={m} value={m}>
+                {m}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {state?.errors?.method && (
           <p className="text-sm text-destructive">
             {state.errors.method.join(", ")}
@@ -245,7 +280,11 @@ export default function PredictionForm({
         </p>
       </div>
 
-      {/* Equity Investment (Optional) */}
+      {/* Equity Investment (Optional) with constraints:
+          - non-negative
+          - integer only (no decimals)
+          - max 20,000,000
+      */}
       <div className="space-y-2">
         <Label htmlFor="equityInvestment">
           Equity Investment{" "}
@@ -253,11 +292,14 @@ export default function PredictionForm({
         </Label>
         <Input
           type="number"
-          step="0.01"
           id="equityInvestment"
           name="equityInvestment"
           min="0"
-          placeholder="e.g., 10000"
+          max="20000000"
+          step="1"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          placeholder="0 – 20,000,000"
           defaultValue={
             state?.data?.equityInvestment ||
             existingPrediction?.equityInvestment?.toString() ||
@@ -275,7 +317,7 @@ export default function PredictionForm({
           </p>
         )}
         <p className="text-xs text-muted-foreground">
-          Amount of equity investment (if applicable)
+          Whole-dollar equity amount, 0 to 20,000,000 (no decimals).
         </p>
       </div>
 
