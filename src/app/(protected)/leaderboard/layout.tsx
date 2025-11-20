@@ -1,5 +1,6 @@
 "use client";
 
+import Router from "@/constants/router";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -12,9 +13,9 @@ export default function LeaderboardLayout({
   const pathname = usePathname();
 
   const tabs = [
-    { name: "Users", href: "/leaderboard/users" },
-    { name: "Predictions", href: "/leaderboard/predictions" },
-    { name: "Categories", href: "/leaderboard/categories" },
+    { name: "Users", href: Router.LEADERBOARD_USERS },
+    { name: "Predictions", href: Router.LEADERBOARD_PREDICTIONS },
+    { name: "Categories", href: Router.LEADERBOARD_CATEGORIES },
   ];
 
   return (

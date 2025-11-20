@@ -554,12 +554,94 @@ const [date, setDate] = useState<Date | undefined>();
 
 **DO NOT** use native `<input type="date">` - always use the DatePicker component for better UX and consistency.
 
+### Metric Formatting
+
+A reusable metric formatting utility at `src/lib/format-metrics.ts` for displaying forecast values, predictions, and performance metrics.
+
+**CRITICAL: Always use these utilities when displaying metrics to ensure consistent formatting based on forecast data types.**
+
+**Core Functions:**
+
+```typescript
+import {
+  formatForecastValue,
+  formatCurrency,
+  formatPercentage,
+  formatErrorMetric,
+  formatMetricValue,
+  abbreviateNumber,
+} from "@/lib/format-metrics";
+
+// Format actual or predicted values based on forecast data type
+formatForecastValue("1234.56", forecast.dataType); // Uses forecast's dataType
+// CURRENCY: "$1,234.56"
+// PERCENT: "123456.00%" (if value stored as decimal)
+// INTEGER: "1,235"
+// DECIMAL/NUMBER: "1,234.56"
+
+// Large numbers are automatically abbreviated (>= 1M)
+formatForecastValue("1234567", "CURRENCY"); // "$1.23M"
+formatForecastValue("1234567890", "NUMBER"); // "1.23B"
+
+// Format currency values (investments, profits, returns)
+formatCurrency(1234.56); // "$1,234.56"
+formatCurrency(-1234.56); // "-$1,234.56"
+formatCurrency(1234.56, { showSign: true }); // "+$1,234.56"
+formatCurrency(1234567); // "$1.23M" (auto-abbreviated)
+
+// Format percentage values (ROI%, ROE%, confidence)
+formatPercentage(0.1234); // "12.34%" (value is decimal)
+formatPercentage(0.1234, { decimals: 1 }); // "12.3%"
+formatPercentage(0.1234, { showSign: true }); // "+12.34%"
+
+// Format error metrics (uses forecast data type for error/absoluteError)
+formatErrorMetric(error, forecast.dataType); // Matches forecast type
+formatErrorMetric(1234.56, "CURRENCY"); // "$1,234.56"
+formatErrorMetric(1234567, "CURRENCY"); // "$1.23M" (auto-abbreviated)
+formatErrorMetric(12.34, null, true); // "12.34%" (percentage error)
+formatErrorMetric(0.0012, null, false, 4); // "0.0012" (explicit decimals)
+
+// Manual number abbreviation
+abbreviateNumber(1234567); // "1.23M"
+abbreviateNumber(1234567890); // "1.23B"
+abbreviateNumber(1234567890123); // "1.23T"
+```
+
+**Usage Guidelines:**
+
+- **Forecast/Prediction Values**: Use `formatForecastValue(value, forecast.dataType)` - respects the forecast's data type
+- **Currency Values**: Use `formatCurrency()` for all dollar amounts (investments, profits, returns)
+- **Percentage Values**: Use `formatPercentage()` for ROI%, ROE%, confidence, etc. (expects decimal input)
+- **Error Metrics**: Use `formatErrorMetric(value, forecast.dataType)` for error/absoluteError to match forecast type
+- **Error Percentages**: Use `formatErrorMetric(value, null, true)` for absoluteActualErrorPct, absoluteForecastErrorPct
+- **Score Metrics**: Use `formatErrorMetric(value, forecast.dataType)` for roiScore (matches forecast type)
+- **Variance/Brier**: Use `formatErrorMetric(value, null, false, 4)` for brierScore, ppVariance (independent of forecast)
+- **Auto-abbreviation**: Numbers >= 1M are automatically abbreviated with K/M/B/T suffixes
+- **Never** use manual `.toFixed()` or `.toLocaleString()` for metrics - always use these utilities
+
+**Examples:**
+
+```typescript
+// ✅ CORRECT - Using format utilities
+<span>{formatForecastValue(forecast.actualValue, forecast.dataType)}</span>
+<span>{formatCurrency(prediction.equityInvestment)}</span>
+<span>{formatPercentage(prediction.roePct)}</span>
+<span>{formatErrorMetric(prediction.absoluteError, forecast.dataType)}</span>
+<span>{formatErrorMetric(prediction.absoluteActualErrorPct, null, true)}</span>
+
+// ❌ WRONG - Manual formatting
+<span>${prediction.equityInvestment.toLocaleString()}</span>
+<span>{(prediction.roePct * 100).toFixed(2)}%</span>
+<span>{prediction.absoluteError.toFixed(2)}</span>
+```
+
 ## Key Files
 
 - `prisma/schema.prisma` - Database schema with custom output path
 - `src/auth/index.ts` - NextAuth configuration and handlers
 - `src/lib/prisma.ts` - Prisma singleton instance
 - `src/lib/server-action-utils.ts` - Reusable server action utilities
+- `src/lib/format-metrics.ts` - Metric formatting utilities (ALWAYS use for displaying metrics)
 - `src/components/pagination-controls.tsx` - Reusable pagination component
 - `src/components/ui/date-picker.tsx` - Reusable date picker component
 - `src/providers/index.tsx` - Root provider composition

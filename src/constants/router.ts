@@ -26,10 +26,10 @@ class Router {
     `${Router.ORG_ADMIN_FORECASTS}/${id}`;
 
   // Org Admin Leaderboard
-  static ORG_ADMIN_LEADERBOARD = "/leaderboard";
-  static ORG_ADMIN_LEADERBOARD_USERS = "/leaderboard/users";
-  static ORG_ADMIN_LEADERBOARD_PREDICTIONS = "/leaderboard/predictions";
-  static ORG_ADMIN_LEADERBOARD_CATEGORIES = "/leaderboard/categories";
+  static LEADERBOARD = "/leaderboard";
+  static LEADERBOARD_USERS = "/leaderboard/users";
+  static LEADERBOARD_PREDICTIONS = "/leaderboard/predictions";
+  static LEADERBOARD_CATEGORIES = "/leaderboard/categories";
 
   // Forecasts
   static FORECASTS = "/forecasts";
@@ -37,8 +37,11 @@ class Router {
 
   // User
   static USER_FORECASTS = "/f";
+  static USER_FORECASTS_PAST = "/past";
   static USER_FORECAST_DETAIL = (id: string) => `/f/${id}`;
   static FORECAST_LEADERBOARD = (id: string) => `/f/${id}/leaderboard`; // public leaderboard, super-admin leader, org-admin, player
+
+  static SUMMARY = "/summary";
 }
 
 export default Router;

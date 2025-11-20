@@ -1,9 +1,9 @@
-// Upcoming forecasts page for users
+// Past forecasts page for users (dashboard view)
 
 import { auth } from "@/auth";
 import Router from "@/constants/router";
-import { getUpcomingForecastsForUser } from "@/services/forecasts";
-import UpcomingForecastsTableView from "@/views/forecasts/UpcomingForecastsTableView";
+import { getPastForecastsForUser } from "@/services/forecasts";
+import PastForecastsTableView from "@/views/forecasts/PastForecastsTableView";
 import { redirect } from "next/navigation";
 
 type PageProps = {
@@ -13,7 +13,7 @@ type PageProps = {
   }>;
 };
 
-export default async function UserForecastsPage({ searchParams }: PageProps) {
+export default async function PastForecastsPage({ searchParams }: PageProps) {
   const session = await auth();
 
   if (!session) {
@@ -29,8 +29,8 @@ export default async function UserForecastsPage({ searchParams }: PageProps) {
   const page = parseInt(params.page || "1", 10);
   const pageSize = parseInt(params.pageSize || "10", 10);
 
-  // Get upcoming forecasts for the user's organization
-  const result = await getUpcomingForecastsForUser({
+  // Get past forecasts for the user's organization
+  const result = await getPastForecastsForUser({
     organizationId: session.user.organizationId,
     userId: session.user.id,
     page,
@@ -38,7 +38,7 @@ export default async function UserForecastsPage({ searchParams }: PageProps) {
   });
 
   return (
-    <UpcomingForecastsTableView
+    <PastForecastsTableView
       forecasts={result.forecasts}
       pagination={{
         page: result.page,

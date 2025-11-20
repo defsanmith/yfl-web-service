@@ -24,6 +24,30 @@ export async function getUserById(id: string) {
   });
 }
 
+/**
+ * Get user with organization ID only (for dashboard pages)
+ *
+ * @param id - User ID
+ * @returns User with organizationId, name, and email or null
+ *
+ * @example
+ * ```typescript
+ * // In a dashboard page
+ * const user = await getUserWithOrganization(userId);
+ * const orgId = user?.organizationId ?? null;
+ * ```
+ */
+export async function getUserWithOrganization(id: string) {
+  return await prisma.user.findUnique({
+    where: { id },
+    select: {
+      organizationId: true,
+      name: true,
+      email: true,
+    },
+  });
+}
+
 export async function getUserByEmail(email: string) {
   return await prisma.user.findUnique({
     where: { email },

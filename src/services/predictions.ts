@@ -8,7 +8,7 @@ import type {
  * Get a prediction by ID
  */
 export async function getPredictionById(id: string) {
-  console.log("🔍 Fetching forecasts for:", { id});
+  console.log("🔍 Fetching forecasts for:", { id });
 
   return await prisma.prediction.findUnique({
     where: { id },
@@ -171,6 +171,41 @@ export async function updatePrediction(data: UpdatePredictionInput) {
 export async function deletePrediction(id: string) {
   return await prisma.prediction.delete({
     where: { id },
+  });
+}
+
+/**
+ * Get user's prediction metrics for charts (dashboard use)
+ *
+ * @param userId - User ID
+ * @param organizationId - Organization ID to filter forecasts
+ * @param limit - Maximum number of metrics to return (default 50)
+ * @returns Array of prediction metrics with id and error percentage
+ *
+ * @example
+ * ```typescript
+ * // In a dashboard page
+ * const metrics = await getUserPredictionMetrics(userId, orgId);
+ * // Returns: [{ id: "...", absoluteActualErrorPct: 5.2 }, ...]
+ * ```
+ */
+export async function getUserPredictionMetrics(
+  userId: string,
+  organizationId: string,
+  limit = 50
+) {
+  return await prisma.prediction.findMany({
+    where: {
+      userId,
+      forecast: { organizationId },
+      absoluteActualErrorPct: { not: null },
+    },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      absoluteActualErrorPct: true,
+    },
+    take: limit,
   });
 }
 

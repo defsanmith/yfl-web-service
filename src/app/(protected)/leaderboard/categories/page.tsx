@@ -1,9 +1,9 @@
 import { auth } from "@/auth";
-import prisma from "@/lib/prisma";
 import { getCategories } from "@/services/categories";
 import { getForecasts } from "@/services/forecasts";
-import { getOrganizationPredictionLeaderboard } from "@/services/leaderboard";
-import PredictionLeaderboardView from "@/views/leaderboard/PredictionLeaderboardView";
+import { getOrganizationCategoryLeaderboard } from "@/services/leaderboard";
+import { getOrganizationByIdMinimal } from "@/services/organizations";
+import CategoryLeaderboardView from "@/views/leaderboard/CategoryLeaderboardView";
 import { redirect } from "next/navigation";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
@@ -12,11 +12,11 @@ type PageProps = {
   searchParams: SearchParams;
 };
 
-export default async function PredictionsLeaderboardPage({
+export default async function CategoriesLeaderboardPage({
   searchParams,
 }: PageProps) {
   const session = await auth();
-  if (!session?.user || session.user.role !== "ORG_ADMIN") {
+  if (!session?.user) {
     redirect("/unauthorized");
   }
 
@@ -26,11 +26,10 @@ export default async function PredictionsLeaderboardPage({
 
   const params = await searchParams;
 
-  const leaderboardData = await getOrganizationPredictionLeaderboard({
+  const leaderboardData = await getOrganizationCategoryLeaderboard({
     organizationId: session.user.organizationId,
-    sortBy: (params.sortBy as string) || "totalParticipants",
+    sortBy: (params.sortBy as string) || "totalForecasts",
     sortOrder: (params.sortOrder as "asc" | "desc") || "desc",
-    forecastIds: params.forecastIds as string | undefined,
     categoryIds: params.categoryIds as string | undefined,
     forecastTypes: params.forecastTypes as string | undefined,
     dateFrom: params.dateFrom as string | undefined,
@@ -40,14 +39,11 @@ export default async function PredictionsLeaderboardPage({
   const [forecasts, categories, organization] = await Promise.all([
     getForecasts({ organizationId: session.user.organizationId }),
     getCategories({ organizationId: session.user.organizationId }),
-    prisma.organization.findUnique({
-      where: { id: session.user.organizationId },
-      select: { name: true },
-    }),
+    getOrganizationByIdMinimal(session.user.organizationId),
   ]);
 
   return (
-    <PredictionLeaderboardView
+    <CategoryLeaderboardView
       data={leaderboardData}
       organizationName={organization?.name || "Your Organization"}
       forecasts={forecasts.forecasts.map(
