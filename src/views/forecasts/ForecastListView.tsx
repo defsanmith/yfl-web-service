@@ -282,10 +282,10 @@ export default function ForecastListView({
               <TableHead>
                 <Button
                   variant="ghost"
-                  onClick={() => handleSort("releaseDate")}
+                  onClick={() => handleSort("dataReleaseDate")}
                   className="h-auto p-0 font-semibold hover:bg-transparent"
                 >
-                  Release {getSortIcon("releaseDate")}
+                  Release {getSortIcon("dataReleaseDate")}
                 </Button>
               </TableHead>
               <TableHead>
@@ -306,7 +306,7 @@ export default function ForecastListView({
             {forecasts.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={isOrgAdmin ? 6 : 5}
+                  colSpan={isOrgAdmin ? 7 : 6}
                   className="text-center text-muted-foreground"
                 >
                   No forecasts found
@@ -361,12 +361,35 @@ export default function ForecastListView({
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    <div className="text-sm">
-                      {format(new Date(forecast.createdAt), "MMM d, yyyy")}
-                    </div>
-                    <div className="text-xs">
-                      {format(new Date(forecast.createdAt), "h:mm a")}
-                    </div>
+                    {forecast.dataReleaseDate ? (
+                      <>
+                        <div className="text-sm">
+                          {format(
+                            new Date(forecast.dataReleaseDate),
+                            "MMM d, yyyy"
+                          )}
+                        </div>
+                        <div className="text-xs">
+                          {format(new Date(forecast.dataReleaseDate), "h:mm a")}
+                        </div>
+                      </>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {forecast.createdAt ? (
+                      <>
+                        <div className="text-sm">
+                          {format(new Date(forecast.createdAt), "MMM d, yyyy")}
+                        </div>
+                        <div className="text-xs">
+                          {format(new Date(forecast.createdAt), "h:mm a")}
+                        </div>
+                      </>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                   {isOrgAdmin && (
                     <TableCell className="text-right">

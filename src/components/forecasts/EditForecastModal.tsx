@@ -363,13 +363,13 @@ export default function EditForecastModal({
               {/* Hidden input to submit the datetime value */}
               <input
                 type="hidden"
-                name="releaseDate"
+                name="dataReleaseDate"
                 value={dataReleaseDate ? dataReleaseDate.toISOString() : ""}
               />
-              {state?.errors?.releaseDate && (
+              {state?.errors?.dataReleaseDate && (
                 <p className="text-sm text-destructive flex items-center gap-1.5">
                   <AlertCircle className="h-3.5 w-3.5" />
-                  {state.errors.releaseDate.join(", ")}
+                  {state.errors.dataReleaseDate.join(", ")}
                 </p>
               )}
               <p className="text-xs text-muted-foreground">

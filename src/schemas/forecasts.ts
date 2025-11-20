@@ -28,7 +28,7 @@ export const createForecastSchema = z
     dataReleaseDate: z.string().min(1, "Release date is required"),
     actualValue: z.string().optional().nullable(),
     organizationId: z.string().cuid("Invalid organization ID"),
-    categoryId: z.string().cuid("Invalid category ID").optional().nullable(),
+    categoryId: z.string().min(1, "Category is required"),
     // For categorical forecasts only
     options: z
       .array(z.string().min(1, "Option cannot be empty"))
@@ -131,7 +131,7 @@ export const updateForecastSchema = z
     dueDate: z.string().min(1, "Due date is required"),
     dataReleaseDate: z.string().min(1, "Release date is required"),
     actualValue: z.string().optional().nullable(),
-    categoryId: z.string().cuid("Invalid category ID").optional().nullable(),
+    categoryId: z.string().min(1, "Category is required"),
     options: z
       .array(z.string().min(1, "Option cannot be empty"))
       .min(2, "Categorical forecasts require at least 2 options")

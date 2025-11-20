@@ -14,6 +14,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -23,7 +28,15 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { DataType, ForecastType } from "@/generated/prisma";
-import { AlertCircle, Calendar, Info, Plus, Settings, X } from "lucide-react";
+import {
+  AlertCircle,
+  Calendar,
+  Check,
+  ChevronsUpDown,
+  Info,
+  Plus,
+  Settings,
+} from "lucide-react";
 import { useActionState, useState } from "react";
 
 type Category = {
@@ -70,10 +83,6 @@ export default function CreateForecastModal({
     (state?.data?.dataType as DataType) || ""
   );
 
-  const [options, setOptions] = useState<string[]>(state?.data?.options || []);
-
-  const [newOption, setNewOption] = useState("");
-
   const [dueDate, setDueDate] = useState<Date | undefined>(
     state?.data?.dueDate ? new Date(state.data.dueDate) : undefined
   );
@@ -84,34 +93,118 @@ export default function CreateForecastModal({
       : undefined
   );
 
-  // Handler to change type and clear options if switching away from CATEGORICAL
+  // Category management
+  const predefinedCategories: Category[] = [
+    { id: "cat-movies", name: "Movies", color: "#E11D48" },
+    { id: "cat-crypto", name: "Crypto", color: "#F59E0B" },
+    { id: "cat-automobiles", name: "Automobiles", color: "#3B82F6" },
+    { id: "cat-stock-market", name: "Stock Market", color: "#10B981" },
+    { id: "cat-corp-earnings", name: "Corp. Earnings", color: "#8B5CF6" },
+  ];
+
+  const [localCategories, setLocalCategories] = useState<Category[]>([
+    ...predefinedCategories,
+    ...categories,
+  ]);
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [categoryError, setCategoryError] = useState("");
+  const [categorySearch, setCategorySearch] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
+    null
+  );
+  const [showCategoryPopover, setShowCategoryPopover] = useState(false);
+
+  // Generate random color for new categories
+  const generateRandomColor = () => {
+    const colors = [
+      "#3B82F6", // blue
+      "#8B5CF6", // purple
+      "#EC4899", // pink
+      "#10B981", // green
+      "#F59E0B", // amber
+      "#EF4444", // red
+      "#06B6D4", // cyan
+      "#6366F1", // indigo
+      "#14B8A6", // teal
+      "#F97316", // orange
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+  };
+
+  // Handler to change type
   const handleTypeChange = (value: ForecastType) => {
     setSelectedType(value);
-    // Clear options if switching away from CATEGORICAL
-    if (value !== ForecastType.CATEGORICAL) {
-      setOptions([]);
-      setNewOption("");
-    }
     // Clear dataType if switching away from CONTINUOUS
     if (value !== ForecastType.CONTINUOUS) {
       setSelectedDataType("");
     }
   };
 
-  const addOption = () => {
-    if (newOption.trim()) {
-      const trimmedOption = newOption.trim();
-      // Check for duplicates
-      if (!options.includes(trimmedOption)) {
-        setOptions([...options, trimmedOption]);
-      }
-      setNewOption("");
+  const handleAddCategory = () => {
+    setCategoryError("");
+
+    if (!newCategoryName.trim()) {
+      setCategoryError("Category name is required");
+      return;
     }
+
+    // Check for duplicate names (case-insensitive)
+    const nameExists = localCategories.some(
+      (cat) => cat.name.toLowerCase() === newCategoryName.trim().toLowerCase()
+    );
+
+    if (nameExists) {
+      setCategoryError("A category with this name already exists");
+      return;
+    }
+
+    // Create temporary category with a temp ID and random color
+    const tempCategory: Category = {
+      id: `temp-${Date.now()}`,
+      name: newCategoryName.trim(),
+      color: generateRandomColor(),
+    };
+
+    setLocalCategories([...localCategories, tempCategory]);
+    setNewCategoryName("");
+    setShowCategoryDialog(false);
   };
 
-  const removeOption = (index: number) => {
-    setOptions(options.filter((_, i) => i !== index));
+  const handleCreateCategoryFromCombobox = (name: string) => {
+    // Check for duplicate names (case-insensitive)
+    const nameExists = localCategories.some(
+      (cat) => cat.name.toLowerCase() === name.toLowerCase()
+    );
+
+    if (nameExists) {
+      return;
+    }
+
+    // Create temporary category with a temp ID and random color
+    const tempCategory: Category = {
+      id: `temp-${Date.now()}`,
+      name: name.trim(),
+      color: generateRandomColor(),
+    };
+
+    setLocalCategories([...localCategories, tempCategory]);
+    setSelectedCategoryId(tempCategory.id);
+    setCategorySearch(name.trim());
+    setShowCategoryPopover(false);
   };
+
+  const filteredCategories = localCategories.filter((cat) =>
+    cat.name.toLowerCase().includes(categorySearch.toLowerCase())
+  );
+
+  const exactMatch = filteredCategories.find(
+    (cat) => cat.name.toLowerCase() === categorySearch.toLowerCase()
+  );
+
+  const selectedCategory = localCategories.find(
+    (cat) => cat.id === selectedCategoryId
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -223,9 +316,6 @@ export default function CreateForecastModal({
                   <SelectItem value={ForecastType.CONTINUOUS}>
                     Continuous
                   </SelectItem>
-                  <SelectItem value={ForecastType.CATEGORICAL}>
-                    Categorical
-                  </SelectItem>
                 </SelectContent>
               </Select>
               {state?.errors?.type && (
@@ -238,8 +328,6 @@ export default function CreateForecastModal({
                   "Binary forecasts have true/false outcomes"}
                 {selectedType === ForecastType.CONTINUOUS &&
                   "Continuous forecasts accept numerical values"}
-                {selectedType === ForecastType.CATEGORICAL &&
-                  "Categorical forecasts have predefined options"}
               </p>
             </div>
 
@@ -280,112 +368,131 @@ export default function CreateForecastModal({
             )}
 
             {/* Category */}
-            {categories.length > 0 && (
-              <div className="space-y-2">
-                <Label htmlFor="categoryId">Category</Label>
-                <Select name="categoryId" disabled={isPending}>
-                  <SelectTrigger aria-invalid={!!state?.errors?.categoryId}>
-                    <SelectValue placeholder="Select a category (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">No category</SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        <div className="flex items-center gap-2">
-                          {category.color && (
-                            <div
-                              className="h-3 w-3 rounded-full"
-                              style={{ backgroundColor: category.color }}
-                            />
-                          )}
-                          {category.name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {state?.errors?.categoryId && (
-                  <p className="text-sm text-destructive">
-                    {state.errors.categoryId.join(", ")}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Categorical Options */}
-            {selectedType === ForecastType.CATEGORICAL && (
-              <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
-                <Label className="text-sm font-medium">
-                  Categorical Options{" "}
-                  <span className="text-destructive">*</span>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="categoryId">
+                  Category <span className="text-destructive">*</span>
                 </Label>
-                <div className="space-y-2">
-                  {options.map((option, index) => (
-                    <div
-                      key={`${option}-${index}`}
-                      className="flex items-center gap-2"
-                    >
-                      <div className="flex items-center gap-2 flex-1 rounded-md border bg-background px-3 py-2">
-                        <span className="text-muted-foreground text-xs font-medium w-6">
-                          {index + 1}.
-                        </span>
-                        <Input
-                          name="options"
-                          value={option}
-                          readOnly
-                          disabled={isPending}
-                          className="border-0 shadow-none p-0 h-auto focus-visible:ring-0"
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeOption(index)}
-                        disabled={isPending}
-                        className="hover:bg-destructive/10 hover:text-destructive"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  <div className="flex items-center gap-2 pt-2">
-                    <Input
-                      value={newOption}
-                      onChange={(e) => setNewOption(e.target.value)}
-                      placeholder="Type a new option and press Enter or click +"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          addOption();
-                        }
-                      }}
-                      disabled={isPending}
-                      className="text-base"
-                    />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="icon"
-                      onClick={addOption}
-                      disabled={isPending}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                {state?.errors?.options && (
-                  <p className="text-sm text-destructive flex items-center gap-1.5">
-                    <AlertCircle className="h-3.5 w-3.5" />
-                    {state.errors.options.join(", ")}
-                  </p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  💡 Add at least 2 options. Each option should be clear and
-                  distinct.
-                </p>
               </div>
-            )}
+              <Popover
+                open={showCategoryPopover}
+                onOpenChange={setShowCategoryPopover}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={showCategoryPopover}
+                    className="w-full justify-between"
+                    disabled={isPending}
+                    type="button"
+                  >
+                    {selectedCategory ? (
+                      <div className="flex items-center gap-2">
+                        {selectedCategory.color && (
+                          <div
+                            className="h-3 w-3 rounded-full"
+                            style={{ backgroundColor: selectedCategory.color }}
+                          />
+                        )}
+                        {selectedCategory.name}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">
+                        Select or type category...
+                      </span>
+                    )}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-full min-w-[300px] max-w-[400px] p-0"
+                  align="start"
+                >
+                  <div className="p-2">
+                    <Input
+                      placeholder="Search or type new category..."
+                      value={categorySearch}
+                      onChange={(e) => setCategorySearch(e.target.value)}
+                      className="h-9"
+                    />
+                  </div>
+                  <div className="max-h-60 overflow-y-auto">
+                    {filteredCategories.length === 0 && categorySearch && (
+                      <div className="p-2">
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start text-sm"
+                          onClick={() =>
+                            handleCreateCategoryFromCombobox(categorySearch)
+                          }
+                          type="button"
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Create &quot;{categorySearch}&quot;
+                        </Button>
+                      </div>
+                    )}
+                    {filteredCategories.length > 0 && (
+                      <div className="p-1">
+                        {filteredCategories.map((category) => (
+                          <Button
+                            key={category.id}
+                            variant="ghost"
+                            className="w-full justify-start text-sm font-normal"
+                            onClick={() => {
+                              setSelectedCategoryId(category.id);
+                              setCategorySearch(category.name);
+                              setShowCategoryPopover(false);
+                            }}
+                            type="button"
+                          >
+                            {category.color && (
+                              <div
+                                className="h-3 w-3 rounded-full mr-2"
+                                style={{ backgroundColor: category.color }}
+                              />
+                            )}
+                            {category.name}
+                            {selectedCategoryId === category.id && (
+                              <Check className="ml-auto h-4 w-4" />
+                            )}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                    {!exactMatch &&
+                      categorySearch.trim() &&
+                      filteredCategories.length > 0 && (
+                        <div className="border-t p-2">
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start text-sm"
+                            onClick={() =>
+                              handleCreateCategoryFromCombobox(categorySearch)
+                            }
+                            type="button"
+                          >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Create &quot;{categorySearch}&quot;
+                          </Button>
+                        </div>
+                      )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+              <input
+                type="hidden"
+                name="categoryId"
+                value={selectedCategoryId || ""}
+              />
+              {state?.errors?.categoryId && (
+                <p className="text-sm text-destructive flex items-center gap-1.5">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {state.errors.categoryId.join(", ")}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Schedule Section */}
@@ -396,36 +503,6 @@ export default function CreateForecastModal({
                 Schedule
               </h3>
               <Separator />
-            </div>
-
-            {/* Data Release Date */}
-            <div className="space-y-2">
-              <Label htmlFor="dataReleaseDate" className="text-sm font-medium">
-                Data Release Date & Time{" "}
-                <span className="text-destructive">*</span>
-              </Label>
-              <DateTimePicker
-                date={dataReleaseDate}
-                onSelect={setDataReleaseDate}
-                placeholder="Select when the outcome will be known"
-                disabled={isPending}
-              />
-              {/* Hidden input to submit the datetime value */}
-              <input
-                type="hidden"
-                name="dataReleaseDate"
-                value={dataReleaseDate ? dataReleaseDate.toISOString() : ""}
-              />
-              {state?.errors?.dataReleaseDate && (
-                <p className="text-sm text-destructive flex items-center gap-1.5">
-                  <AlertCircle className="h-3.5 w-3.5" />
-                  {state.errors.dataReleaseDate.join(", ")}
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                When the actual data/event will be released (e.g., Q3 earnings
-                announcement date)
-              </p>
             </div>
 
             {/* Due Date */}
@@ -496,6 +573,57 @@ export default function CreateForecastModal({
           </div>
         </form>
       </DialogContent>
+
+      {/* New Category Dialog */}
+      <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Category</DialogTitle>
+            <DialogDescription>
+              Add a new category for organizing forecasts.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newCategoryName">
+                Category Name <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="newCategoryName"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="e.g., Revenue, Sales, Marketing"
+                maxLength={100}
+              />
+              <p className="text-xs text-muted-foreground">
+                A color will be automatically assigned to this category
+              </p>
+            </div>
+            {categoryError && (
+              <p className="text-sm text-destructive flex items-center gap-1.5">
+                <AlertCircle className="h-3.5 w-3.5" />
+                {categoryError}
+              </p>
+            )}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowCategoryDialog(false);
+                  setNewCategoryName("");
+                  setCategoryError("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="button" onClick={handleAddCategory}>
+                Add Category
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
