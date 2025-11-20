@@ -10,10 +10,14 @@ import {
   formDataToString,
   validateFormData,
 } from "@/lib/server-action-utils";
-import { updateForecastSchema } from "@/schemas/forecasts";
+import {
+  setActualValueSchema,
+  updateForecastSchema,
+} from "@/schemas/forecasts";
 import {
   deleteForecast,
   getForecastById,
+  setActualValue,
   updateForecast,
   validateForecastUpdate,
 } from "@/services/forecasts";
@@ -24,8 +28,10 @@ type ForecastFormData = {
   title: string;
   description: string | null;
   type: string;
+  dataType: string | null;
   dueDate: string;
-  releaseDate: string;
+  dataReleaseDate: string | null;
+  categoryId: string | null;
   options: string[];
 };
 
@@ -63,8 +69,10 @@ export async function updateForecastAction(
     "title",
     "description",
     "type",
+    "dataType",
     "dueDate",
-    "releaseDate",
+    "dataReleaseDate",
+    "categoryId",
   ]);
 
   // Handle options array for categorical forecasts
@@ -87,8 +95,10 @@ export async function updateForecastAction(
       title: formDataToString(rawData.title),
       description: formDataToString(rawData.description) || null,
       type: formDataToString(rawData.type),
+      dataType: formDataToString(rawData.dataType) || null,
       dueDate: formDataToString(rawData.dueDate),
-      releaseDate: formDataToString(rawData.releaseDate),
+      dataReleaseDate: formDataToString(rawData.dataReleaseDate) || null,
+      categoryId: formDataToString(rawData.categoryId) || null,
       options: options || [],
     });
   }
@@ -100,8 +110,10 @@ export async function updateForecastAction(
       title: validation.data.title,
       description: validation.data.description || null,
       type: validation.data.type,
+      dataType: validation.data.dataType || null,
       dueDate: validation.data.dueDate,
-      releaseDate: validation.data.releaseDate,
+      dataReleaseDate: validation.data.dataReleaseDate || null,
+      categoryId: validation.data.categoryId || null,
       options: validation.data.options || [],
     });
   }
@@ -152,4 +164,65 @@ export async function deleteForecastAction(
 
   // 5. Redirect (throws NEXT_REDIRECT - this is normal!)
   redirect(Router.ORG_ADMIN_FORECASTS);
+}
+
+type ActualValueFormData = {
+  actualValue: string;
+};
+
+export async function setActualValueAction(
+  forecastId: string,
+  prevState: ActionState<ActualValueFormData> | undefined,
+  formData: FormData
+): Promise<ActionState<ActualValueFormData>> {
+  // 1. Verify permissions and get org admin's organization
+  const session = await requireRole([Role.ORG_ADMIN]);
+
+  // Org admins must have an organizationId
+  if (!session.user.organizationId) {
+    return createErrorState({
+      _form: ["Organization not found for your account"],
+    });
+  }
+
+  // 2. Verify forecast belongs to org admin's organization
+  const existingForecast = await getForecastById(forecastId);
+  if (!existingForecast) {
+    return createErrorState({
+      _form: ["Forecast not found"],
+    });
+  }
+
+  if (existingForecast.organizationId !== session.user.organizationId) {
+    return createErrorState({
+      _form: ["You do not have permission to update this forecast"],
+    });
+  }
+
+  // 3. Extract form data
+  const rawData = extractFormData(formData, ["actualValue"]);
+
+  const dataToValidate = {
+    id: forecastId,
+    type: existingForecast.type,
+    actualValue: formDataToString(rawData.actualValue),
+  };
+
+  // 4. Validate schema
+  const validation = validateFormData(setActualValueSchema, dataToValidate);
+  if (!validation.success) {
+    return createErrorState(validation.errors, {
+      actualValue: formDataToString(rawData.actualValue),
+    });
+  }
+
+  // 5. Perform operation
+  await setActualValue(validation.data);
+
+  // 6. Revalidate cache
+  revalidatePath(Router.orgAdminForecastDetail(forecastId));
+  revalidatePath(Router.ORG_ADMIN_FORECASTS);
+
+  // 7. Redirect
+  redirect(Router.orgAdminForecastDetail(forecastId));
 }

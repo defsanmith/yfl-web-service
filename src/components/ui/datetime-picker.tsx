@@ -2,113 +2,202 @@
 
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Clock } from "lucide-react";
-import * as React from "react";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
-type DateTimePickerProps = {
-  date: Date | undefined;
-  onSelect: (date: Date | undefined) => void;
+interface DateTimePickerProps {
+  date?: Date;
+  onSelect?: (date: Date | undefined) => void;
   placeholder?: string;
   disabled?: boolean;
-};
+  className?: string;
+}
 
 export function DateTimePicker({
   date,
   onSelect,
   placeholder = "Pick a date and time",
   disabled = false,
+  className,
 }: DateTimePickerProps) {
-  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(
-    date
-  );
-  const [timeValue, setTimeValue] = React.useState<string>(
-    date ? format(date, "HH:mm") : "12:00"
-  );
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(date);
 
-  React.useEffect(() => {
-    if (date) {
-      setSelectedDate(date);
-      setTimeValue(format(date, "HH:mm"));
+  // Extract initial time values from the date
+  const initialHour = date ? date.getHours() : 12;
+  const initialMinute = date ? date.getMinutes() : 0;
+  const initialPeriod = initialHour >= 12 ? "PM" : "AM";
+  const initial12Hour =
+    initialHour === 0 ? 12 : initialHour > 12 ? initialHour - 12 : initialHour;
+
+  const [hour, setHour] = useState<number>(initial12Hour);
+  const [minute, setMinute] = useState<number>(initialMinute);
+  const [period, setPeriod] = useState<"AM" | "PM">(initialPeriod);
+
+  const updateDateTime = (
+    newDate: Date | undefined,
+    newHour: number,
+    newMinute: number,
+    newPeriod: "AM" | "PM"
+  ) => {
+    if (!newDate) {
+      setSelectedDate(undefined);
+      onSelect?.(undefined);
+      return;
     }
-  }, [date]);
+
+    // Convert 12-hour to 24-hour format
+    let hour24 = newHour;
+    if (newPeriod === "PM" && newHour !== 12) {
+      hour24 = newHour + 12;
+    } else if (newPeriod === "AM" && newHour === 12) {
+      hour24 = 0;
+    }
+
+    const updatedDate = new Date(newDate);
+    updatedDate.setHours(hour24, newMinute, 0, 0);
+    setSelectedDate(updatedDate);
+    onSelect?.(updatedDate);
+  };
 
   const handleDateSelect = (newDate: Date | undefined) => {
     if (!newDate) {
       setSelectedDate(undefined);
-      onSelect(undefined);
+      onSelect?.(undefined);
       return;
     }
 
-    // Preserve the time when selecting a new date
-    const [hours, minutes] = timeValue.split(":").map(Number);
-    newDate.setHours(hours, minutes, 0, 0);
-    setSelectedDate(newDate);
-    onSelect(newDate);
+    updateDateTime(newDate, hour, minute, period);
   };
 
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTime = e.target.value;
-    setTimeValue(newTime);
-
+  const handleHourChange = (value: string) => {
+    const newHour = parseInt(value, 10);
+    setHour(newHour);
     if (selectedDate) {
-      const [hours, minutes] = newTime.split(":").map(Number);
-      const newDate = new Date(selectedDate);
-      newDate.setHours(hours, minutes, 0, 0);
-      setSelectedDate(newDate);
-      onSelect(newDate);
+      updateDateTime(selectedDate, newHour, minute, period);
+    }
+  };
+
+  const handleMinuteChange = (value: string) => {
+    const newMinute = parseInt(value, 10);
+    setMinute(newMinute);
+    if (selectedDate) {
+      updateDateTime(selectedDate, hour, newMinute, period);
+    }
+  };
+
+  const handlePeriodChange = (value: "AM" | "PM") => {
+    setPeriod(value);
+    if (selectedDate) {
+      updateDateTime(selectedDate, hour, minute, value);
     }
   };
 
   return (
-    <div className="grid gap-2">
-      <div className="flex gap-2">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "flex-1 justify-start text-left font-normal",
-                !selectedDate && "text-muted-foreground"
-              )}
-              disabled={disabled}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {selectedDate ? (
-                format(selectedDate, "PPP")
-              ) : (
-                <span>{placeholder}</span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={handleDateSelect}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
-        <div className="relative flex items-center">
-          <Clock className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
-          <Input
-            type="time"
-            value={timeValue}
-            onChange={handleTimeChange}
-            disabled={disabled || !selectedDate}
-            className="w-[160px] pl-9"
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          data-empty={!selectedDate}
+          disabled={disabled}
+          className={cn(
+            "data-[empty=true]:text-muted-foreground w-full justify-start text-left font-normal",
+            className
+          )}
+        >
+          <CalendarIcon />
+          {selectedDate ? (
+            format(selectedDate, "PPP 'at' p")
+          ) : (
+            <span>{placeholder}</span>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0">
+        <div className="flex flex-col">
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={handleDateSelect}
           />
+          <div className="border-t p-3">
+            <Label htmlFor="time" className="text-sm font-medium">
+              Time
+            </Label>
+            <div className="mt-2 flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+
+              {/* Hour Select */}
+              <Select
+                value={hour.toString()}
+                onValueChange={handleHourChange}
+                disabled={disabled}
+              >
+                <SelectTrigger className="w-[70px]">
+                  <SelectValue placeholder="HH" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                    <SelectItem key={h} value={h.toString()}>
+                      {h.toString().padStart(2, "0")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <span className="text-muted-foreground">:</span>
+
+              {/* Minute Select */}
+              <Select
+                value={minute.toString()}
+                onValueChange={handleMinuteChange}
+                disabled={disabled}
+              >
+                <SelectTrigger className="w-[70px]">
+                  <SelectValue placeholder="MM" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 60 }, (_, i) => i).map((m) => (
+                    <SelectItem key={m} value={m.toString()}>
+                      {m.toString().padStart(2, "0")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* AM/PM Select */}
+              <Select
+                value={period}
+                onValueChange={handlePeriodChange}
+                disabled={disabled}
+              >
+                <SelectTrigger className="w-[70px]">
+                  <SelectValue placeholder="AM" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="AM">AM</SelectItem>
+                  <SelectItem value="PM">PM</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      </PopoverContent>
+    </Popover>
   );
 }

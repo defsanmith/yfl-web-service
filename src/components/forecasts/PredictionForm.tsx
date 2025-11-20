@@ -27,6 +27,10 @@ type PredictionFormProps = {
     value: string;
     confidence: number | null;
     reasoning: string | null;
+    method: string | null;
+    estimatedTime: number | null;
+    equityInvestment: number | null;
+    debtFinancing: number | null;
   } | null;
   isReadOnly?: boolean;
   onSuccess?: () => void;
@@ -181,6 +185,129 @@ export default function PredictionForm({
         <p className="text-xs text-muted-foreground">
           How confident are you in this prediction? (0 = not confident, 100 =
           very confident)
+        </p>
+      </div>
+
+      {/* Method (Optional) */}
+      <div className="space-y-2">
+        <Label htmlFor="method">
+          Method <span className="text-muted-foreground">(Optional)</span>
+        </Label>
+        <Input
+          type="text"
+          id="method"
+          name="method"
+          placeholder="e.g., Statistical analysis, Expert judgment"
+          maxLength={500}
+          defaultValue={state?.data?.method || existingPrediction?.method || ""}
+          disabled={isReadOnly || isPending}
+          aria-invalid={!!state?.errors?.method}
+          className={state?.errors?.method ? "border-destructive" : ""}
+        />
+        {state?.errors?.method && (
+          <p className="text-sm text-destructive">
+            {state.errors.method.join(", ")}
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          What method did you use to make this prediction?
+        </p>
+      </div>
+
+      {/* Estimated Time (Optional) */}
+      <div className="space-y-2">
+        <Label htmlFor="estimatedTime">
+          Estimated Time (minutes){" "}
+          <span className="text-muted-foreground">(Optional)</span>
+        </Label>
+        <Input
+          type="number"
+          id="estimatedTime"
+          name="estimatedTime"
+          min="0"
+          placeholder="e.g., 30"
+          defaultValue={
+            state?.data?.estimatedTime ||
+            existingPrediction?.estimatedTime?.toString() ||
+            ""
+          }
+          disabled={isReadOnly || isPending}
+          aria-invalid={!!state?.errors?.estimatedTime}
+          className={state?.errors?.estimatedTime ? "border-destructive" : ""}
+        />
+        {state?.errors?.estimatedTime && (
+          <p className="text-sm text-destructive">
+            {state.errors.estimatedTime.join(", ")}
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          How much time did you spend on this prediction?
+        </p>
+      </div>
+
+      {/* Equity Investment (Optional) */}
+      <div className="space-y-2">
+        <Label htmlFor="equityInvestment">
+          Equity Investment{" "}
+          <span className="text-muted-foreground">(Optional)</span>
+        </Label>
+        <Input
+          type="number"
+          step="0.01"
+          id="equityInvestment"
+          name="equityInvestment"
+          min="0"
+          placeholder="e.g., 10000"
+          defaultValue={
+            state?.data?.equityInvestment ||
+            existingPrediction?.equityInvestment?.toString() ||
+            ""
+          }
+          disabled={isReadOnly || isPending}
+          aria-invalid={!!state?.errors?.equityInvestment}
+          className={
+            state?.errors?.equityInvestment ? "border-destructive" : ""
+          }
+        />
+        {state?.errors?.equityInvestment && (
+          <p className="text-sm text-destructive">
+            {state.errors.equityInvestment.join(", ")}
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          Amount of equity investment (if applicable)
+        </p>
+      </div>
+
+      {/* Debt Financing (Optional) */}
+      <div className="space-y-2">
+        <Label htmlFor="debtFinancing">
+          Debt Financing{" "}
+          <span className="text-muted-foreground">(Optional)</span>
+        </Label>
+        <Input
+          type="number"
+          step="0.01"
+          id="debtFinancing"
+          name="debtFinancing"
+          min="0"
+          placeholder="e.g., 5000"
+          defaultValue={
+            state?.data?.debtFinancing ||
+            existingPrediction?.debtFinancing?.toString() ||
+            ""
+          }
+          disabled={isReadOnly || isPending}
+          aria-invalid={!!state?.errors?.debtFinancing}
+          className={state?.errors?.debtFinancing ? "border-destructive" : ""}
+        />
+        {state?.errors?.debtFinancing && (
+          <p className="text-sm text-destructive">
+            {state.errors.debtFinancing.join(", ")}
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          Amount of debt financing (if applicable)
         </p>
       </div>
 

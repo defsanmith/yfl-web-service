@@ -144,6 +144,8 @@ export default function ForecastLeaderboardView({
                     <TableHead>Participant</TableHead>
                     <TableHead>Prediction</TableHead>
                     <TableHead className="text-center">Confidence</TableHead>
+                    <TableHead>Method</TableHead>
+                    <TableHead>Time (min)</TableHead>
                     <TableHead>Submitted</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -190,6 +192,28 @@ export default function ForecastLeaderboardView({
                             <Badge variant="secondary">
                               {prediction.confidence}%
                             </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">
+                              N/A
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {prediction.method ? (
+                            <span className="text-sm truncate max-w-[150px] block">
+                              {prediction.method}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">
+                              N/A
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {prediction.estimatedTime !== null ? (
+                            <span className="text-sm">
+                              {prediction.estimatedTime}
+                            </span>
                           ) : (
                             <span className="text-muted-foreground text-sm">
                               N/A

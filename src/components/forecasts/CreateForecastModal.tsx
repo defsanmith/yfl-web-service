@@ -22,9 +22,15 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { ForecastType } from "@/generated/prisma";
+import { DataType, ForecastType } from "@/generated/prisma";
 import { AlertCircle, Calendar, Info, Plus, Settings, X } from "lucide-react";
 import { useActionState, useState } from "react";
+
+type Category = {
+  id: string;
+  name: string;
+  color: string | null;
+};
 
 type CreateForecastModalProps = {
   orgId: string;
@@ -33,6 +39,8 @@ type CreateForecastModalProps = {
   onOpenChange: (open: boolean) => void;
   /** Whether this is for org admin context (if true, orgId is ignored) */
   isOrgAdmin?: boolean;
+  /** Available categories for the organization */
+  categories?: Category[];
 };
 
 export default function CreateForecastModal({
@@ -41,6 +49,7 @@ export default function CreateForecastModal({
   open,
   onOpenChange,
   isOrgAdmin = false,
+  categories = [],
 }: CreateForecastModalProps) {
   // Use different action based on context
   const [state, formAction, isPending] = useActionState(
@@ -56,6 +65,10 @@ export default function CreateForecastModal({
       : ForecastType.CONTINUOUS
   );
 
+  const [selectedDataType, setSelectedDataType] = useState<DataType | "">(
+    (state?.data?.dataType as DataType) || ""
+  );
+
   const [options, setOptions] = useState<string[]>(state?.data?.options || []);
 
   const [newOption, setNewOption] = useState("");
@@ -64,8 +77,10 @@ export default function CreateForecastModal({
     state?.data?.dueDate ? new Date(state.data.dueDate) : undefined
   );
 
-  const [releaseDate, setReleaseDate] = useState<Date | undefined>(
-    state?.data?.releaseDate ? new Date(state.data.releaseDate) : undefined
+  const [dataReleaseDate, setDataReleaseDate] = useState<Date | undefined>(
+    state?.data?.dataReleaseDate
+      ? new Date(state.data.dataReleaseDate)
+      : undefined
   );
 
   // Handler to change type and clear options if switching away from CATEGORICAL
@@ -75,6 +90,10 @@ export default function CreateForecastModal({
     if (value !== ForecastType.CATEGORICAL) {
       setOptions([]);
       setNewOption("");
+    }
+    // Clear dataType if switching away from CONTINUOUS
+    if (value !== ForecastType.CONTINUOUS) {
+      setSelectedDataType("");
     }
   };
 
@@ -182,50 +201,113 @@ export default function CreateForecastModal({
               <Separator />
             </div>
 
-            {/* Type */}
+          {/* Type */}
+          <div className="space-y-2">
+            <Label htmlFor="type">
+              Forecast Type <span className="text-destructive">*</span>
+            </Label>
+            <Select
+              name="type"
+              value={selectedType}
+              onValueChange={(value) => handleTypeChange(value as ForecastType)}
+              disabled={isPending}
+            >
+              <SelectTrigger aria-invalid={!!state?.errors?.type}>
+                <SelectValue placeholder="Select forecast type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ForecastType.BINARY}>Binary</SelectItem>
+                <SelectItem value={ForecastType.CONTINUOUS}>
+                  Continuous
+                </SelectItem>
+                <SelectItem value={ForecastType.CATEGORICAL}>
+                  Categorical
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            {state?.errors?.type && (
+              <p className="text-sm text-destructive">
+                {state.errors.type.join(", ")}
+              </p>
+            )}
+            <p className="text-sm text-muted-foreground">
+              {selectedType === ForecastType.BINARY &&
+                "Binary forecasts have true/false outcomes"}
+              {selectedType === ForecastType.CONTINUOUS &&
+                "Continuous forecasts accept numerical values"}
+              {selectedType === ForecastType.CATEGORICAL &&
+                "Categorical forecasts have predefined options"}
+            </p>
+          </div>
+
+          {/* Data Type - Only for Continuous */}
+          {selectedType === ForecastType.CONTINUOUS && (
             <div className="space-y-2">
-              <Label htmlFor="type" className="text-sm font-medium">
-                Forecast Type <span className="text-destructive">*</span>
+              <Label htmlFor="dataType">
+                Data Type <span className="text-destructive">*</span>
               </Label>
               <Select
-                name="type"
-                value={selectedType}
+                name="dataType"
+                value={selectedDataType}
                 onValueChange={(value) =>
-                  handleTypeChange(value as ForecastType)
+                  setSelectedDataType(value as DataType)
                 }
                 disabled={isPending}
               >
-                <SelectTrigger
-                  aria-invalid={!!state?.errors?.type}
-                  className="text-sm"
-                >
-                  <SelectValue placeholder="Select forecast type" />
+                <SelectTrigger aria-invalid={!!state?.errors?.dataType}>
+                  <SelectValue placeholder="Select data type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={ForecastType.BINARY}>Binary</SelectItem>
-                  <SelectItem value={ForecastType.CONTINUOUS}>
-                    Continuous
-                  </SelectItem>
-                  <SelectItem value={ForecastType.CATEGORICAL}>
-                    Categorical
-                  </SelectItem>
+                  <SelectItem value={DataType.NUMBER}>Number</SelectItem>
+                  <SelectItem value={DataType.CURRENCY}>Currency</SelectItem>
+                  <SelectItem value={DataType.PERCENT}>Percent</SelectItem>
+                  <SelectItem value={DataType.DECIMAL}>Decimal</SelectItem>
+                  <SelectItem value={DataType.INTEGER}>Integer</SelectItem>
                 </SelectContent>
               </Select>
-              {state?.errors?.type && (
-                <p className="text-sm text-destructive flex items-center gap-1.5">
-                  <AlertCircle className="h-3.5 w-3.5" />
-                  {state.errors.type.join(", ")}
+              {state?.errors?.dataType && (
+                <p className="text-sm text-destructive">
+                  {state.errors.dataType.join(", ")}
                 </p>
               )}
-              <div className="rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
-                {selectedType === ForecastType.BINARY &&
-                  "📊 Participants will predict True or False outcomes"}
-                {selectedType === ForecastType.CONTINUOUS &&
-                  "📈 Participants will provide numerical predictions"}
-                {selectedType === ForecastType.CATEGORICAL &&
-                  "📋 Participants will choose from predefined options"}
-              </div>
+              <p className="text-sm text-muted-foreground">
+                Specify the type of numerical data for proper formatting
+              </p>
             </div>
+          )}
+
+          {/* Category */}
+          {categories.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="categoryId">Category</Label>
+              <Select name="categoryId" disabled={isPending}>
+                <SelectTrigger aria-invalid={!!state?.errors?.categoryId}>
+                  <SelectValue placeholder="Select a category (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No category</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      <div className="flex items-center gap-2">
+                        {category.color && (
+                          <div
+                            className="h-3 w-3 rounded-full"
+                            style={{ backgroundColor: category.color }}
+                          />
+                        )}
+                        {category.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {state?.errors?.categoryId && (
+                <p className="text-sm text-destructive">
+                  {state.errors.categoryId.join(", ")}
+                </p>
+              )}
+            </div>
+          )}
 
             {/* Categorical Options */}
             {selectedType === ForecastType.CATEGORICAL && (
@@ -342,36 +424,55 @@ export default function CreateForecastModal({
               </p>
             </div>
 
-            {/* Due Date */}
-            <div className="space-y-2">
-              <Label htmlFor="dueDate" className="text-sm font-medium">
-                Due Date & Time<span className="text-destructive">*</span>
-              </Label>
-              <DateTimePicker
-                date={dueDate}
-                onSelect={setDueDate}
-                placeholder="Select when this forecast is due"
-                disabled={isPending}
-              />
-              {/* Hidden input to submit the datetime value */}
-              <input
-                type="hidden"
-                name="dueDate"
-                value={dueDate ? dueDate.toISOString() : ""}
-              />
-              {state?.errors?.dueDate && (
-                <p className="text-sm text-destructive flex items-center gap-1.5">
-                  <AlertCircle className="h-3.5 w-3.5" />
-                  {state.errors.dueDate.join(", ")}
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                When predictions close (must be before or same as release date)
+          {/* Due Date */}
+          <div className="space-y-2">
+            <Label htmlFor="dueDate">
+              Due Date & Time <span className="text-destructive">*</span>
+            </Label>
+            <DateTimePicker
+              date={dueDate}
+              onSelect={setDueDate}
+              placeholder="Select due date and time"
+              disabled={isPending}
+            />
+            {/* Hidden input to submit the datetime value */}
+            <input
+              type="hidden"
+              name="dueDate"
+              value={dueDate ? dueDate.toISOString() : ""}
+            />
+            {state?.errors?.dueDate && (
+              <p className="text-sm text-destructive">
+                {state.errors.dueDate.join(", ")}
               </p>
-            </div>
+            )}
           </div>
 
-          <Separator className="my-4" />
+          {/* Data Release Date */}
+          <div className="space-y-2">
+            <Label htmlFor="dataReleaseDate">Data Release Date & Time</Label>
+            <DateTimePicker
+              date={dataReleaseDate}
+              onSelect={setDataReleaseDate}
+              placeholder="Select data release date and time (optional)"
+              disabled={isPending}
+            />
+            {/* Hidden input to submit the datetime value */}
+            <input
+              type="hidden"
+              name="dataReleaseDate"
+              value={dataReleaseDate ? dataReleaseDate.toISOString() : ""}
+            />
+            {state?.errors?.dataReleaseDate && (
+              <p className="text-sm text-destructive">
+                {state.errors.dataReleaseDate.join(", ")}
+              </p>
+            )}
+            <p className="text-sm text-muted-foreground">
+              When the actual data will be released (must be on or after due
+              date)
+            </p>
+          </div>
 
           {/* Actions */}
           <div className="flex items-center justify-end gap-3 pt-2">

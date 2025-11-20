@@ -26,14 +26,38 @@ enum ForecastType {
   CATEGORICAL
 }
 
+enum DataType {
+  NUMBER
+  CURRENCY
+  PERCENT
+  DECIMAL
+  INTEGER
+}
+
+enum LedgerKind {
+  REVENUE // cash in
+  EXPENSE // cash out
+  PAYMENT // other cash movement (e.g., grant, loan proceeds, repayments)
+  DEBT // liability records (do NOT change cash)
+}
+
+enum LeaderboardViewType {
+  USER // Aggregated by user (for end users)
+  PREDICTION // Aggregated by prediction/forecast (for org admins)
+  CATEGORY // Aggregated by category (for org admins)
+}
+
 model Organization {
-  id          String     @id @default(cuid())
-  name        String     @unique
+  id          String             @id @default(cuid())
+  name        String             @unique
   description String?
   users       User[]
   forecasts   Forecast[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  categories  ForecastCategory[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  ledgerEntries LedgerEntry[]
 }
 
 model User {
@@ -51,8 +75,33 @@ model User {
   // Optional for WebAuthn support
   // Authenticator Authenticator[]
 
+  // back-relation to ledger
+  ledgerEntries LedgerEntry[]
+
+  // Saved leaderboard views
+  leaderboardViews LeaderboardView[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model LedgerEntry {
+  id             String     @id @default(cuid())
+  userId         String?
+  organizationId String?
+  amountCents    Int // + inflow, - outflow for cash kinds
+  kind           LedgerKind
+  occurredAt     DateTime   @default(now())
+  settledAt      DateTime? // mark DEBT as settled here
+  memo           String?
+
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([userId, occurredAt])
+  @@index([userId, kind, occurredAt])
+  @@index([organizationId, occurredAt])
+  @@index([organizationId, kind, occurredAt])
 }
 
 model Account {
@@ -94,48 +143,124 @@ model VerificationToken {
   @@id([identifier, token])
 }
 
-model Forecast {
+model ForecastCategory {
   id             String       @id @default(cuid())
-  title          String
+  name           String
   description    String?
-  type           ForecastType
-  dueDate        DateTime
-  releaseDate    DateTime
+  color          String? // Hex color code for UI display
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  predictions    Prediction[]
-  // For categorical forecasts, store options as JSON array
-  options        Json?
+  forecasts      Forecast[]
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
+  @@unique([organizationId, name])
   @@index([organizationId])
+}
+
+model Forecast {
+  id              String            @id @default(cuid())
+  title           String
+  description     String?
+  type            ForecastType
+  dataType        DataType? // Only for CONTINUOUS forecasts
+  dueDate         DateTime // When predictions are due (includes time)
+  dataReleaseDate DateTime? // When the actual data will be released (includes time)
+  actualValue     String? // Actual outcome - for BINARY: "true"/"false", for CONTINUOUS: numeric string
+  organizationId  String
+  organization    Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  categoryId      String?
+  category        ForecastCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  predictions     Prediction[]
+  // For categorical forecasts, store options as JSON array
+  options         Json?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // @@unique([organizationId, title])
+  @@index([organizationId])
+  @@index([categoryId])
   @@index([type])
   @@index([dueDate])
   @@index([releaseDate])
 }
 
 model Prediction {
-  id         String   @id @default(cuid())
-  forecastId String
-  forecast   Forecast @relation(fields: [forecastId], references: [id], onDelete: Cascade)
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String   @id @default(cuid())
+  forecastId       String
+  forecast         Forecast @relation(fields: [forecastId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   // Store the prediction value - interpretation depends on forecast type:
   // BINARY: "true" or "false"
   // CONTINUOUS: numerical value as string
   // CATEGORICAL: one of the options
-  value      String
-  // Optional confidence level (0-100)
-  confidence Int?
+  value            String
+  // Optional confidence level (0-100) - also known as Probability
+  confidence       Int?
   // Optional reasoning/notes
-  reasoning  String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  reasoning        String?
+  // Method used for the prediction
+  method           String?
+  // Estimated time spent on the prediction (in minutes)
+  estimatedTime    Int?
+  // Equity investment amount
+  equityInvestment Float?
+  // Debt financing amount
+  debtFinancing    Float?
+
+  // Derived metrics (calculated by PredictionMetricsService)
+  totalInvestment          Float?
+  isCorrect                Boolean? // for binary
+  highLow                  String? // for continuous: "HIGH" | "LOW" | "PERFECT"
+  ppVariance               Float? // probability variance for binary
+  error                    Float? // for continuous
+  brierScore               Float? // for binary
+  absoluteError            Float? // for continuous
+  absoluteActualErrorPct   Float?
+  absoluteForecastErrorPct Float?
+  roiScore                 Float? // unified ROI score from Brier / % error
+  roe                      Float? // profit from equity (amount, not %)
+  roePct                   Float? // return on equity (decimal)
+  financingGrossProfit     Float? // profit from debt before repayment
+  debtRepayment            Float? // interest payment at -10% of debt
+  rof                      Float? // net profit from financing (debt)
+  rofPct                   Float? // ROI on net debt (decimal)
+  netProfitEquityPlusDebt  Float? // ROT: total net profit (equity + debt)
+  roiEquityPlusDebtPct     Float? // ROI % on equity + debt
+  profitPerHour            Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([forecastId, userId])
   @@index([forecastId])
   @@index([userId])
+}
+
+model LeaderboardView {
+  id       String              @id @default(cuid())
+  name     String
+  viewType LeaderboardViewType @default(USER)
+  userId   String
+  user     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Filter settings stored as JSON
+  filters Json
+
+  // Sorting configuration
+  sortBy    String?
+  sortOrder String? // "asc" or "desc"
+
+  // Column visibility stored as JSON (key-value pairs of columnId: boolean)
+  columnVisibility Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name, viewType])
+  @@index([userId])
+  @@index([userId, viewType])
 }
 
 // Optional for WebAuthn support

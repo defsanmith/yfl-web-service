@@ -19,8 +19,10 @@ type ForecastFormData = {
   title: string;
   description: string | null;
   type: string;
+  dataType: string | null;
   dueDate: string;
-  releaseDate: string;
+  dataReleaseDate: string | null;
+  categoryId: string | null;
   options: string[];
 };
 
@@ -45,8 +47,10 @@ export async function createForecastAction(
     "title",
     "description",
     "type",
+    "dataType",
     "dueDate",
-    "releaseDate",
+    "dataReleaseDate",
+    "categoryId",
   ]);
 
   // Handle options array for categorical forecasts
@@ -69,8 +73,10 @@ export async function createForecastAction(
       title: formDataToString(rawData.title),
       description: formDataToString(rawData.description) || null,
       type: formDataToString(rawData.type),
+      dataType: formDataToString(rawData.dataType) || null,
       dueDate: formDataToString(rawData.dueDate),
-      releaseDate: formDataToString(rawData.releaseDate),
+      dataReleaseDate: formDataToString(rawData.dataReleaseDate) || null,
+      categoryId: formDataToString(rawData.categoryId) || null,
       options: options || [],
     });
   }
@@ -82,8 +88,10 @@ export async function createForecastAction(
       title: validation.data.title,
       description: validation.data.description || null,
       type: validation.data.type,
+      dataType: validation.data.dataType || null,
       dueDate: validation.data.dueDate,
-      releaseDate: validation.data.releaseDate,
+      dataReleaseDate: validation.data.dataReleaseDate || null,
+      categoryId: validation.data.categoryId || null,
       options: validation.data.options || [],
     });
   }

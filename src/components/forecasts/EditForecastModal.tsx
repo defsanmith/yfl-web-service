@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { Forecast, ForecastType } from "@/generated/prisma";
+import { DataType, Forecast, ForecastType } from "@/generated/prisma";
 import { AlertCircle, Calendar, Info, Plus, Settings, X } from "lucide-react";
 import { useActionState, useState } from "react";
 
@@ -31,6 +31,17 @@ type ForecastWithOrg = Forecast & {
     id: string;
     name: string;
   };
+  category?: {
+    id: string;
+    name: string;
+    color: string | null;
+  } | null;
+};
+
+type Category = {
+  id: string;
+  name: string;
+  color: string | null;
 };
 
 type EditForecastModalProps = {
@@ -39,6 +50,8 @@ type EditForecastModalProps = {
   onOpenChange: (open: boolean) => void;
   /** Whether this is for org admin context */
   isOrgAdmin?: boolean;
+  /** Available categories for the organization */
+  categories?: Category[];
 };
 
 export default function EditForecastModal({
@@ -46,6 +59,7 @@ export default function EditForecastModal({
   open,
   onOpenChange,
   isOrgAdmin = false,
+  categories = [],
 }: EditForecastModalProps) {
   // Use different action based on context
   const [state, formAction, isPending] = useActionState(
@@ -57,6 +71,10 @@ export default function EditForecastModal({
 
   const [selectedType, setSelectedType] = useState<ForecastType>(
     state?.data?.type ? (state.data.type as ForecastType) : forecast.type
+  );
+
+  const [selectedDataType, setSelectedDataType] = useState<DataType | "">(
+    (state?.data?.dataType as DataType) || forecast.dataType || ""
   );
 
   const [options, setOptions] = useState<string[]>(
@@ -74,10 +92,12 @@ export default function EditForecastModal({
       : new Date(forecast.dueDate)
   );
 
-  const [releaseDate, setReleaseDate] = useState<Date | undefined>(
-    state?.data?.releaseDate
-      ? new Date(state.data.releaseDate)
-      : new Date(forecast.releaseDate)
+  const [dataReleaseDate, setDataReleaseDate] = useState<Date | undefined>(
+    state?.data?.dataReleaseDate
+      ? new Date(state.data.dataReleaseDate)
+      : forecast.dataReleaseDate
+      ? new Date(forecast.dataReleaseDate)
+      : undefined
   );
 
   // Handler to change type and clear options if switching away from CATEGORICAL
@@ -87,6 +107,10 @@ export default function EditForecastModal({
     if (value !== ForecastType.CATEGORICAL) {
       setOptions([]);
       setNewOption("");
+    }
+    // Clear dataType if switching away from CONTINUOUS
+    if (value !== ForecastType.CONTINUOUS) {
+      setSelectedDataType("");
     }
   };
 
@@ -200,7 +224,7 @@ export default function EditForecastModal({
 
             {/* Type */}
             <div className="space-y-2">
-              <Label htmlFor="type" className="text-sm font-medium">
+              <Label htmlFor="type">
                 Forecast Type <span className="text-destructive">*</span>
               </Label>
               <Select
@@ -211,10 +235,7 @@ export default function EditForecastModal({
                 }
                 disabled={isPending}
               >
-                <SelectTrigger
-                  aria-invalid={!!state?.errors?.type}
-                  className="text-base"
-                >
+                <SelectTrigger aria-invalid={!!state?.errors?.type}>
                   <SelectValue placeholder="Select forecast type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -228,19 +249,18 @@ export default function EditForecastModal({
                 </SelectContent>
               </Select>
               {state?.errors?.type && (
-                <p className="text-sm text-destructive flex items-center gap-1.5">
-                  <AlertCircle className="h-3.5 w-3.5" />
+                <p className="text-sm text-destructive">
                   {state.errors.type.join(", ")}
                 </p>
               )}
-              <div className="rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {selectedType === ForecastType.BINARY &&
-                  "📊 Participants will predict True or False outcomes"}
+                  "Binary forecasts have true/false outcomes"}
                 {selectedType === ForecastType.CONTINUOUS &&
-                  "📈 Participants will provide numerical predictions"}
+                  "Continuous forecasts accept numerical values"}
                 {selectedType === ForecastType.CATEGORICAL &&
-                  "📋 Participants will choose from predefined options"}
-              </div>
+                  "Categorical forecasts have predefined options"}
+              </p>
             </div>
 
             {/* Categorical Options */}
@@ -335,8 +355,8 @@ export default function EditForecastModal({
                 Release Date & Time <span className="text-destructive">*</span>
               </Label>
               <DateTimePicker
-                date={releaseDate}
-                onSelect={setReleaseDate}
+                date={dataReleaseDate}
+                onSelect={setDataReleaseDate}
                 placeholder="Select when the outcome will be known"
                 disabled={isPending}
               />
@@ -344,7 +364,7 @@ export default function EditForecastModal({
               <input
                 type="hidden"
                 name="releaseDate"
-                value={releaseDate ? releaseDate.toISOString() : ""}
+                value={dataReleaseDate ? dataReleaseDate.toISOString() : ""}
               />
               {state?.errors?.releaseDate && (
                 <p className="text-sm text-destructive flex items-center gap-1.5">
@@ -360,13 +380,13 @@ export default function EditForecastModal({
 
             {/* Due Date */}
             <div className="space-y-2">
-              <Label htmlFor="dueDate" className="text-sm font-medium">
-                Due Date & Time<span className="text-destructive">*</span>
+              <Label htmlFor="dueDate">
+                Due Date & Time <span className="text-destructive">*</span>
               </Label>
               <DateTimePicker
                 date={dueDate}
                 onSelect={setDueDate}
-                placeholder="Select when this forecast is due"
+                placeholder="Select due date and time"
                 disabled={isPending}
               />
               {/* Hidden input to submit the datetime value */}
@@ -376,33 +396,27 @@ export default function EditForecastModal({
                 value={dueDate ? dueDate.toISOString() : ""}
               />
               {state?.errors?.dueDate && (
-                <p className="text-sm text-destructive flex items-center gap-1.5">
-                  <AlertCircle className="h-3.5 w-3.5" />
+                <p className="text-sm text-destructive">
                   {state.errors.dueDate.join(", ")}
                 </p>
               )}
-              <p className="text-xs text-muted-foreground">
-                When predictions close (must be before or same as release date)
-              </p>
             </div>
-          </div>
 
-          <Separator className="my-4" />
-
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isPending}
-              size="lg"
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isPending} size="lg">
-              {isPending ? "Saving..." : "Save Changes"}
-            </Button>
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isPending}
+                size="lg"
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isPending} size="lg">
+                {isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>

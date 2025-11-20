@@ -3,6 +3,7 @@
 import { deleteForecastAction as orgAdminDeleteAction } from "@/app/(protected)/(org-admin)/forecasts/[forecastId]/actions";
 import { deleteForecastAction as superAdminDeleteAction } from "@/app/(protected)/(super-admin)/orgs/[orgId]/forecasts/[forecastId]/actions";
 import EditForecastModal from "@/components/forecasts/EditForecastModal";
+import SetActualValueDialog from "@/components/forecasts/SetActualValueDialog";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -24,7 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import Router from "@/constants/router";
-import { Forecast, ForecastType } from "@/generated/prisma";
+import { DataType, Forecast, ForecastType } from "@/generated/prisma";
 import { format } from "date-fns";
 import {
   ArrowLeft,
@@ -44,6 +45,11 @@ type ForecastWithOrg = Forecast & {
     id: string;
     name: string;
   };
+  category?: {
+    id: string;
+    name: string;
+    color: string | null;
+  } | null;
 };
 
 type ForecastDetailViewProps = {
@@ -54,6 +60,12 @@ type ForecastDetailViewProps = {
   listPath?: string;
   /** Whether to show breadcrumbs (default: true for super admin, false for org admin) */
   showBreadcrumbs?: boolean;
+  /** Available categories for the organization */
+  categories?: Array<{
+    id: string;
+    name: string;
+    color: string | null;
+  }>;
 };
 
 const FORECAST_TYPE_LABELS: Record<ForecastType, string> = {
@@ -77,14 +89,24 @@ const FORECAST_TYPE_COLORS: Record<
   CATEGORICAL: "outline",
 };
 
+const DATA_TYPE_LABELS: Record<DataType, string> = {
+  NUMBER: "Number",
+  CURRENCY: "Currency",
+  PERCENT: "Percent",
+  DECIMAL: "Decimal",
+  INTEGER: "Integer",
+};
+
 export default function ForecastDetailView({
   forecast,
   isOrgAdmin = false,
   listPath,
   showBreadcrumbs = true,
+  categories = [],
 }: ForecastDetailViewProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showActualValueDialog, setShowActualValueDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Determine the list path for back button
@@ -171,9 +193,12 @@ export default function ForecastDetailView({
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              size="lg"
-              onClick={() => setShowEditModal(true)}
+              onClick={() => setShowActualValueDialog(true)}
             >
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              {forecast.actualValue ? "Update" : "Set"} Actual Value
+            </Button>
+            <Button variant="outline" onClick={() => setShowEditModal(true)}>
               <Edit className="mr-2 h-4 w-4" />
               Edit Forecast
             </Button>
@@ -188,32 +213,135 @@ export default function ForecastDetailView({
           </div>
         </div>
 
-        <Separator />
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">
+                  Type
+                </dt>
+                <dd className="mt-1">
+                  <Badge variant={FORECAST_TYPE_COLORS[forecast.type]}>
+                    {FORECAST_TYPE_LABELS[forecast.type]}
+                  </Badge>
+                </dd>
+              </div>
 
-        {/* Main Content */}
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Left Column - Main Details */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Description Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <FileText className="h-5 w-5 text-muted-foreground" />
-                  Description
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {forecast.description ? (
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                    {forecast.description}
-                  </p>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">
-                    No description provided for this forecast.
-                  </p>
+              {forecast.type === ForecastType.CONTINUOUS &&
+                forecast.dataType && (
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">
+                      Data Type
+                    </dt>
+                    <dd className="mt-1">
+                      <Badge variant="outline">
+                        {DATA_TYPE_LABELS[forecast.dataType]}
+                      </Badge>
+                    </dd>
+                  </div>
                 )}
-              </CardContent>
-            </Card>
+
+              {forecast.category && (
+                <div>
+                  <dt className="text-sm font-medium text-muted-foreground">
+                    Category
+                  </dt>
+                  <dd className="mt-1 flex items-center gap-2">
+                    {forecast.category.color && (
+                      <div
+                        className="h-3 w-3 rounded-full"
+                        style={{ backgroundColor: forecast.category.color }}
+                      />
+                    )}
+                    <span>{forecast.category.name}</span>
+                  </dd>
+                </div>
+              )}
+
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">
+                  Due Date
+                </dt>
+                <dd className="mt-1 text-lg font-semibold">
+                  {format(
+                    new Date(forecast.dueDate),
+                    "MMMM d, yyyy 'at' h:mm a"
+                  )}
+                </dd>
+              </div>
+
+              {forecast.dataReleaseDate && (
+                <div>
+                  <dt className="text-sm font-medium text-muted-foreground">
+                    Data Release Date
+                  </dt>
+                  <dd className="mt-1 text-lg font-semibold">
+                    {format(
+                      new Date(forecast.dataReleaseDate),
+                      "MMMM d, yyyy 'at' h:mm a"
+                    )}
+                  </dd>
+                </div>
+              )}
+
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">
+                  Organization
+                </dt>
+                <dd className="mt-1">
+                  <Link
+                    href={Router.organizationDetail(forecast.organization.id)}
+                    className="text-primary hover:underline"
+                  >
+                    {forecast.organization.name}
+                  </Link>
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">
+                  Created
+                </dt>
+                <dd className="mt-1 text-sm">
+                  {format(
+                    new Date(forecast.createdAt),
+                    "MMM d, yyyy 'at' h:mm a"
+                  )}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">
+                  Last Updated
+                </dt>
+                <dd className="mt-1 text-sm">
+                  {format(
+                    new Date(forecast.updatedAt),
+                    "MMM d, yyyy 'at' h:mm a"
+                  )}
+                </dd>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Description</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {forecast.description ? (
+                <p className="text-sm">{forecast.description}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No description provided
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
             {/* Forecast Options Card */}
             {forecast.type === ForecastType.CATEGORICAL &&
@@ -413,6 +541,21 @@ export default function ForecastDetailView({
         forecast={forecast}
         open={showEditModal}
         onOpenChange={setShowEditModal}
+        isOrgAdmin={isOrgAdmin}
+        categories={categories}
+      />
+
+      {/* Set Actual Value Dialog */}
+      <SetActualValueDialog
+        forecastId={forecast.id}
+        organizationId={forecast.organizationId}
+        forecastType={forecast.type}
+        forecastTitle={forecast.title}
+        currentActualValue={forecast.actualValue}
+        dueDate={forecast.dueDate}
+        dataReleaseDate={forecast.dataReleaseDate}
+        open={showActualValueDialog}
+        onOpenChange={setShowActualValueDialog}
         isOrgAdmin={isOrgAdmin}
       />
     </>

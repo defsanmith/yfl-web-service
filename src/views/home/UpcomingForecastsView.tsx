@@ -1,3 +1,5 @@
+// old file, not sure whoever made it was intended for, but the user dashboard code is in views/forecasts directory
+
 "use client";
 
 import { Badge } from "@/components/ui/badge";

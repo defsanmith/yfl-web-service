@@ -2,8 +2,10 @@ import { ForecastType, Prisma } from "@/generated/prisma";
 import prisma from "@/lib/prisma";
 import type {
   CreateForecastInput,
+  SetActualValueInput,
   UpdateForecastInput,
 } from "@/schemas/forecasts";
+import { PredictionMetricsService } from "./prediction-metrics";
 
 /**
  * Get a forecast by ID
@@ -15,6 +17,9 @@ export async function getForecastById(id: string) {
       organization: {
         select: { id: true, name: true },
       },
+      category: {
+        select: { id: true, name: true, color: true },
+      },
     },
   });
 }
@@ -24,6 +29,7 @@ export async function getForecastById(id: string) {
  */
 export async function getForecasts({
   organizationId,
+  userId,
   page = 1,
   limit = 10,
   search,
@@ -32,6 +38,7 @@ export async function getForecasts({
   sortOrder = "desc",
 }: {
   organizationId: string;
+  userId?: string;
   page?: number;
   limit?: number;
   search?: string;
@@ -44,6 +51,7 @@ export async function getForecasts({
   // Build where clause
   const where: Prisma.ForecastWhereInput = {
     organizationId,
+    ...(userId && { userId }),
     ...(type && { type }),
     ...(search && {
       title: {
@@ -68,6 +76,9 @@ export async function getForecasts({
         organization: {
           select: { id: true, name: true },
         },
+        category: {
+          select: { id: true, name: true, color: true },
+        },
       },
     }),
     prisma.forecast.count({ where }),
@@ -86,44 +97,129 @@ export async function getForecasts({
  * Create a new forecast
  */
 export async function createForecast(data: CreateForecastInput) {
-  return await prisma.forecast.create({
+  const forecast = await prisma.forecast.create({
     data: {
       title: data.title,
       description: data.description,
       type: data.type,
+      dataType: data.dataType,
       dueDate: new Date(data.dueDate),
-      releaseDate: new Date(data.releaseDate),
+      dataReleaseDate: data.dataReleaseDate
+        ? new Date(data.dataReleaseDate)
+        : null,
+      actualValue: data.actualValue,
       organizationId: data.organizationId,
+      categoryId: data.categoryId,
       options: data.options || undefined,
     },
     include: {
       organization: {
         select: { id: true, name: true },
       },
+      category: {
+        select: { id: true, name: true, color: true },
+      },
     },
   });
+
+  // If actualValue is provided, recalculate metrics for all predictions
+  if (data.actualValue) {
+    await PredictionMetricsService.recalculateMetricsForForecast(forecast.id);
+  }
+
+  return forecast;
 }
 
 /**
  * Update a forecast
  */
 export async function updateForecast(data: UpdateForecastInput) {
-  return await prisma.forecast.update({
+  // Get the current forecast to check if actualValue changed
+  const currentForecast = await prisma.forecast.findUnique({
+    where: { id: data.id },
+    select: { actualValue: true },
+  });
+
+  const forecast = await prisma.forecast.update({
     where: { id: data.id },
     data: {
       title: data.title,
       description: data.description,
       type: data.type,
+      dataType: data.dataType,
       dueDate: new Date(data.dueDate),
-      releaseDate: new Date(data.releaseDate),
+      dataReleaseDate: data.dataReleaseDate
+        ? new Date(data.dataReleaseDate)
+        : null,
+      actualValue: data.actualValue,
+      categoryId: data.categoryId,
       options: data.options || undefined,
     },
     include: {
       organization: {
         select: { id: true, name: true },
       },
+      category: {
+        select: { id: true, name: true, color: true },
+      },
     },
   });
+
+  // If actualValue changed, recalculate metrics for all predictions
+  if (currentForecast?.actualValue !== data.actualValue) {
+    await PredictionMetricsService.recalculateMetricsForForecast(data.id);
+  }
+
+  return forecast;
+}
+
+/**
+ * Set the actual value for a forecast
+ * If the actual value is set before the due date or data release date,
+ * both dates are automatically updated to the current time
+ */
+export async function setActualValue(data: SetActualValueInput) {
+  const now = new Date();
+
+  // Get the current forecast
+  const currentForecast = await prisma.forecast.findUnique({
+    where: { id: data.id },
+    select: { dueDate: true, dataReleaseDate: true },
+  });
+
+  if (!currentForecast) {
+    throw new Error("Forecast not found");
+  }
+
+  // Check if we need to update dates
+  const needsDateUpdate =
+    now < currentForecast.dueDate ||
+    (currentForecast.dataReleaseDate && now < currentForecast.dataReleaseDate);
+
+  const forecast = await prisma.forecast.update({
+    where: { id: data.id },
+    data: {
+      actualValue: data.actualValue,
+      // Update dates if actual value is set before due date or data release date
+      ...(needsDateUpdate && {
+        dueDate: now,
+        dataReleaseDate: now,
+      }),
+    },
+    include: {
+      organization: {
+        select: { id: true, name: true },
+      },
+      category: {
+        select: { id: true, name: true, color: true },
+      },
+    },
+  });
+
+  // Recalculate metrics for all predictions
+  await PredictionMetricsService.recalculateMetricsForForecast(data.id);
+
+  return forecast;
 }
 
 /**
@@ -141,32 +237,31 @@ export async function deleteForecast(id: string) {
  */
 export async function getUpcomingForecastsForUser({
   organizationId,
+  userId,
   limit = 10,
 }: {
   organizationId: string;
+  userId: string;
   limit?: number;
 }) {
   const now = new Date();
 
-  const forecasts = await prisma.forecast.findMany({
+  return prisma.forecast.findMany({
     where: {
       organizationId,
-      dueDate: {
-        gte: now,
-      },
+      dueDate: { gte: now },
     },
-    orderBy: {
-      dueDate: "asc",
-    },
+    orderBy: { dueDate: "asc" },
     take: limit,
     include: {
-      organization: {
-        select: { id: true, name: true },
+      organization: { select: { id: true, name: true } },
+      category: { select: { id: true, name: true, color: true } },
+      predictions: {
+        where: { userId }, // only this user's prediction
+        select: { id: true, userId: true, value: true },
       },
     },
   });
-
-  return forecasts;
 }
 
 /**
@@ -264,4 +359,101 @@ export async function validateForecastUpdate(
   }
 
   return { valid: true };
+}
+
+// Helper function to add days to a date
+function addDays(base: Date, days: number) {
+  const d = new Date(base);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+/**
+ * Get the count of closed forecasts for a user in an organization.
+ * "Closed" here means dueDate has passed.
+ */
+export async function getClosedForecastCountForUser(params: {
+  organizationId: string;
+  userId: string;
+}) {
+  const { organizationId, userId } = params;
+  const now = new Date();
+
+  const count = await prisma.forecast.count({
+    where: {
+      organizationId,
+      dueDate: {
+        lt: now,
+      },
+      predictions: {
+        some: { userId },
+      },
+    },
+  });
+
+  return count;
+}
+
+/**
+ * Get the count of forecasts due soon for an organization.
+ * Optionally filter to forecasts the user has participated in.
+ *
+ * "Due soon" = dueDate between now and now + `days` (default 7).
+ */
+export async function getForecastsDueSoonCount(params: {
+  organizationId: string;
+  days?: number;
+  userId?: string;
+}) {
+  const { organizationId, days = 7, userId } = params;
+  const now = new Date();
+  const soon = addDays(now, days);
+
+  const where: Prisma.ForecastWhereInput = {
+    organizationId,
+    dueDate: {
+      gte: now,
+      lte: soon,
+    },
+  };
+
+  if (userId) {
+    where.predictions = {
+      some: { userId },
+    };
+  }
+
+  const count = await prisma.forecast.count({ where });
+  return count;
+}
+
+/**
+ * Get the count of forecasts due within the rest of the day.
+ * Optionally filter to forecasts the user has participated in.
+ */
+export async function getForecastsDueTodayCount(params: {
+  organizationId: string;
+  userId?: string;
+}) {
+  const { organizationId, userId } = params;
+  const now = new Date();
+  const endOfDay = new Date(now);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const where: Prisma.ForecastWhereInput = {
+    organizationId,
+    dueDate: {
+      gte: now,
+      lte: endOfDay,
+    },
+  };
+
+  if (userId) {
+    where.predictions = {
+      some: { userId },
+    };
+  }
+
+  const count = await prisma.forecast.count({ where });
+  return count;
 }

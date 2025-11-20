@@ -8,6 +8,8 @@ import type {
  * Get a prediction by ID
  */
 export async function getPredictionById(id: string) {
+  console.log("🔍 Fetching forecasts for:", { id});
+
   return await prisma.prediction.findUnique({
     where: { id },
     include: {
@@ -127,6 +129,10 @@ export async function createPrediction(
       value: data.value,
       confidence: data.confidence,
       reasoning: data.reasoning,
+      method: data.method,
+      estimatedTime: data.estimatedTime,
+      equityInvestment: data.equityInvestment,
+      debtFinancing: data.debtFinancing,
     },
     include: {
       forecast: {
@@ -146,6 +152,10 @@ export async function updatePrediction(data: UpdatePredictionInput) {
       value: data.value,
       confidence: data.confidence,
       reasoning: data.reasoning,
+      method: data.method,
+      estimatedTime: data.estimatedTime,
+      equityInvestment: data.equityInvestment,
+      debtFinancing: data.debtFinancing,
     },
     include: {
       forecast: {

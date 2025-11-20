@@ -24,6 +24,10 @@ type PredictionDialogProps = {
     value: string;
     confidence: number | null;
     reasoning: string | null;
+    method: string | null;
+    estimatedTime: number | null;
+    equityInvestment: number | null;
+    debtFinancing: number | null;
   } | null;
 };
 
