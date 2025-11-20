@@ -22,10 +22,11 @@ import {
 import { Role } from "@/generated/prisma";
 import { PaginatedResult } from "@/lib/pagination";
 import { OrganizationUser } from "@/services/organizations";
-import { ChevronDown, ChevronsUpDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronsUpDown, ChevronUp, Trash2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
 import EditUserDialog from "./EditUserDialog";
+import OrgAdminDeleteUserDialog from "./OrgAdminDeleteUserDialog";
 
 type UsersTableProps = {
   initialUsers: PaginatedResult<OrganizationUser>;
@@ -37,15 +38,24 @@ type UsersTableProps = {
     sortBy?: string;
     sortOrder?: string;
   };
+  organizationId: string;
+  onDeleteUser: (
+    userId: string
+  ) => Promise<{ success: boolean; error?: string }>;
 };
 
 export default function UsersTable({
   initialUsers,
   searchParams,
+  organizationId,
+  onDeleteUser,
 }: UsersTableProps) {
   const router = useRouter();
   const currentSearchParams = useSearchParams();
   const [editingUser, setEditingUser] = useState<OrganizationUser | null>(null);
+  const [deletingUser, setDeletingUser] = useState<OrganizationUser | null>(
+    null
+  );
 
   const currentQuery = searchParams.query || "";
   const currentRole = searchParams.role || "all";
@@ -148,11 +158,14 @@ export default function UsersTable({
           <SearchBar
             placeholder="Search by name, email, or ID..."
             defaultValue={currentQuery}
-            onSearch={handleSearch}
+            onSearch={(query: string) => handleSearch(query)}
           />
         </div>
         <div className="w-full sm:w-[200px]">
-          <Select value={currentRole} onValueChange={handleRoleFilter}>
+          <Select
+            value={currentRole}
+            onValueChange={(value: string) => handleRoleFilter(value)}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Filter by role" />
             </SelectTrigger>
@@ -215,7 +228,7 @@ export default function UsersTable({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {initialUsers.data.map((user) => (
+                {initialUsers.data.map((user: OrganizationUser) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">
                       {user.name || "No name"}
@@ -230,13 +243,23 @@ export default function UsersTable({
                       {new Date(user.createdAt).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditingUser(user)}
-                      >
-                        Edit
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingUser(user)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeletingUser(user)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -247,8 +270,10 @@ export default function UsersTable({
           {/* Pagination */}
           <PaginationControls
             pagination={initialUsers.pagination}
-            onPageChange={handlePageChange}
-            onPageSizeChange={handlePageSizeChange}
+            onPageChange={(page: number) => handlePageChange(page)}
+            onPageSizeChange={(pageSize: number) =>
+              handlePageSizeChange(pageSize)
+            }
           />
         </>
       )}
@@ -258,7 +283,19 @@ export default function UsersTable({
         <EditUserDialog
           user={editingUser}
           open={!!editingUser}
-          onOpenChange={(open) => !open && setEditingUser(null)}
+          onOpenChange={(open: boolean) => !open && setEditingUser(null)}
+        />
+      )}
+
+      {/* Delete User Dialog */}
+      {deletingUser && (
+        <OrgAdminDeleteUserDialog
+          userId={deletingUser.id}
+          userName={deletingUser.name}
+          userEmail={deletingUser.email}
+          open={!!deletingUser}
+          onOpenChange={(open: boolean) => !open && setDeletingUser(null)}
+          onDelete={(userId: string) => onDeleteUser(userId)}
         />
       )}
     </div>

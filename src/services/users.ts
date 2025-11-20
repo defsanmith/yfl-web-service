@@ -132,6 +132,26 @@ export async function updateUser(id: string, data: UpdateUserInput) {
 }
 
 /**
+ * Delete a user
+ *
+ * @param id - User ID to delete
+ * @returns The deleted user
+ *
+ * @throws {Error} If database operation fails
+ *
+ * @example
+ * ```typescript
+ * // In a server action
+ * await deleteUser(userId);
+ * ```
+ */
+export async function deleteUser(id: string) {
+  return await prisma.user.delete({
+    where: { id },
+  });
+}
+
+/**
  * Check if user email already exists (case-insensitive)
  *
  * @param email - Email to check
