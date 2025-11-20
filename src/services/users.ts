@@ -336,23 +336,3 @@ export async function bulkCreateUsers(
     },
   };
 }
-
-/**
- * Delete a user
- *
- * @param id - User ID to delete
- * @returns The deleted user
- *
- * @throws {Error} If database operation fails
- *
- * @example
- * ```typescript
- * // In a server action
- * const deletedUser = await deleteUser(userId);
- * ```
- */
-export async function deleteUser(id: string) {
-  return await prisma.user.delete({
-    where: { id },
-  });
-}
