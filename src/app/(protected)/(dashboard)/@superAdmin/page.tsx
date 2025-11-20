@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import Router from "@/constants/router";
-import prisma from "@/lib/prisma";
+import { getForecastCounts } from "@/services/forecasts";
 import SuperAdminDashboard from "@/views/home/SuperAdminDashboardView";
 import { redirect } from "next/navigation";
 
@@ -11,26 +11,23 @@ export default async function SuperAdminPage() {
   if (!session) redirect(Router.SIGN_IN);
   if (session.user.role !== "SUPER_ADMIN") redirect(Router.UNAUTHORIZED);
 
-  const now = new Date();
+  const {
+    total: totalForecasts,
+    active: activeForecasts,
+    completed: completedForecasts,
+  } = await getForecastCounts();
 
-  const [totalForecasts, activeForecasts, completedForecasts] = await Promise.all([
-    prisma.forecast.count(),
-    prisma.forecast.count({
-      // Active = due date in the future (null due dates are excluded here on purpose)
-      where: { dueDate: { gt: now } },
-    }),
-    prisma.forecast.count({
-      // Completed = due date in the past or now
-      where: { dueDate: { lte: now } },
-    }),
-  ]);
-
-  const completionRate = totalForecasts > 0
-    ? Math.round((completedForecasts / totalForecasts) * 100)
-    : 0;
+  const completionRate =
+    totalForecasts > 0
+      ? Math.round((completedForecasts / totalForecasts) * 100)
+      : 0;
 
   // Fake leaderboard leader for now
-  const leader = { name: "Edwin Miyatake", score: 121280, handle: "@edmiyatake" };
+  const leader = {
+    name: "Edwin Miyatake",
+    score: 121280,
+    handle: "@edmiyatake",
+  };
 
   const displayName =
     session.user.name ??

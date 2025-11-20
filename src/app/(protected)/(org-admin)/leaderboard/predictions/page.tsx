@@ -1,8 +1,8 @@
 import { auth } from "@/auth";
-import prisma from "@/lib/prisma";
 import { getCategories } from "@/services/categories";
 import { getForecasts } from "@/services/forecasts";
 import { getOrganizationPredictionLeaderboard } from "@/services/leaderboard";
+import { getOrganizationByIdMinimal } from "@/services/organizations";
 import PredictionLeaderboardView from "@/views/leaderboard/PredictionLeaderboardView";
 import { redirect } from "next/navigation";
 
@@ -40,10 +40,7 @@ export default async function PredictionsLeaderboardPage({
   const [forecasts, categories, organization] = await Promise.all([
     getForecasts({ organizationId: session.user.organizationId }),
     getCategories({ organizationId: session.user.organizationId }),
-    prisma.organization.findUnique({
-      where: { id: session.user.organizationId },
-      select: { name: true },
-    }),
+    getOrganizationByIdMinimal(session.user.organizationId),
   ]);
 
   return (

@@ -82,14 +82,19 @@ const orgAdminNavItems: NavItem[] = [
 
 const userNavItems: NavItem[] = [
   {
-    title: "Dashboard",
+    title: "Forecasts",
     url: Router.HOME,
-    icon: IconDashboard,
+    icon: IconEaseOutControlPoint,
   },
   {
-    title: "My Forecasts",
-    url: Router.USER_FORECASTS,
-    icon: IconEaseOutControlPoint,
+    title: "Leaderboard",
+    url: Router.LEADERBOARD,
+    icon: IconListDetails,
+  },
+  {
+    title: "Metrics",
+    url: Router.HOME,
+    icon: IconDashboard,
   },
 ];
 

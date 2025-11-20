@@ -1,8 +1,8 @@
 import { auth } from "@/auth";
-import prisma from "@/lib/prisma";
 import { getCategories } from "@/services/categories";
 import { getForecasts } from "@/services/forecasts";
 import { getOrganizationLeaderboardWithSort } from "@/services/leaderboard";
+import { getOrganizationByIdMinimal } from "@/services/organizations";
 import LeaderboardView from "@/views/leaderboard/LeaderboardView";
 import { redirect } from "next/navigation";
 
@@ -42,10 +42,7 @@ export default async function UsersLeaderboardPage({
   const [forecasts, categories, organization] = await Promise.all([
     getForecasts({ organizationId: session.user.organizationId }),
     getCategories({ organizationId: session.user.organizationId }),
-    prisma.organization.findUnique({
-      where: { id: session.user.organizationId },
-      select: { name: true },
-    }),
+    getOrganizationByIdMinimal(session.user.organizationId),
   ]);
 
   return (
