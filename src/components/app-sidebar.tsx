@@ -3,6 +3,7 @@
 import {
   IconDashboard,
   IconEaseOutControlPoint,
+  IconGraph,
   IconInnerShadowTop,
   IconListDetails,
   IconUsers,
@@ -26,6 +27,7 @@ import {
 } from "@/components/ui/sidebar";
 import Router from "@/constants/router";
 import { Role } from "@/generated/prisma";
+
 import Link from "next/link";
 import SuperAdminAction from "./main-action";
 import OrgAdminAction from "./org-admin-action";
@@ -51,22 +53,8 @@ const orgAdminNavItems: NavItem[] = [
   },
   {
     title: "Leaderboard",
-    url: "/leaderboard",
+    url: Router.LEADERBOARD_USERS,
     icon: IconListDetails,
-    items: [
-      {
-        title: "Users",
-        url: "/leaderboard/users",
-      },
-      {
-        title: "Predictions",
-        url: "/leaderboard/predictions",
-      },
-      {
-        title: "Categories",
-        url: "/leaderboard/categories",
-      },
-    ],
   },
   {
     title: "Forecasts",
@@ -88,13 +76,13 @@ const userNavItems: NavItem[] = [
   },
   {
     title: "Leaderboard",
-    url: Router.LEADERBOARD,
+    url: Router.LEADERBOARD_USERS,
     icon: IconListDetails,
   },
   {
-    title: "Metrics",
-    url: Router.HOME,
-    icon: IconDashboard,
+    title: "Summary",
+    url: Router.SUMMARY,
+    icon: IconGraph,
   },
 ];
 

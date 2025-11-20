@@ -1,9 +1,9 @@
 import { auth } from "@/auth";
 import { getCategories } from "@/services/categories";
 import { getForecasts } from "@/services/forecasts";
-import { getOrganizationCategoryLeaderboard } from "@/services/leaderboard";
+import { getOrganizationLeaderboardWithSort } from "@/services/leaderboard";
 import { getOrganizationByIdMinimal } from "@/services/organizations";
-import CategoryLeaderboardView from "@/views/leaderboard/CategoryLeaderboardView";
+import LeaderboardView from "@/views/leaderboard/LeaderboardView";
 import { redirect } from "next/navigation";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
@@ -12,11 +12,11 @@ type PageProps = {
   searchParams: SearchParams;
 };
 
-export default async function CategoriesLeaderboardPage({
+export default async function UsersLeaderboardPage({
   searchParams,
 }: PageProps) {
   const session = await auth();
-  if (!session?.user || session.user.role !== "ORG_ADMIN") {
+  if (!session?.user) {
     redirect("/unauthorized");
   }
 
@@ -26,12 +26,15 @@ export default async function CategoriesLeaderboardPage({
 
   const params = await searchParams;
 
-  const leaderboardData = await getOrganizationCategoryLeaderboard({
+  const leaderboardData = await getOrganizationLeaderboardWithSort({
     organizationId: session.user.organizationId,
-    sortBy: (params.sortBy as string) || "totalForecasts",
+    sortBy: (params.sortBy as string) || "accuracyRate",
     sortOrder: (params.sortOrder as "asc" | "desc") || "desc",
+    forecastIds: params.forecastIds as string | undefined,
     categoryIds: params.categoryIds as string | undefined,
     forecastTypes: params.forecastTypes as string | undefined,
+    recentCount: params.recentCount ? Number(params.recentCount) : undefined,
+    minForecasts: params.minForecasts ? Number(params.minForecasts) : undefined,
     dateFrom: params.dateFrom as string | undefined,
     dateTo: params.dateTo as string | undefined,
   });
@@ -43,9 +46,11 @@ export default async function CategoriesLeaderboardPage({
   ]);
 
   return (
-    <CategoryLeaderboardView
+    <LeaderboardView
       data={leaderboardData}
       organizationName={organization?.name || "Your Organization"}
+      isOrgAdmin={true}
+      currentUserId={session.user.id}
       forecasts={forecasts.forecasts.map(
         (f: { id: string; title: string }) => ({ id: f.id, title: f.title })
       )}
