@@ -43,3 +43,32 @@ export const updateUserSchema = z.object({
 });
 
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
+
+/**
+ * Schema for a single user row in bulk CSV upload
+ * Role is automatically set to USER, so CSV only needs name and email
+ */
+export const bulkUserRowSchema = z.object({
+  name: z
+    .string()
+    .min(2, "Name must be at least 2 characters")
+    .max(100, "Name must not exceed 100 characters"),
+  email: z
+    .string()
+    .email("Invalid email address")
+    .max(255, "Email must not exceed 255 characters"),
+});
+
+export type BulkUserRow = z.infer<typeof bulkUserRowSchema>;
+
+/**
+ * Schema for validating bulk user upload CSV data
+ */
+export const bulkUserUploadSchema = z.object({
+  users: z
+    .array(bulkUserRowSchema)
+    .min(1, "At least one user is required")
+    .max(100, "Maximum 100 users can be uploaded at once"),
+});
+
+export type BulkUserUpload = z.infer<typeof bulkUserUploadSchema>;

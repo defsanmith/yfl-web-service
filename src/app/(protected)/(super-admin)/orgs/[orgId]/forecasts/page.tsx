@@ -1,6 +1,7 @@
 // Forecasts for a specific organization for Super Admin
 
 import { ForecastType } from "@/generated/prisma";
+import { getCategories } from "@/services/categories";
 import { getForecasts } from "@/services/forecasts";
 import { getOrganizationById } from "@/services/organizations";
 import ForecastListView from "@/views/forecasts/ForecastListView";
@@ -41,15 +42,19 @@ export default async function OrgsForecastsPage({
   const pageSizeNum = parseInt(pageSize, 10);
   const forecastType = type ? (type as ForecastType) : undefined;
 
-  const result = await getForecasts({
-    organizationId: orgId,
-    page: pageNum,
-    limit: pageSizeNum,
-    search,
-    type: forecastType,
-    sortBy,
-    sortOrder: sortOrder as "asc" | "desc",
-  });
+  // Fetch forecasts and categories for this organization
+  const [result, categoriesResult] = await Promise.all([
+    getForecasts({
+      organizationId: orgId,
+      page: pageNum,
+      limit: pageSizeNum,
+      search,
+      type: forecastType,
+      sortBy,
+      sortOrder: sortOrder as "asc" | "desc",
+    }),
+    getCategories({ organizationId: orgId }),
+  ]);
 
   return (
     <ForecastListView
@@ -64,6 +69,7 @@ export default async function OrgsForecastsPage({
       }}
       orgId={orgId}
       orgName={organization.name}
+      categories={categoriesResult.categories}
     />
   );
 }

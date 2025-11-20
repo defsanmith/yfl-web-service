@@ -1,5 +1,6 @@
 "use client";
 
+import DeleteUserDialog from "@/components/DeleteUserDialog";
 import { PaginationControls } from "@/components/pagination-controls";
 import { SearchBar } from "@/components/search-bar";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +26,6 @@ import { OrganizationUser } from "@/services/organizations";
 import { ChevronDown, ChevronsUpDown, ChevronUp, Trash2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
-import OrgAdminDeleteUserDialog from "./OrgAdminDeleteUserDialog";
 import OrgAdminEditUserDialog from "./OrgAdminEditUserDialog";
 
 type OrgAdminUsersTableProps = {
@@ -244,11 +244,12 @@ export default function OrgAdminUsersTable({
                       {new Date(user.createdAt).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex items-center justify-end gap-2">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => setEditingUser(user)}
+                          className="cursor-pointer"
                         >
                           Edit
                         </Button>
@@ -256,7 +257,7 @@ export default function OrgAdminUsersTable({
                           variant="ghost"
                           size="sm"
                           onClick={() => setDeletingUser(user)}
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          className="text-destructive cursor-pointer hover:text-destructive hover:bg-destructive/10"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -288,12 +289,12 @@ export default function OrgAdminUsersTable({
 
       {/* Delete User Dialog */}
       {deletingUser && (
-        <OrgAdminDeleteUserDialog
-          userId={deletingUser.id}
-          userName={deletingUser.name}
-          userEmail={deletingUser.email}
+        <DeleteUserDialog
           open={!!deletingUser}
           onOpenChange={(open) => !open && setDeletingUser(null)}
+          userId={deletingUser.id}
+          userName={deletingUser.name || "Unknown"}
+          userEmail={deletingUser.email}
           onDelete={handleDeleteUser}
         />
       )}

@@ -60,9 +60,15 @@ export async function createForecastAction(
       ? optionsData.map((opt) => opt.toString()).filter((opt) => opt.trim())
       : undefined;
 
+  // Handle categoryId - convert 'none' to null
+  const categoryIdValue = formDataToString(rawData.categoryId);
+  const categoryId =
+    categoryIdValue === "none" || !categoryIdValue ? null : categoryIdValue;
+
   const dataToValidate = {
     ...rawData,
     organizationId: orgId,
+    categoryId,
     options,
   };
 
@@ -76,7 +82,7 @@ export async function createForecastAction(
       dataType: formDataToString(rawData.dataType) || null,
       dueDate: formDataToString(rawData.dueDate),
       dataReleaseDate: formDataToString(rawData.dataReleaseDate) || null,
-      categoryId: formDataToString(rawData.categoryId) || null,
+      categoryId,
       options: options || [],
     });
   }
@@ -96,7 +102,7 @@ export async function createForecastAction(
     });
   }
 
-  // 5. Perform operation
+  // 5. Perform operation (category ID is already validated by schema)
   const forecast = await createForecast(validation.data);
 
   // 6. Revalidate cache
@@ -104,4 +110,57 @@ export async function createForecastAction(
 
   // 7. Redirect (throws NEXT_REDIRECT - this is normal!)
   redirect(Router.orgAdminForecastDetail(forecast.id));
+}
+
+/**
+ * Delete a forecast from the org admin's organization
+ */
+export async function deleteForecastAction(forecastId: string): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  // 1. Verify permissions and get org admin's organization
+  const session = await requireRole([Role.ORG_ADMIN]);
+
+  // Org admins must have an organizationId
+  if (!session.user.organizationId) {
+    return {
+      success: false,
+      error: "Organization not found for your account",
+    };
+  }
+
+  const orgId = session.user.organizationId;
+
+  // 2. Verify the forecast belongs to the org admin's organization
+  const { getForecastById, deleteForecast } = await import(
+    "@/services/forecasts"
+  );
+  const existingForecast = await getForecastById(forecastId);
+
+  if (!existingForecast || existingForecast.organizationId !== orgId) {
+    return {
+      success: false,
+      error: "You can only delete forecasts in your own organization",
+    };
+  }
+
+  try {
+    // 3. Delete the forecast (cascades to predictions via Prisma schema)
+    await deleteForecast(forecastId);
+
+    // 4. Revalidate cache
+    revalidatePath(Router.ORG_ADMIN_FORECASTS);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Delete forecast error:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "An error occurred while deleting the forecast",
+    };
+  }
 }

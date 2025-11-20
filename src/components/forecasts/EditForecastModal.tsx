@@ -20,8 +20,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { DataType, Forecast, ForecastType } from "@/generated/prisma";
-import { Plus, X } from "lucide-react";
+import { AlertCircle, Calendar, Info, Plus, Settings, X } from "lucide-react";
 import { useActionState, useState } from "react";
 
 type ForecastWithOrg = Forecast & {
@@ -129,301 +131,292 @@ export default function EditForecastModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Forecast</DialogTitle>
-          <DialogDescription>
-            Update the forecast details for {forecast.organization.name}
+          <DialogTitle className="text-2xl">Edit Forecast</DialogTitle>
+          <DialogDescription className="text-base">
+            Update forecast details for{" "}
+            <span className="font-medium text-foreground">
+              {forecast.organization.name}
+            </span>
           </DialogDescription>
         </DialogHeader>
 
+        <Separator className="my-2" />
+
         <form action={formAction} className="space-y-6">
           {state?.errors?._form && (
-            <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-              {state.errors._form.join(", ")}
+            <div className="flex items-start gap-3 rounded-lg bg-destructive/10 border border-destructive/20 p-4 text-sm text-destructive">
+              <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+              <div>{state.errors._form.join(", ")}</div>
             </div>
           )}
 
-          {/* Title */}
-          <div className="space-y-2">
-            <Label htmlFor="title">
-              Title <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="title"
-              name="title"
-              defaultValue={state?.data?.title || forecast.title}
-              placeholder="Enter forecast title"
-              aria-invalid={!!state?.errors?.title}
-              disabled={isPending}
-            />
-            {state?.errors?.title && (
-              <p className="text-sm text-destructive">
-                {state.errors.title.join(", ")}
-              </p>
-            )}
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <textarea
-              id="description"
-              name="description"
-              defaultValue={
-                state?.data?.description || forecast.description || ""
-              }
-              placeholder="Enter forecast description (optional)"
-              className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-invalid={!!state?.errors?.description}
-              disabled={isPending}
-            />
-            {state?.errors?.description && (
-              <p className="text-sm text-destructive">
-                {state.errors.description.join(", ")}
-              </p>
-            )}
-          </div>
-
-          {/* Type */}
-          <div className="space-y-2">
-            <Label htmlFor="type">
-              Forecast Type <span className="text-destructive">*</span>
-            </Label>
-            <Select
-              name="type"
-              value={selectedType}
-              onValueChange={(value) => handleTypeChange(value as ForecastType)}
-              disabled={isPending}
-            >
-              <SelectTrigger aria-invalid={!!state?.errors?.type}>
-                <SelectValue placeholder="Select forecast type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ForecastType.BINARY}>Binary</SelectItem>
-                <SelectItem value={ForecastType.CONTINUOUS}>
-                  Continuous
-                </SelectItem>
-                <SelectItem value={ForecastType.CATEGORICAL}>
-                  Categorical
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            {state?.errors?.type && (
-              <p className="text-sm text-destructive">
-                {state.errors.type.join(", ")}
-              </p>
-            )}
-            <p className="text-sm text-muted-foreground">
-              {selectedType === ForecastType.BINARY &&
-                "Binary forecasts have true/false outcomes"}
-              {selectedType === ForecastType.CONTINUOUS &&
-                "Continuous forecasts accept numerical values"}
-              {selectedType === ForecastType.CATEGORICAL &&
-                "Categorical forecasts have predefined options"}
-            </p>
-          </div>
-
-          {/* Data Type - Only for Continuous */}
-          {selectedType === ForecastType.CONTINUOUS && (
+          {/* Basic Information Section */}
+          <div className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="dataType">
-                Data Type <span className="text-destructive">*</span>
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Info className="h-4 w-4" />
+                Basic Information
+              </h3>
+              <Separator />
+            </div>
+
+            {/* Title */}
+            <div className="space-y-2">
+              <Label htmlFor="title" className="text-sm font-medium">
+                Forecast Title <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="title"
+                name="title"
+                defaultValue={state?.data?.title || forecast.title}
+                placeholder="e.g., Will we exceed Q1 revenue targets?"
+                aria-invalid={!!state?.errors?.title}
+                disabled={isPending}
+                className="text-base"
+              />
+              {state?.errors?.title && (
+                <p className="text-sm text-destructive flex items-center gap-1.5">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {state.errors.title.join(", ")}
+                </p>
+              )}
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description" className="text-sm font-medium">
+                Description{" "}
+                <span className="text-muted-foreground text-xs">
+                  (optional)
+                </span>
+              </Label>
+              <Textarea
+                id="description"
+                name="description"
+                defaultValue={
+                  state?.data?.description || forecast.description || ""
+                }
+                placeholder="Provide additional context or details about this forecast..."
+                aria-invalid={!!state?.errors?.description}
+                disabled={isPending}
+                className="min-h-[100px] resize-none"
+              />
+              {state?.errors?.description && (
+                <p className="text-sm text-destructive flex items-center gap-1.5">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {state.errors.description.join(", ")}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Forecast Configuration Section */}
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Forecast Configuration
+              </h3>
+              <Separator />
+            </div>
+
+            {/* Type */}
+            <div className="space-y-2">
+              <Label htmlFor="type">
+                Forecast Type <span className="text-destructive">*</span>
               </Label>
               <Select
-                name="dataType"
-                value={selectedDataType}
+                name="type"
+                value={selectedType}
                 onValueChange={(value) =>
-                  setSelectedDataType(value as DataType)
+                  handleTypeChange(value as ForecastType)
                 }
                 disabled={isPending}
               >
-                <SelectTrigger aria-invalid={!!state?.errors?.dataType}>
-                  <SelectValue placeholder="Select data type" />
+                <SelectTrigger aria-invalid={!!state?.errors?.type}>
+                  <SelectValue placeholder="Select forecast type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={DataType.NUMBER}>Number</SelectItem>
-                  <SelectItem value={DataType.CURRENCY}>Currency</SelectItem>
-                  <SelectItem value={DataType.PERCENT}>Percent</SelectItem>
-                  <SelectItem value={DataType.DECIMAL}>Decimal</SelectItem>
-                  <SelectItem value={DataType.INTEGER}>Integer</SelectItem>
+                  <SelectItem value={ForecastType.BINARY}>Binary</SelectItem>
+                  <SelectItem value={ForecastType.CONTINUOUS}>
+                    Continuous
+                  </SelectItem>
+                  <SelectItem value={ForecastType.CATEGORICAL}>
+                    Categorical
+                  </SelectItem>
                 </SelectContent>
               </Select>
-              {state?.errors?.dataType && (
+              {state?.errors?.type && (
                 <p className="text-sm text-destructive">
-                  {state.errors.dataType.join(", ")}
+                  {state.errors.type.join(", ")}
                 </p>
               )}
               <p className="text-sm text-muted-foreground">
-                Specify the type of numerical data for proper formatting
+                {selectedType === ForecastType.BINARY &&
+                  "Binary forecasts have true/false outcomes"}
+                {selectedType === ForecastType.CONTINUOUS &&
+                  "Continuous forecasts accept numerical values"}
+                {selectedType === ForecastType.CATEGORICAL &&
+                  "Categorical forecasts have predefined options"}
               </p>
             </div>
-          )}
 
-          {/* Category */}
-          {categories.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="categoryId">Category</Label>
-              <Select
-                name="categoryId"
-                defaultValue={forecast.categoryId || ""}
-                disabled={isPending}
-              >
-                <SelectTrigger aria-invalid={!!state?.errors?.categoryId}>
-                  <SelectValue placeholder="Select a category (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">No category</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      <div className="flex items-center gap-2">
-                        {category.color && (
-                          <div
-                            className="h-3 w-3 rounded-full"
-                            style={{ backgroundColor: category.color }}
-                          />
-                        )}
-                        {category.name}
+            {/* Categorical Options */}
+            {selectedType === ForecastType.CATEGORICAL && (
+              <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
+                <Label className="text-sm font-medium">
+                  Categorical Options{" "}
+                  <span className="text-destructive">*</span>
+                </Label>
+                <div className="space-y-2">
+                  {options.map((option, index) => (
+                    <div
+                      key={`${option}-${index}`}
+                      className="flex items-center gap-2"
+                    >
+                      <div className="flex items-center gap-2 flex-1 rounded-md border bg-background px-3 py-2">
+                        <span className="text-muted-foreground text-xs font-medium w-6">
+                          {index + 1}.
+                        </span>
+                        <Input
+                          name="options"
+                          value={option}
+                          readOnly
+                          disabled={isPending}
+                          className="border-0 shadow-none p-0 h-auto focus-visible:ring-0"
+                        />
                       </div>
-                    </SelectItem>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeOption(index)}
+                        disabled={isPending}
+                        className="hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   ))}
-                </SelectContent>
-              </Select>
-              {state?.errors?.categoryId && (
-                <p className="text-sm text-destructive">
-                  {state.errors.categoryId.join(", ")}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Categorical Options */}
-          {selectedType === ForecastType.CATEGORICAL && (
-            <div className="space-y-2">
-              <Label>
-                Options <span className="text-destructive">*</span>
-              </Label>
-              <div className="space-y-2">
-                {options.map((option, index) => (
-                  <div
-                    key={`${option}-${index}`}
-                    className="flex items-center gap-2"
-                  >
+                  <div className="flex items-center gap-2 pt-2">
                     <Input
-                      name="options"
-                      value={option}
-                      readOnly
+                      value={newOption}
+                      onChange={(e) => setNewOption(e.target.value)}
+                      placeholder="Type a new option and press Enter or click +"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addOption();
+                        }
+                      }}
                       disabled={isPending}
+                      className="text-base"
                     />
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="secondary"
                       size="icon"
-                      onClick={() => removeOption(index)}
+                      onClick={addOption}
                       disabled={isPending}
                     >
-                      <X className="h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                     </Button>
                   </div>
-                ))}
-                <div className="flex items-center gap-2">
-                  <Input
-                    value={newOption}
-                    onChange={(e) => setNewOption(e.target.value)}
-                    placeholder="Add new option"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addOption();
-                      }
-                    }}
-                    disabled={isPending}
-                  />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="icon"
-                    onClick={addOption}
-                    disabled={isPending}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
                 </div>
+                {state?.errors?.options && (
+                  <p className="text-sm text-destructive flex items-center gap-1.5">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    {state.errors.options.join(", ")}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  💡 Add at least 2 options. Each option should be clear and
+                  distinct.
+                </p>
               </div>
-              {state?.errors?.options && (
-                <p className="text-sm text-destructive">
-                  {state.errors.options.join(", ")}
+            )}
+          </div>
+
+          {/* Schedule Section */}
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Schedule
+              </h3>
+              <Separator />
+            </div>
+
+            {/* Release Date */}
+            <div className="space-y-2">
+              <Label htmlFor="releaseDate" className="text-sm font-medium">
+                Release Date & Time <span className="text-destructive">*</span>
+              </Label>
+              <DateTimePicker
+                date={dataReleaseDate}
+                onSelect={setDataReleaseDate}
+                placeholder="Select when the outcome will be known"
+                disabled={isPending}
+              />
+              {/* Hidden input to submit the datetime value */}
+              <input
+                type="hidden"
+                name="dataReleaseDate"
+                value={dataReleaseDate ? dataReleaseDate.toISOString() : ""}
+              />
+              {state?.errors?.dataReleaseDate && (
+                <p className="text-sm text-destructive flex items-center gap-1.5">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {state.errors.dataReleaseDate.join(", ")}
                 </p>
               )}
-              <p className="text-sm text-muted-foreground">
-                Add at least 2 options for categorical forecasts
+              <p className="text-xs text-muted-foreground">
+                When the actual data/event will be released (e.g., Q3 earnings
+                announcement date)
               </p>
             </div>
-          )}
 
-          {/* Due Date */}
-          <div className="space-y-2">
-            <Label htmlFor="dueDate">
-              Due Date & Time <span className="text-destructive">*</span>
-            </Label>
-            <DateTimePicker
-              date={dueDate}
-              onSelect={setDueDate}
-              placeholder="Select due date and time"
-              disabled={isPending}
-            />
-            {/* Hidden input to submit the datetime value */}
-            <input
-              type="hidden"
-              name="dueDate"
-              value={dueDate ? dueDate.toISOString() : ""}
-            />
-            {state?.errors?.dueDate && (
-              <p className="text-sm text-destructive">
-                {state.errors.dueDate.join(", ")}
-              </p>
-            )}
-          </div>
+            {/* Due Date */}
+            <div className="space-y-2">
+              <Label htmlFor="dueDate">
+                Due Date & Time <span className="text-destructive">*</span>
+              </Label>
+              <DateTimePicker
+                date={dueDate}
+                onSelect={setDueDate}
+                placeholder="Select due date and time"
+                disabled={isPending}
+              />
+              {/* Hidden input to submit the datetime value */}
+              <input
+                type="hidden"
+                name="dueDate"
+                value={dueDate ? dueDate.toISOString() : ""}
+              />
+              {state?.errors?.dueDate && (
+                <p className="text-sm text-destructive">
+                  {state.errors.dueDate.join(", ")}
+                </p>
+              )}
+            </div>
 
-          {/* Data Release Date */}
-          <div className="space-y-2">
-            <Label htmlFor="dataReleaseDate">Data Release Date & Time</Label>
-            <DateTimePicker
-              date={dataReleaseDate}
-              onSelect={setDataReleaseDate}
-              placeholder="Select data release date and time (optional)"
-              disabled={isPending}
-            />
-            {/* Hidden input to submit the datetime value */}
-            <input
-              type="hidden"
-              name="dataReleaseDate"
-              value={dataReleaseDate ? dataReleaseDate.toISOString() : ""}
-            />
-            {state?.errors?.dataReleaseDate && (
-              <p className="text-sm text-destructive">
-                {state.errors.dataReleaseDate.join(", ")}
-              </p>
-            )}
-            <p className="text-sm text-muted-foreground">
-              When the actual data will be released (must be on or after due
-              date)
-            </p>
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isPending}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? "Saving..." : "Save Changes"}
-            </Button>
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isPending}
+                size="lg"
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isPending} size="lg">
+                {isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>

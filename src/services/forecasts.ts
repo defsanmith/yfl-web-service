@@ -72,7 +72,20 @@ export async function getForecasts({
       orderBy,
       skip,
       take: limit,
-      include: {
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        type: true,
+        dataType: true,
+        dueDate: true,
+        dataReleaseDate: true,
+        actualValue: true,
+        organizationId: true,
+        categoryId: true,
+        options: true,
+        createdAt: true,
+        updatedAt: true,
         organization: {
           select: { id: true, name: true },
         },

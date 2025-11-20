@@ -1,5 +1,6 @@
 "use client";
 
+import DeleteForecastDialog from "@/components/DeleteForecastDialog";
 import CreateForecastModal from "@/components/forecasts/CreateForecastModal";
 import type { PaginationInfo } from "@/components/pagination-controls";
 import { PaginationControls } from "@/components/pagination-controls";
@@ -38,6 +39,7 @@ import {
   ChevronUp,
   Plus,
   Search,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -105,6 +107,8 @@ export default function ForecastListView({
     searchParams.get("search") || ""
   );
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [deletingForecast, setDeletingForecast] =
+    useState<ForecastWithOrg | null>(null);
 
   // Determine the base path for navigation
   const effectiveBasePath = basePath || Router.organizationForecasts(orgId);
@@ -153,6 +157,20 @@ export default function ForecastListView({
     if (currentSortBy !== column)
       return <ChevronsUpDown className="ml-2 h-4 w-4" />;
     return currentSortOrder === "asc" ? <ChevronUp /> : <ChevronDown />;
+  };
+
+  const handleDeleteForecast = async (forecastId: string) => {
+    const { deleteForecastAction } = await import(
+      "@/app/(protected)/(org-admin)/forecasts/actions"
+    );
+    const result = await deleteForecastAction(forecastId);
+
+    if (result.success) {
+      // Refresh the page to show updated list
+      router.refresh();
+    }
+
+    return result;
   };
 
   return (
@@ -264,19 +282,31 @@ export default function ForecastListView({
               <TableHead>
                 <Button
                   variant="ghost"
+                  onClick={() => handleSort("dataReleaseDate")}
+                  className="h-auto p-0 font-semibold hover:bg-transparent"
+                >
+                  Release {getSortIcon("dataReleaseDate")}
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button
+                  variant="ghost"
                   onClick={() => handleSort("createdAt")}
                   className="h-auto p-0 font-semibold hover:bg-transparent"
                 >
                   Created {getSortIcon("createdAt")}
                 </Button>
               </TableHead>
+              {isOrgAdmin && (
+                <TableHead className="text-right">Actions</TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
             {forecasts.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={isOrgAdmin ? 7 : 6}
                   className="text-center text-muted-foreground"
                 >
                   No forecasts found
@@ -331,8 +361,48 @@ export default function ForecastListView({
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {format(new Date(forecast.createdAt), "MMM d, yyyy")}
+                    {forecast.dataReleaseDate ? (
+                      <>
+                        <div className="text-sm">
+                          {format(
+                            new Date(forecast.dataReleaseDate),
+                            "MMM d, yyyy"
+                          )}
+                        </div>
+                        <div className="text-xs">
+                          {format(new Date(forecast.dataReleaseDate), "h:mm a")}
+                        </div>
+                      </>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
                   </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {forecast.createdAt ? (
+                      <>
+                        <div className="text-sm">
+                          {format(new Date(forecast.createdAt), "MMM d, yyyy")}
+                        </div>
+                        <div className="text-xs">
+                          {format(new Date(forecast.createdAt), "h:mm a")}
+                        </div>
+                      </>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  {isOrgAdmin && (
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeletingForecast(forecast)}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}
@@ -369,6 +439,17 @@ export default function ForecastListView({
         isOrgAdmin={isOrgAdmin}
         categories={categories}
       />
+
+      {/* Delete Forecast Dialog */}
+      {deletingForecast && (
+        <DeleteForecastDialog
+          open={!!deletingForecast}
+          onOpenChange={(open) => !open && setDeletingForecast(null)}
+          forecastId={deletingForecast.id}
+          forecastTitle={deletingForecast.title}
+          onDelete={handleDeleteForecast}
+        />
+      )}
     </div>
   );
 }

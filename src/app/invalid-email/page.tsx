@@ -5,14 +5,14 @@ import Router from "@/constants/router";
 import Link from "next/link";
 
 type PageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     error?: string;
-  };
+  }>;
 };
 
 export default async function InvalidMagicUrlPage({ searchParams }: PageProps) {
   const session = await auth();
-  const error = searchParams?.error;
+  const error = (await searchParams)?.error;
 
   // NextAuth sends `error=Verification` for invalid/expired magic links
   const isInvalidMagicLink = error === "Verification";
@@ -40,9 +40,7 @@ export default async function InvalidMagicUrlPage({ searchParams }: PageProps) {
 
         <div className="pt-4">
           <Link href={ctaHref}>
-            <Button className="w-full">
-              Go to homepage
-            </Button>
+            <Button className="w-full">Go to homepage</Button>
           </Link>
         </div>
       </div>

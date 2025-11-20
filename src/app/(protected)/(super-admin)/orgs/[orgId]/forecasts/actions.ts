@@ -52,9 +52,15 @@ export async function createForecastAction(
       ? optionsData.map((opt) => opt.toString()).filter((opt) => opt.trim())
       : undefined;
 
+  // Handle categoryId - convert 'none' to null
+  const categoryIdValue = formDataToString(rawData.categoryId);
+  const categoryId =
+    categoryIdValue === "none" || !categoryIdValue ? null : categoryIdValue;
+
   const dataToValidate = {
     ...rawData,
     organizationId: orgId,
+    categoryId,
     options,
   };
 
@@ -68,7 +74,7 @@ export async function createForecastAction(
       dataType: formDataToString(rawData.dataType) || null,
       dueDate: formDataToString(rawData.dueDate),
       dataReleaseDate: formDataToString(rawData.dataReleaseDate) || null,
-      categoryId: formDataToString(rawData.categoryId) || null,
+      categoryId,
       options: options || [],
     });
   }
@@ -88,12 +94,12 @@ export async function createForecastAction(
     });
   }
 
-  // 5. Perform operation
+  // 5. Perform operation (category ID is already validated by schema)
   const forecast = await createForecast(validation.data);
 
   // 6. Revalidate cache
   revalidatePath(Router.organizationForecasts(orgId));
 
-  // 7. Redirect (throws NEXT_REDIRECT - this is normal!)
+  // 8. Redirect (throws NEXT_REDIRECT - this is normal!)
   redirect(Router.forecastDetail(orgId, forecast.id));
 }

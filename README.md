@@ -33,22 +33,26 @@ A Next.js 15 + TypeScript web application with NextAuth.js email authentication,
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone <repository-url>
 cd yfl-web-service
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Set up environment variables:
+
 ```bash
 cp .env.example .env
 ```
 
 Edit `.env` with your configuration:
+
 - `DATABASE_URL`: PostgreSQL connection string
 - `NEXTAUTH_SECRET`: Generate with `openssl rand -base64 32`
 - `NEXTAUTH_URL`: Your app URL (e.g., `http://localhost:3000`)
@@ -117,12 +121,14 @@ This project is configured for deployment on Vercel with PostgreSQL.
 ### Manual Deployment
 
 1. **Provision a PostgreSQL database**:
+
    - [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres) (recommended)
    - [Neon](https://neon.tech) (serverless)
    - [Supabase](https://supabase.com)
    - [Railway](https://railway.app)
 
 2. **Deploy to Vercel**:
+
    ```bash
    # Install Vercel CLI
    npm i -g vercel
@@ -132,6 +138,7 @@ This project is configured for deployment on Vercel with PostgreSQL.
    ```
 
 3. **Set environment variables** in Vercel Dashboard:
+
    - See `.env.example` for required variables
    - Generate `NEXTAUTH_SECRET` with `openssl rand -base64 32`
    - Add `?sslmode=require` to `DATABASE_URL` for production
@@ -207,6 +214,39 @@ See `.env.example` for all required environment variables. Key variables:
 3. Run tests and linting
 4. Submit a pull request
 
+## Database Setup
+
+### Initial Setup (First Time Only)
+
+Run database migrations to create tables:
+
+```bash
+npx prisma migrate dev
+```
+
+### View and Edit Database
+
+Launch Prisma Studio to browse and edit data:
+
+```bash
+npx prisma studio
+```
+
+Open [http://localhost:5555](http://localhost:5555) to access Prisma Studio.
+
+### Additional Prisma Commands
+
+```bash
+# Generate Prisma client after schema changes
+npx prisma generate
+
+# Reset database (WARNING: deletes all data)
+npx prisma migrate reset
+
+# Create a new migration
+npx prisma migrate dev --name description_of_changes
+```
+
 ## Learn More
 
 - [Next.js Documentation](https://nextjs.org/docs)
@@ -222,6 +262,7 @@ See `.env.example` for all required environment variables. Key variables:
 ## Support
 
 For questions or issues:
+
 - Check the [documentation](docs/)
 - Open an issue on GitHub
 - Contact the development team
@@ -230,4 +271,3 @@ For questions or issues:
 
 **Maintained by**: YFL Development Team  
 **Last Updated**: November 2025
-
