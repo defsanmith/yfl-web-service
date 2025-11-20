@@ -82,12 +82,6 @@ export default function UserForecastDetailView({
           </Button>
           <h1 className="text-3xl font-bold">{forecast.title}</h1>
         </div>
-        <Button variant="outline" asChild>
-          <Link href={Router.FORECAST_LEADERBOARD(forecast.id)}>
-            <Trophy className="mr-2 h-4 w-4" />
-            View Leaderboard
-          </Link>
-        </Button>
       </div>
 
       {/* Key Information Card */}
