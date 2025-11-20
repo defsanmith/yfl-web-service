@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ForecastType } from "@/generated/prisma";
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 
 type PredictionFormProps = {
   forecastId: string;
@@ -84,13 +84,14 @@ export default function PredictionForm({
     undefined
   );
 
-  // Show success message if submission was successful
-  if (state?.success) {
-    // Call onSuccess callback if provided (e.g., to switch dialog into success mode)
-    if (onSuccess) {
+  useEffect(() => {
+    if (state?.success && onSuccess) {
       onSuccess();
     }
+  }, [state?.success, onSuccess]);
 
+  // Show success message if submission was successful
+  if (state?.success) {
     return (
       <div className="rounded-lg border border-green-500 bg-green-50 p-4">
         <h3 className="font-semibold text-green-900">
