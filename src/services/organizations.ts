@@ -240,6 +240,26 @@ export async function getOrganizationById(id: string) {
 }
 
 /**
+ * Get organization by ID with minimal data (name only)
+ *
+ * @param id - Organization ID
+ * @returns Organization with name only or null
+ *
+ * @example
+ * ```typescript
+ * // In a leaderboard page
+ * const organization = await getOrganizationByIdMinimal(orgId);
+ * const orgName = organization?.name || "Unknown";
+ * ```
+ */
+export async function getOrganizationByIdMinimal(id: string) {
+  return await prisma.organization.findUnique({
+    where: { id },
+    select: { name: true },
+  });
+}
+
+/**
  * Check if organization name already exists (case-insensitive)
  *
  * @param name - Organization name to check

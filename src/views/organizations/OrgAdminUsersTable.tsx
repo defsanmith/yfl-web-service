@@ -148,7 +148,11 @@ export default function OrgAdminUsersTable({
     const { deleteUserAction } = await import(
       "@/app/(protected)/(org-admin)/users/actions"
     );
-    return await deleteUserAction(userId);
+    const result = await deleteUserAction(userId);
+    if (result.success) {
+      router.refresh();
+    }
+    return result;
   };
 
   return (

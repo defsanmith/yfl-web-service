@@ -1,5 +1,6 @@
 "use client";
 
+import { deleteUserAction } from "@/app/(protected)/(org-admin)/users/actions";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -45,6 +46,10 @@ export default function OrganizationOverviewView({
 }: OrganizationOverviewViewProps) {
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
 
+  const handleDeleteUser = async (userId: string) => {
+    return await deleteUserAction(userId);
+  };
+
   return (
     <div className="space-y-4">
       {/* Breadcrumb */}
@@ -78,7 +83,12 @@ export default function OrganizationOverviewView({
           </div>
         </CardHeader>
         <CardContent>
-          <UsersTable initialUsers={initialUsers} searchParams={searchParams} />
+          <UsersTable
+            initialUsers={initialUsers}
+            searchParams={searchParams}
+            organizationId={organizationId}
+            onDeleteUser={handleDeleteUser}
+          />
         </CardContent>
       </Card>
 

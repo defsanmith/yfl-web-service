@@ -25,6 +25,30 @@ export async function getUserById(id: string) {
   });
 }
 
+/**
+ * Get user with organization ID only (for dashboard pages)
+ *
+ * @param id - User ID
+ * @returns User with organizationId, name, and email or null
+ *
+ * @example
+ * ```typescript
+ * // In a dashboard page
+ * const user = await getUserWithOrganization(userId);
+ * const orgId = user?.organizationId ?? null;
+ * ```
+ */
+export async function getUserWithOrganization(id: string) {
+  return await prisma.user.findUnique({
+    where: { id },
+    select: {
+      organizationId: true,
+      name: true,
+      email: true,
+    },
+  });
+}
+
 export async function getUserByEmail(email: string) {
   return await prisma.user.findUnique({
     where: { email },
@@ -105,6 +129,26 @@ export async function updateUser(id: string, data: UpdateUserInput) {
         },
       },
     },
+  });
+}
+
+/**
+ * Delete a user
+ *
+ * @param id - User ID to delete
+ * @returns The deleted user
+ *
+ * @throws {Error} If database operation fails
+ *
+ * @example
+ * ```typescript
+ * // In a server action
+ * await deleteUser(userId);
+ * ```
+ */
+export async function deleteUser(id: string) {
+  return await prisma.user.delete({
+    where: { id },
   });
 }
 

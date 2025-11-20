@@ -1,12 +1,19 @@
-// Forecasts page for users
+// Upcoming forecasts page for users
 
 import { auth } from "@/auth";
 import Router from "@/constants/router";
 import { getUpcomingForecastsForUser } from "@/services/forecasts";
-import UpcomingForecastsView from "@/views/home/UpcomingForecastsView";
+import UpcomingForecastsTableView from "@/views/forecasts/UpcomingForecastsTableView";
 import { redirect } from "next/navigation";
 
-export default async function UserForecastsPage() {
+type PageProps = {
+  searchParams: Promise<{
+    page?: string;
+    pageSize?: string;
+  }>;
+};
+
+export default async function UserForecastsPage({ searchParams }: PageProps) {
   const session = await auth();
 
   if (!session) {
@@ -18,11 +25,29 @@ export default async function UserForecastsPage() {
     redirect(Router.UNAUTHORIZED);
   }
 
+  const params = await searchParams;
+  const page = parseInt(params.page || "1", 10);
+  const pageSize = parseInt(params.pageSize || "10", 10);
+
   // Get upcoming forecasts for the user's organization
-  const forecasts = await getUpcomingForecastsForUser({
+  const result = await getUpcomingForecastsForUser({
     organizationId: session.user.organizationId,
     userId: session.user.id,
+    page,
+    limit: pageSize,
   });
 
-  return <UpcomingForecastsView forecasts={forecasts} />;
+  return (
+    <UpcomingForecastsTableView
+      forecasts={result.forecasts}
+      pagination={{
+        page: result.page,
+        pageSize: result.limit,
+        totalItems: result.total,
+        totalPages: result.totalPages,
+        hasNextPage: result.page < result.totalPages,
+        hasPreviousPage: result.page > 1,
+      }}
+    />
+  );
 }

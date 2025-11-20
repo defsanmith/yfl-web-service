@@ -251,30 +251,103 @@ export async function deleteForecast(id: string) {
 export async function getUpcomingForecastsForUser({
   organizationId,
   userId,
+  page = 1,
   limit = 10,
 }: {
   organizationId: string;
   userId: string;
+  page?: number;
   limit?: number;
 }) {
   const now = new Date();
+  const skip = (page - 1) * limit;
 
-  return prisma.forecast.findMany({
-    where: {
-      organizationId,
-      dueDate: { gte: now },
-    },
-    orderBy: { dueDate: "asc" },
-    take: limit,
-    include: {
-      organization: { select: { id: true, name: true } },
-      category: { select: { id: true, name: true, color: true } },
-      predictions: {
-        where: { userId }, // only this user's prediction
-        select: { id: true, userId: true, value: true },
+  const [forecasts, total] = await Promise.all([
+    prisma.forecast.findMany({
+      where: {
+        organizationId,
+        dueDate: { gte: now },
       },
-    },
-  });
+      orderBy: { dueDate: "asc" },
+      skip,
+      take: limit,
+      include: {
+        organization: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true, color: true } },
+        predictions: {
+          where: { userId }, // only this user's prediction
+          select: { id: true, userId: true, value: true },
+        },
+      },
+    }),
+    prisma.forecast.count({
+      where: {
+        organizationId,
+        dueDate: { gte: now },
+      },
+    }),
+  ]);
+
+  return {
+    forecasts,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
+}
+
+/**
+ * Get past forecasts for a user's organization
+ * Returns forecasts with dueDate in the past, ordered by dueDate descending
+ */
+export async function getPastForecastsForUser({
+  organizationId,
+  userId,
+  page = 1,
+  limit = 10,
+}: {
+  organizationId: string;
+  userId: string;
+  page?: number;
+  limit?: number;
+}) {
+  const now = new Date();
+  const skip = (page - 1) * limit;
+
+  const [forecasts, total] = await Promise.all([
+    prisma.forecast.findMany({
+      where: {
+        organizationId,
+        dueDate: { lt: now },
+      },
+      orderBy: { dueDate: "desc" },
+      skip,
+      take: limit,
+      include: {
+        organization: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true, color: true } },
+        predictions: {
+          where: { userId }, // only this user's prediction
+          select: { id: true, userId: true, value: true },
+        },
+      },
+    }),
+    prisma.forecast.count({
+      where: {
+        organizationId,
+        dueDate: { lt: now },
+      },
+    }),
+  ]);
+
+  return {
+    forecasts,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
 }
 
 /**
@@ -438,6 +511,38 @@ export async function getForecastsDueSoonCount(params: {
 
   const count = await prisma.forecast.count({ where });
   return count;
+}
+
+/**
+ * Get forecast count statistics for super admin dashboard
+ *
+ * @returns Object with total, active, and completed forecast counts
+ *
+ * @example
+ * ```typescript
+ * // In super admin dashboard
+ * const stats = await getForecastCounts();
+ * // Returns: { total: 100, active: 30, completed: 70 }
+ * ```
+ */
+export async function getForecastCounts() {
+  const now = new Date();
+
+  const [total, active, completed] = await Promise.all([
+    prisma.forecast.count(),
+    prisma.forecast.count({
+      where: { dueDate: { gt: now } },
+    }),
+    prisma.forecast.count({
+      where: { dueDate: { lte: now } },
+    }),
+  ]);
+
+  return {
+    total,
+    active,
+    completed,
+  };
 }
 
 /**
