@@ -29,7 +29,7 @@ export const createPredictionSchema = z
       .min(0, "Estimated time must be at least 0")
       .optional(),
 
-    // 🔐 Equity constraints: non-negative, integer, max 20M, optional
+    // 🔐 Equity constraints
     equityInvestment: z
       .coerce
       .number()
@@ -38,12 +38,16 @@ export const createPredictionSchema = z
       .max(20_000_000, "Equity investment cannot exceed 20,000,000")
       .optional(),
 
-    debtFinancing: z.coerce
+    // 🔐 Debt constraints
+    debtFinancing: z
+      .coerce
       .number()
+      .int("Debt financing must be a whole-dollar amount (no decimals).")
       .min(0, "Debt financing must be at least 0")
+      .max(20_000_000, "Debt financing cannot exceed 20,000,000")
       .optional(),
   })
-  // 💰 NEW: combined cap for equity + debt
+  // 💰 Combined cap: equity + debt ≤ 20M
   .refine(
     (data) => {
       const equity = data.equityInvestment ?? 0;
@@ -53,7 +57,7 @@ export const createPredictionSchema = z
     {
       message:
         "Total of equity investment + debt financing cannot exceed 20,000,000.",
-      path: ["equityInvestment"], // or ["debtFinancing"] depending on what you want to highlight
+      path: ["equityInvestment"],
     }
   )
   .refine(
@@ -81,7 +85,6 @@ export const createPredictionSchema = z
       path: ["value"],
     }
   );
-
 
 export type CreatePredictionInput = z.infer<typeof createPredictionSchema>;
 
@@ -113,7 +116,6 @@ export const updatePredictionSchema = z
       .min(0, "Estimated time must be at least 0")
       .optional(),
 
-    // 🔐 Same equity rules for updates
     equityInvestment: z
       .coerce
       .number()
@@ -122,12 +124,14 @@ export const updatePredictionSchema = z
       .max(20_000_000, "Equity investment cannot exceed 20,000,000")
       .optional(),
 
-    debtFinancing: z.coerce
+    debtFinancing: z
+      .coerce
       .number()
+      .int("Debt financing must be a whole-dollar amount (no decimals).")
       .min(0, "Debt financing must be at least 0")
+      .max(20_000_000, "Debt financing cannot exceed 20,000,000")
       .optional(),
   })
-  // 💰 NEW: combined cap for equity + debt
   .refine(
     (data) => {
       const equity = data.equityInvestment ?? 0;
@@ -143,7 +147,7 @@ export const updatePredictionSchema = z
   .refine(
     (data) => {
       if (data.forecastType === ForecastType.BINARY) {
-        return data.value === "true" || "false";
+        return data.value === "true" || data.value === "false";
       }
       return true;
     },
@@ -165,6 +169,5 @@ export const updatePredictionSchema = z
       path: ["value"],
     }
   );
-
 
 export type UpdatePredictionInput = z.infer<typeof updatePredictionSchema>;
