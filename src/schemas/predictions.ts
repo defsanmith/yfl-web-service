@@ -43,6 +43,19 @@ export const createPredictionSchema = z
       .min(0, "Debt financing must be at least 0")
       .optional(),
   })
+  // 💰 NEW: combined cap for equity + debt
+  .refine(
+    (data) => {
+      const equity = data.equityInvestment ?? 0;
+      const debt = data.debtFinancing ?? 0;
+      return equity + debt <= 20_000_000;
+    },
+    {
+      message:
+        "Total of equity investment + debt financing cannot exceed 20,000,000.",
+      path: ["equityInvestment"], // or ["debtFinancing"] depending on what you want to highlight
+    }
+  )
   .refine(
     (data) => {
       if (data.forecastType === ForecastType.BINARY) {
@@ -68,6 +81,7 @@ export const createPredictionSchema = z
       path: ["value"],
     }
   );
+
 
 export type CreatePredictionInput = z.infer<typeof createPredictionSchema>;
 
@@ -113,10 +127,23 @@ export const updatePredictionSchema = z
       .min(0, "Debt financing must be at least 0")
       .optional(),
   })
+  // 💰 NEW: combined cap for equity + debt
+  .refine(
+    (data) => {
+      const equity = data.equityInvestment ?? 0;
+      const debt = data.debtFinancing ?? 0;
+      return equity + debt <= 20_000_000;
+    },
+    {
+      message:
+        "Total of equity investment + debt financing cannot exceed 20,000,000.",
+      path: ["equityInvestment"],
+    }
+  )
   .refine(
     (data) => {
       if (data.forecastType === ForecastType.BINARY) {
-        return data.value === "true" || data.value === "false";
+        return data.value === "true" || "false";
       }
       return true;
     },
@@ -138,5 +165,6 @@ export const updatePredictionSchema = z
       path: ["value"],
     }
   );
+
 
 export type UpdatePredictionInput = z.infer<typeof updatePredictionSchema>;
