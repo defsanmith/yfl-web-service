@@ -351,6 +351,99 @@ export async function getPastForecastsForUser({
 }
 
 /**
+ * Get forecasts for a user with flexible filtering
+ * Supports filtering by status (pending/submitted/completed/all), category, and type
+ */
+export async function getUserForecasts({
+  organizationId,
+  userId,
+  status,
+  categoryId,
+  type,
+  page = 1,
+  limit = 10,
+  sortBy = "dueDate",
+  sortOrder = "asc",
+}: {
+  organizationId: string;
+  userId: string;
+  status?: "pending" | "submitted" | "completed" | "all";
+  categoryId?: string;
+  type?: ForecastType;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+}) {
+  const now = new Date();
+  const skip = (page - 1) * limit;
+
+  // Build where clause based on status
+  const where: Prisma.ForecastWhereInput = {
+    organizationId,
+    ...(categoryId && { categoryId }),
+    ...(type && { type }),
+  };
+
+  // Apply status-based filters
+  switch (status) {
+    case "pending":
+      // Upcoming forecasts without user's prediction
+      where.dueDate = { gte: now };
+      where.predictions = {
+        none: { userId },
+      };
+      break;
+    case "submitted":
+      // Upcoming forecasts with user's prediction submitted
+      where.dueDate = { gte: now };
+      where.predictions = {
+        some: { userId },
+      };
+      break;
+    case "completed":
+      // Past forecasts (due date passed)
+      where.dueDate = { lt: now };
+      break;
+    case "all":
+    default:
+      // No additional date filter
+      break;
+  }
+
+  // Build order by clause
+  const orderBy: Prisma.ForecastOrderByWithRelationInput = {
+    [sortBy]: sortOrder,
+  };
+
+  const [forecasts, total] = await Promise.all([
+    prisma.forecast.findMany({
+      where,
+      orderBy,
+      skip,
+      take: limit,
+      include: {
+        organization: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true, color: true } },
+        predictions: {
+          where: { userId }, // only this user's prediction
+          select: { id: true, userId: true, value: true },
+        },
+      },
+    }),
+    prisma.forecast.count({ where }),
+  ]);
+
+  return {
+    forecasts,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
+}
+
+/**
  * Check if a forecast title exists within an organization (case-insensitive)
  * @param title - Forecast title to check
  * @param organizationId - Organization ID
