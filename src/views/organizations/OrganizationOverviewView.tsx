@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteUserAction } from "@/app/(protected)/(org-admin)/users/actions";
+import { deleteUserAction } from "@/app/(protected)/(super-admin)/orgs/[orgId]/actions";
 import {
   Breadcrumb,
   BreadcrumbItem,
