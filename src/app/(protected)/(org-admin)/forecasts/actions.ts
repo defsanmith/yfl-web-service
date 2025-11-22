@@ -51,6 +51,8 @@ export async function createForecastAction(
     "dueDate",
     "dataReleaseDate",
     "categoryId",
+    "categoryName",
+    "categoryColor",
   ]);
 
   // Handle options array for categorical forecasts
@@ -102,13 +104,52 @@ export async function createForecastAction(
     });
   }
 
-  // 5. Perform operation (category ID is already validated by schema)
-  const forecast = await createForecast(validation.data);
+  // 5. Handle inline category creation if temp ID is detected
+  let finalCategoryId = validation.data.categoryId;
+  if (finalCategoryId && finalCategoryId.startsWith("temp-")) {
+    const categoryName = formDataToString(rawData.categoryName);
+    const categoryColor = formDataToString(rawData.categoryColor);
 
-  // 6. Revalidate cache
+    if (!categoryName) {
+      return createErrorState(
+        {
+          _form: ["Category name is required for new categories"],
+        },
+        {
+          title: validation.data.title,
+          description: validation.data.description || null,
+          type: validation.data.type,
+          dataType: validation.data.dataType || null,
+          dueDate: validation.data.dueDate,
+          dataReleaseDate: validation.data.dataReleaseDate || null,
+          categoryId: null,
+          options: validation.data.options || [],
+        }
+      );
+    }
+
+    // Create the category
+    const { createCategory } = await import("@/services/categories");
+    const newCategory = await createCategory({
+      name: categoryName,
+      description: null,
+      color: categoryColor || "#3B82F6",
+      organizationId: orgId,
+    });
+
+    finalCategoryId = newCategory.id;
+  }
+
+  // 6. Perform operation with the resolved category ID
+  const forecast = await createForecast({
+    ...validation.data,
+    categoryId: finalCategoryId,
+  });
+
+  // 7. Revalidate cache
   revalidatePath(Router.ORG_ADMIN_FORECASTS);
 
-  // 7. Redirect (throws NEXT_REDIRECT - this is normal!)
+  // 8. Redirect (throws NEXT_REDIRECT - this is normal!)
   redirect(Router.orgAdminForecastDetail(forecast.id));
 }
 
