@@ -14,6 +14,36 @@ import EmailProvider from "next-auth/providers/email";
 import nodemailer from "nodemailer";
 
 /** ---------- Email helpers (customize branding here) ---------- */
+async function sendMagicLinkAfterCreate(email: string) {
+  // Prefer a single canonical public URL
+  const baseUrl =
+    config.publicUrl || process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL;
+
+  if (!baseUrl) {
+    console.error(
+      "[NextAuth] Missing base URL (config.publicUrl / NEXTAUTH_URL / NEXT_PUBLIC_APP_URL)"
+    );
+    return;
+  }
+
+  const url = new URL("/api/auth/signin/email", baseUrl);
+
+  const body = new URLSearchParams({
+    email,
+    // where you want them to land after sign-in
+    callbackUrl: baseUrl, 
+    // you could also do `${baseUrl}/dashboard` or your protected root
+  });
+
+  // This hits the same route that `signIn("email")` uses
+  await fetch(url.toString(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body,
+  });
+}
 
 function emailSubject(host: string) {
   return `Sign in to ${host} • yFL`;
@@ -148,12 +178,32 @@ const authConfig: AuthOptions = {
   
   events: {
     async createUser({ user }) {
-      try {
-        await ensureStartingBalancesForUser(user.id);
-      } catch (err) {
-        console.error("ensureStartingBalancesForUser failed on createUser:", err);
+    //
+    // 1. Your existing balance initialization
+    //
+    try {
+      await ensureStartingBalancesForUser(user.id);
+    } catch (err) {
+      console.error(
+        "ensureStartingBalancesForUser failed on createUser:",
+        err
+      );
+    }
+
+    //
+    // 2. Send sign-in email immediately when user is created
+    //
+    try {
+      if (user.email) {
+        await sendMagicLinkAfterCreate(user.email);
+        console.log("[NextAuth] Magic link requested for new user:", user.email);
+      } else {
+        console.warn("User created without email — cannot send magic link");
       }
-    },
+    } catch (err) {
+      console.error("Failed to send magic link after user creation:", err);
+    }
+  },
   },
 
   callbacks: {
