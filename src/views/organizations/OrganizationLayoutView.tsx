@@ -64,6 +64,8 @@ export default function OrganizationLayoutView({
           {
             label: "Overview",
             href: Router.organizationDetail(organization.id),
+            isActive: (pathname) =>
+              pathname === Router.organizationDetail(organization.id),
           },
           {
             label: "Forecasts",

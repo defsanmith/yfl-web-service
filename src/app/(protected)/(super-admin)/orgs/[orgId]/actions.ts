@@ -182,3 +182,45 @@ export async function updateOrganizationAction(
     data: validation.data,
   };
 }
+
+/**
+ * Delete a user from any organization (super admin only)
+ */
+export async function deleteUserAction(
+  userId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // 1. Verify permissions
+    await requireRole([Role.SUPER_ADMIN]);
+
+    // 2. Get the user to find their organization for cache revalidation
+    const { getUserById, deleteUser } = await import("@/services/users");
+    const existingUser = await getUserById(userId);
+
+    if (!existingUser) {
+      return {
+        success: false,
+        error: "User not found",
+      };
+    }
+
+    // 3. Delete the user
+    await deleteUser(userId);
+
+    // 4. Revalidate cache
+    if (existingUser.organizationId) {
+      revalidatePath(Router.organizationDetail(existingUser.organizationId));
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Delete user error:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "An error occurred while deleting the user",
+    };
+  }
+}
