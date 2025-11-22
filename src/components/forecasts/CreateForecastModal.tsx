@@ -481,6 +481,16 @@ export default function CreateForecastModal({
                 name="categoryId"
                 value={selectedCategoryId || ""}
               />
+              <input
+                type="hidden"
+                name="categoryName"
+                value={selectedCategory?.name || ""}
+              />
+              <input
+                type="hidden"
+                name="categoryColor"
+                value={selectedCategory?.color || ""}
+              />
               {state?.errors?.categoryId && (
                 <p className="text-sm text-destructive flex items-center gap-1.5">
                   <AlertCircle className="h-3.5 w-3.5" />
