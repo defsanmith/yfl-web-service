@@ -107,32 +107,7 @@ export default function PredictionForm({
   }
 
   return (
-    <form action={formAction} className="space-y-4">
-      {/* Top row: helper text + top-right submit button */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="text-xs text-muted-foreground">
-          {isUpdate
-            ? "Update your prediction before the forecast due date."
-            : "Submit your prediction. You can update it before the forecast due date."}
-        </div>
-
-        {!isReadOnly && (
-          <Button
-            type="submit"
-            disabled={isPending}
-            className="whitespace-nowrap"
-          >
-            {isPending
-              ? isUpdate
-                ? "Updating..."
-                : "Submitting..."
-              : isUpdate
-              ? "Update Prediction"
-              : "Submit Prediction"}
-          </Button>
-        )}
-      </div>
-
+    <form action={formAction} className="space-y-6">
       {state?.errors?._form && (
         <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
           <p className="text-sm text-destructive">
@@ -141,267 +116,309 @@ export default function PredictionForm({
         </div>
       )}
 
-      {/* Value Input - varies by forecast type */}
-      <div className="space-y-2">
-        <Label htmlFor="value">
-          Your Prediction <span className="text-destructive">*</span>
-        </Label>
+      {/* Prediction Details Section */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold border-b pb-2">
+          Prediction Details
+        </h3>
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* Value Input - varies by forecast type */}
+          <div className="space-y-2">
+            <Label htmlFor="value">
+              Your Prediction <span className="text-destructive">*</span>
+            </Label>
 
-        {forecastType === ForecastType.BINARY && (
-          <Select
-            name="value"
-            defaultValue={state?.data?.value || existingPrediction?.value || ""}
-            disabled={isReadOnly || isPending}
-          >
-            <SelectTrigger
-              className={state?.errors?.value ? "border-destructive" : ""}
+            {forecastType === ForecastType.BINARY && (
+              <Select
+                name="value"
+                defaultValue={
+                  state?.data?.value || existingPrediction?.value || ""
+                }
+                disabled={isReadOnly || isPending}
+              >
+                <SelectTrigger
+                  className={state?.errors?.value ? "border-destructive" : ""}
+                >
+                  <SelectValue placeholder="Select your prediction" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="true">True</SelectItem>
+                  <SelectItem value="false">False</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+
+            {forecastType === ForecastType.CONTINUOUS && (
+              <Input
+                type="number"
+                step="any"
+                id="value"
+                name="value"
+                placeholder="Enter a numerical value"
+                defaultValue={
+                  state?.data?.value || existingPrediction?.value || ""
+                }
+                disabled={isReadOnly || isPending}
+                aria-invalid={!!state?.errors?.value}
+                className={state?.errors?.value ? "border-destructive" : ""}
+              />
+            )}
+
+            {forecastType === ForecastType.CATEGORICAL && (
+              <Select
+                name="value"
+                defaultValue={
+                  state?.data?.value || existingPrediction?.value || ""
+                }
+                disabled={isReadOnly || isPending}
+              >
+                <SelectTrigger
+                  className={state?.errors?.value ? "border-destructive" : ""}
+                >
+                  <SelectValue placeholder="Select an option" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categoricalOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {state?.errors?.value && (
+              <p className="text-sm text-destructive">
+                {state.errors.value.join(", ")}
+              </p>
+            )}
+          </div>
+
+          {/* Confidence Level */}
+          <div className="space-y-2">
+            <Label htmlFor="confidence">
+              Confidence Level (0-100){" "}
+              <span className="text-muted-foreground">(Optional)</span>
+            </Label>
+            <Input
+              type="number"
+              id="confidence"
+              name="confidence"
+              min="0"
+              max="100"
+              placeholder="e.g., 75"
+              defaultValue={
+                state?.data?.confidence ||
+                existingPrediction?.confidence?.toString() ||
+                ""
+              }
+              disabled={isReadOnly || isPending}
+              aria-invalid={!!state?.errors?.confidence}
+              className={state?.errors?.confidence ? "border-destructive" : ""}
+            />
+            {state?.errors?.confidence && (
+              <p className="text-sm text-destructive">
+                {state.errors.confidence.join(", ")}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              How confident are you? (0-100)
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Financial Information Section */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold border-b pb-2">
+          Financial Information
+        </h3>
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* Equity Investment - NOW REQUIRED */}
+          <div className="space-y-2">
+            <Label htmlFor="equityInvestment">
+              Equity Investment <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              type="number"
+              id="equityInvestment"
+              name="equityInvestment"
+              min="0"
+              max="20000000"
+              step="1"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              placeholder="0 – 20,000,000"
+              defaultValue={
+                state?.data?.equityInvestment ||
+                existingPrediction?.equityInvestment?.toString() ||
+                ""
+              }
+              disabled={isReadOnly || isPending}
+              aria-invalid={!!state?.errors?.equityInvestment}
+              className={
+                state?.errors?.equityInvestment ? "border-destructive" : ""
+              }
+            />
+            {state?.errors?.equityInvestment && (
+              <p className="text-sm text-destructive">
+                {state.errors.equityInvestment.join(", ")}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Whole-dollar amount (no decimals)
+            </p>
+          </div>
+
+          {/* Debt Financing - NOW REQUIRED */}
+          <div className="space-y-2">
+            <Label htmlFor="debtFinancing">
+              Debt Financing <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              type="number"
+              step="0.01"
+              id="debtFinancing"
+              name="debtFinancing"
+              min="0"
+              placeholder="e.g., 5000"
+              defaultValue={
+                state?.data?.debtFinancing ||
+                existingPrediction?.debtFinancing?.toString() ||
+                ""
+              }
+              disabled={isReadOnly || isPending}
+              aria-invalid={!!state?.errors?.debtFinancing}
+              className={
+                state?.errors?.debtFinancing ? "border-destructive" : ""
+              }
+            />
+            {state?.errors?.debtFinancing && (
+              <p className="text-sm text-destructive">
+                {state.errors.debtFinancing.join(", ")}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Amount of debt financing
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Methodology Section */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold border-b pb-2">Methodology</h3>
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* Method */}
+          <div className="space-y-2">
+            <Label htmlFor="method">
+              Method <span className="text-muted-foreground">(Optional)</span>
+            </Label>
+            <Select
+              name="method"
+              defaultValue={
+                state?.data?.method || existingPrediction?.method || ""
+              }
+              disabled={isReadOnly || isPending}
             >
-              <SelectValue placeholder="Select your prediction" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="true">True</SelectItem>
-              <SelectItem value="false">False</SelectItem>
-            </SelectContent>
-          </Select>
-        )}
+              <SelectTrigger
+                className={state?.errors?.method ? "border-destructive" : ""}
+              >
+                <SelectValue placeholder="Select a method" />
+              </SelectTrigger>
+              <SelectContent>
+                {METHOD_OPTIONS.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {m}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {state?.errors?.method && (
+              <p className="text-sm text-destructive">
+                {state.errors.method.join(", ")}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Prediction method used
+            </p>
+          </div>
 
-        {forecastType === ForecastType.CONTINUOUS && (
-          <Input
-            type="number"
-            step="any"
-            id="value"
-            name="value"
-            placeholder="Enter a numerical value"
-            defaultValue={state?.data?.value || existingPrediction?.value || ""}
+          {/* Estimated Time */}
+          <div className="space-y-2">
+            <Label htmlFor="estimatedTime">
+              Estimated Time (minutes){" "}
+              <span className="text-muted-foreground">(Optional)</span>
+            </Label>
+            <Input
+              type="number"
+              id="estimatedTime"
+              name="estimatedTime"
+              min="0"
+              placeholder="e.g., 30"
+              defaultValue={
+                state?.data?.estimatedTime ||
+                existingPrediction?.estimatedTime?.toString() ||
+                ""
+              }
+              disabled={isReadOnly || isPending}
+              aria-invalid={!!state?.errors?.estimatedTime}
+              className={
+                state?.errors?.estimatedTime ? "border-destructive" : ""
+              }
+            />
+            {state?.errors?.estimatedTime && (
+              <p className="text-sm text-destructive">
+                {state.errors.estimatedTime.join(", ")}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Time spent on prediction
+            </p>
+          </div>
+        </div>
+
+        {/* Reasoning - Full Width */}
+        <div className="space-y-2">
+          <Label htmlFor="reasoning">
+            Reasoning <span className="text-muted-foreground">(Optional)</span>
+          </Label>
+          <Textarea
+            id="reasoning"
+            name="reasoning"
+            placeholder="Explain your reasoning..."
+            rows={4}
+            maxLength={1000}
+            defaultValue={
+              state?.data?.reasoning || existingPrediction?.reasoning || ""
+            }
             disabled={isReadOnly || isPending}
-            aria-invalid={!!state?.errors?.value}
-            className={state?.errors?.value ? "border-destructive" : ""}
+            aria-invalid={!!state?.errors?.reasoning}
+            className={state?.errors?.reasoning ? "border-destructive" : ""}
           />
-        )}
-
-        {forecastType === ForecastType.CATEGORICAL && (
-          <Select
-            name="value"
-            defaultValue={state?.data?.value || existingPrediction?.value || ""}
-            disabled={isReadOnly || isPending}
-          >
-            <SelectTrigger
-              className={state?.errors?.value ? "border-destructive" : ""}
-            >
-              <SelectValue placeholder="Select an option" />
-            </SelectTrigger>
-            <SelectContent>
-              {categoricalOptions.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-
-        {state?.errors?.value && (
-          <p className="text-sm text-destructive">
-            {state.errors.value.join(", ")}
+          {state?.errors?.reasoning && (
+            <p className="text-sm text-destructive">
+              {state.errors.reasoning.join(", ")}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Share your thought process (max 1000 characters)
           </p>
-        )}
+        </div>
       </div>
 
-      {/* Confidence Level (Optional) */}
-      <div className="space-y-2">
-        <Label htmlFor="confidence">
-          Confidence Level (0-100){" "}
-          <span className="text-muted-foreground">(Optional)</span>
-        </Label>
-        <Input
-          type="number"
-          id="confidence"
-          name="confidence"
-          min="0"
-          max="100"
-          placeholder="e.g., 75"
-          defaultValue={
-            state?.data?.confidence ||
-            existingPrediction?.confidence?.toString() ||
-            ""
-          }
-          disabled={isReadOnly || isPending}
-          aria-invalid={!!state?.errors?.confidence}
-          className={state?.errors?.confidence ? "border-destructive" : ""}
-        />
-        {state?.errors?.confidence && (
-          <p className="text-sm text-destructive">
-            {state.errors.confidence.join(", ")}
-          </p>
-        )}
-        <p className="text-xs text-muted-foreground">
-          How confident are you in this prediction? (0 = not confident, 100 =
-          very confident)
-        </p>
-      </div>
-
-      {/* Method -> DROPDOWN */}
-      <div className="space-y-2">
-        <Label htmlFor="method">
-          Method <span className="text-muted-foreground">(Optional)</span>
-        </Label>
-        <Select
-          name="method"
-          defaultValue={
-            state?.data?.method || existingPrediction?.method || ""
-          }
-          disabled={isReadOnly || isPending}
-        >
-          <SelectTrigger
-            className={state?.errors?.method ? "border-destructive" : ""}
-          >
-            <SelectValue placeholder="Select a method" />
-          </SelectTrigger>
-          <SelectContent>
-            {METHOD_OPTIONS.map((m) => (
-              <SelectItem key={m} value={m}>
-                {m}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {state?.errors?.method && (
-          <p className="text-sm text-destructive">
-            {state.errors.method.join(", ")}
-          </p>
-        )}
-        <p className="text-xs text-muted-foreground">
-          What method did you use to make this prediction?
-        </p>
-      </div>
-
-      {/* Estimated Time (Optional) */}
-      <div className="space-y-2">
-        <Label htmlFor="estimatedTime">
-          Estimated Time (minutes){" "}
-          <span className="text-muted-foreground">(Optional)</span>
-        </Label>
-        <Input
-          type="number"
-          id="estimatedTime"
-          name="estimatedTime"
-          min="0"
-          placeholder="e.g., 30"
-          defaultValue={
-            state?.data?.estimatedTime ||
-            existingPrediction?.estimatedTime?.toString() ||
-            ""
-          }
-          disabled={isReadOnly || isPending}
-          aria-invalid={!!state?.errors?.estimatedTime}
-          className={state?.errors?.estimatedTime ? "border-destructive" : ""}
-        />
-        {state?.errors?.estimatedTime && (
-          <p className="text-sm text-destructive">
-            {state.errors.estimatedTime.join(", ")}
-          </p>
-        )}
-        <p className="text-xs text-muted-foreground">
-          How much time did you spend on this prediction?
-        </p>
-      </div>
-
-      {/* Equity Investment (Optional) */}
-      <div className="space-y-2">
-        <Label htmlFor="equityInvestment">
-          Equity Investment{" "}
-          <span className="text-muted-foreground">(Optional)</span>
-        </Label>
-        <Input
-          type="number"
-          id="equityInvestment"
-          name="equityInvestment"
-          min="0"
-          max="20000000"
-          step="1"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          placeholder="0 – 20,000,000"
-          defaultValue={
-            state?.data?.equityInvestment ||
-            existingPrediction?.equityInvestment?.toString() ||
-            ""
-          }
-          disabled={isReadOnly || isPending}
-          aria-invalid={!!state?.errors?.equityInvestment}
-          className={
-            state?.errors?.equityInvestment ? "border-destructive" : ""
-          }
-        />
-        {state?.errors?.equityInvestment && (
-          <p className="text-sm text-destructive">
-            {state.errors.equityInvestment.join(", ")}
-          </p>
-        )}
-        <p className="text-xs text-muted-foreground">
-          Whole-dollar equity amount, 0 to 20,000,000 (no decimals).
-        </p>
-      </div>
-
-      {/* Debt Financing (Optional) */}
-      <div className="space-y-2">
-        <Label htmlFor="debtFinancing">
-          Debt Financing{" "}
-          <span className="text-muted-foreground">(Optional)</span>
-        </Label>
-        <Input
-          type="number"
-          step="0.01"
-          id="debtFinancing"
-          name="debtFinancing"
-          min="0"
-          placeholder="e.g., 5000"
-          defaultValue={
-            state?.data?.debtFinancing ||
-            existingPrediction?.debtFinancing?.toString() ||
-            ""
-          }
-          disabled={isReadOnly || isPending}
-          aria-invalid={!!state?.errors?.debtFinancing}
-          className={state?.errors?.debtFinancing ? "border-destructive" : ""}
-        />
-        {state?.errors?.debtFinancing && (
-          <p className="text-sm text-destructive">
-            {state.errors.debtFinancing.join(", ")}
-          </p>
-        )}
-        <p className="text-xs text-muted-foreground">
-          Amount of debt financing (if applicable)
-        </p>
-      </div>
-
-      {/* Reasoning (Optional) */}
-      <div className="space-y-2">
-        <Label htmlFor="reasoning">
-          Reasoning <span className="text-muted-foreground">(Optional)</span>
-        </Label>
-        <Textarea
-          id="reasoning"
-          name="reasoning"
-          placeholder="Explain your reasoning..."
-          rows={4}
-          maxLength={1000}
-          defaultValue={
-            state?.data?.reasoning || existingPrediction?.reasoning || ""
-          }
-          disabled={isReadOnly || isPending}
-          aria-invalid={!!state?.errors?.reasoning}
-          className={state?.errors?.reasoning ? "border-destructive" : ""}
-        />
-        {state?.errors?.reasoning && (
-          <p className="text-sm text-destructive">
-            {state.errors.reasoning.join(", ")}
-          </p>
-        )}
-        <p className="text-xs text-muted-foreground">
-          Share your thought process (max 1000 characters)
-        </p>
-      </div>
+      {/* Submit Button */}
+      {!isReadOnly && (
+        <Button type="submit" disabled={isPending} className="w-full">
+          {isPending
+            ? isUpdate
+              ? "Updating..."
+              : "Submitting..."
+            : isUpdate
+            ? "Update Prediction"
+            : "Submit Prediction"}
+        </Button>
+      )}
     </form>
   );
 }

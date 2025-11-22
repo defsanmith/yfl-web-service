@@ -1,4 +1,4 @@
-// Pending forecasts page for users (upcoming forecasts without predictions)
+// Completed forecasts page for users (past forecasts)
 
 import { auth } from "@/auth";
 import Router from "@/constants/router";
@@ -18,7 +18,7 @@ type PageProps = {
   }>;
 };
 
-export default async function PendingForecastsPage({
+export default async function CompletedForecastsPage({
   searchParams,
 }: PageProps) {
   const session = await auth();
@@ -42,13 +42,13 @@ export default async function PendingForecastsPage({
     | "CATEGORICAL"
     | undefined;
   const sortBy = params.sortBy || "dueDate";
-  const sortOrder = (params.sortOrder as "asc" | "desc") || "asc";
+  const sortOrder = (params.sortOrder as "asc" | "desc") || "desc"; // Default desc for past
 
-  // Get pending forecasts for the user
+  // Get completed forecasts for the user
   const result = await getUserForecasts({
     organizationId: session.user.organizationId,
     userId: session.user.id,
-    status: "pending",
+    status: "completed",
     categoryId,
     type,
     page,
@@ -66,9 +66,9 @@ export default async function PendingForecastsPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Pending Forecasts</h1>
+        <h1 className="text-3xl font-bold">Completed Forecasts</h1>
         <p className="text-muted-foreground mt-2">
-          Upcoming forecasts that need your prediction
+          Past forecasts that have reached their due date
         </p>
       </div>
 
@@ -83,9 +83,9 @@ export default async function PendingForecastsPage({
           hasPreviousPage: result.page > 1,
         }}
         categories={categoriesResult.categories}
-        currentPath={Router.USER_FORECASTS_PENDING}
-        emptyMessage="No pending forecasts"
-        emptyDescription="All upcoming forecasts have been submitted or there are no forecasts available."
+        currentPath={Router.USER_FORECASTS_COMPLETED}
+        emptyMessage="No completed forecasts"
+        emptyDescription="Past forecasts will appear here after their due date."
       />
     </div>
   );

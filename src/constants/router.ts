@@ -37,7 +37,11 @@ class Router {
 
   // User
   static USER_FORECASTS = "/f";
-  static USER_FORECASTS_PAST = "/past";
+  static USER_FORECASTS_PENDING = "/"; // Upcoming forecasts (pending predictions)
+  static USER_FORECASTS_SUBMITTED = "/submitted"; // Forecasts with predictions submitted
+  static USER_FORECASTS_COMPLETED = "/completed"; // Past forecasts (completed)
+  static USER_FORECASTS_ALL = "/all"; // All forecasts
+  static USER_FORECASTS_PAST = Router.USER_FORECASTS_COMPLETED; // Legacy - redirect to completed
   static USER_FORECAST_DETAIL = (id: string) => `/f/${id}`;
   static FORECAST_LEADERBOARD = (id: string) => `/f/${id}/leaderboard`; // public leaderboard, super-admin leader, org-admin, player
 

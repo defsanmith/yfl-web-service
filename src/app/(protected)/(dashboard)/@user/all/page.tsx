@@ -1,4 +1,4 @@
-// Pending forecasts page for users (upcoming forecasts without predictions)
+// All forecasts page for users
 
 import { auth } from "@/auth";
 import Router from "@/constants/router";
@@ -18,9 +18,7 @@ type PageProps = {
   }>;
 };
 
-export default async function PendingForecastsPage({
-  searchParams,
-}: PageProps) {
+export default async function AllForecastsPage({ searchParams }: PageProps) {
   const session = await auth();
 
   if (!session) {
@@ -42,13 +40,13 @@ export default async function PendingForecastsPage({
     | "CATEGORICAL"
     | undefined;
   const sortBy = params.sortBy || "dueDate";
-  const sortOrder = (params.sortOrder as "asc" | "desc") || "asc";
+  const sortOrder = (params.sortOrder as "asc" | "desc") || "desc";
 
-  // Get pending forecasts for the user
+  // Get all forecasts for the user
   const result = await getUserForecasts({
     organizationId: session.user.organizationId,
     userId: session.user.id,
-    status: "pending",
+    status: "all",
     categoryId,
     type,
     page,
@@ -66,9 +64,9 @@ export default async function PendingForecastsPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Pending Forecasts</h1>
+        <h1 className="text-3xl font-bold">All Forecasts</h1>
         <p className="text-muted-foreground mt-2">
-          Upcoming forecasts that need your prediction
+          View all forecasts in your organization
         </p>
       </div>
 
@@ -83,9 +81,9 @@ export default async function PendingForecastsPage({
           hasPreviousPage: result.page > 1,
         }}
         categories={categoriesResult.categories}
-        currentPath={Router.USER_FORECASTS_PENDING}
-        emptyMessage="No pending forecasts"
-        emptyDescription="All upcoming forecasts have been submitted or there are no forecasts available."
+        currentPath={Router.USER_FORECASTS_ALL}
+        emptyMessage="No forecasts found"
+        emptyDescription="There are no forecasts in your organization yet."
       />
     </div>
   );
