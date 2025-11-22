@@ -286,7 +286,7 @@ export default function ForecastsTable({
                       key={forecast.id}
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() =>
-                        (window.location.href = Router.USER_FORECAST_DETAIL(
+                        router.push(Router.USER_FORECAST_DETAIL(
                           forecast.id
                         ))
                       }
