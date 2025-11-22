@@ -108,6 +108,31 @@ export default function PredictionForm({
 
   return (
     <form action={formAction} className="space-y-4">
+      {/* Top row: helper text + top-right submit button */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="text-xs text-muted-foreground">
+          {isUpdate
+            ? "Update your prediction before the forecast due date."
+            : "Submit your prediction. You can update it before the forecast due date."}
+        </div>
+
+        {!isReadOnly && (
+          <Button
+            type="submit"
+            disabled={isPending}
+            className="whitespace-nowrap"
+          >
+            {isPending
+              ? isUpdate
+                ? "Updating..."
+                : "Submitting..."
+              : isUpdate
+              ? "Update Prediction"
+              : "Submit Prediction"}
+          </Button>
+        )}
+      </div>
+
       {state?.errors?._form && (
         <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
           <p className="text-sm text-destructive">
@@ -281,11 +306,7 @@ export default function PredictionForm({
         </p>
       </div>
 
-      {/* Equity Investment (Optional) with constraints:
-          - non-negative
-          - integer only (no decimals)
-          - max 20,000,000
-      */}
+      {/* Equity Investment (Optional) */}
       <div className="space-y-2">
         <Label htmlFor="equityInvestment">
           Equity Investment{" "}
@@ -381,19 +402,6 @@ export default function PredictionForm({
           Share your thought process (max 1000 characters)
         </p>
       </div>
-
-      {/* Submit Button */}
-      {!isReadOnly && (
-        <Button type="submit" disabled={isPending} className="w-full">
-          {isPending
-            ? isUpdate
-              ? "Updating..."
-              : "Submitting..."
-            : isUpdate
-            ? "Update Prediction"
-            : "Submit Prediction"}
-        </Button>
-      )}
     </form>
   );
 }
