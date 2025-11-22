@@ -1,61 +1,72 @@
 // src/services/finance.ts
+import { LedgerKind } from "@/generated/prisma";
 import prisma from "@/lib/prisma";
 
-const CENTS = (d: number) => Math.round(d * 100);
+export const CENTS = (d: number) => Math.round(d * 100);
+
+type CreateLedgerEntryParams = {
+  userId?: string | null;
+  organizationId?: string | null;
+  kind: LedgerKind;
+  amountCents: number; // + inflow, - outflow (for cash kinds)
+  memo?: string | null;
+};
+
 
 /**
- * Ensures a user has the default starting money:
- * +$10,000 cash (grant), +$10,000 cash (loan proceeds), +$10,000 debt (outstanding).
- * Safe to call multiple times (idempotent).
+ * Low-level helper to insert one ledger row.
  */
-export async function ensureStartingBalancesForUser(userId: string) {
-  const exists = await prisma.ledgerEntry.findFirst({
-    where: { userId, memo: "SEED: Starting grant $10k" },
-    select: { id: true },
-  });
-  if (exists) return;
+export async function createLedgerEntry(
+  params: CreateLedgerEntryParams
+) {
+  const { userId, organizationId, kind, amountCents, memo } = params;
 
-  await prisma.ledgerEntry.createMany({
-    data: [
-      {
-        userId,
-        amountCents: CENTS(10000),
-        kind: "PAYMENT",
-        memo: "SEED: Starting grant $10k",
-      },
-      {
-        userId,
-        amountCents: CENTS(10000),
-        kind: "PAYMENT",
-        memo: "SEED: Loan proceeds $10k",
-      },
-      {
-        userId,
-        amountCents: CENTS(10000),
-        kind: "DEBT",
-        memo: "SEED: Loan principal $10k (outstanding)",
-      },
-    ],
+  return prisma.ledgerEntry.create({
+    data: {
+      userId: userId ?? null,
+      organizationId: organizationId ?? null,
+      kind,
+      amountCents,
+      memo: memo ?? null,
+    },
   });
 }
 
-export async function getUserBalance(userId: string) {
-  // Fetch all ledger entries for this user
-  const entries = await prisma.ledgerEntry.findMany({
-    where: { userId },
-    select: { amountCents: true, kind: true },
+/**
+ * Ensures a user has the default starting money:
+ * +$1 Billion Dollars
+ */
+export async function ensureStartingBalancesForUser(userId: string) {
+  const exists = await prisma.ledgerEntry.findFirst({
+    where: { userId, memo: "SEED: Starting grant $1 Billion" },
+    select: { id: true },
   });
 
-  let totalCents = 0;
+  if (exists) return; // idempotent
 
-  for (const e of entries) {
-    if (e.kind === "PAYMENT" || e.kind === "REVENUE") {
-      totalCents += e.amountCents;
-    } else if (e.kind === "EXPENSE" || e.kind === "DEBT") {
-      totalCents -= e.amountCents;
-    }
-  }
+  await prisma.ledgerEntry.create({
+    data: {
+      userId,
+      amountCents: CENTS(1_000_000_000), // 1 billion dollars
+      kind: LedgerKind.PAYMENT,          // cash inflow
+      memo: "SEED: Starting grant $1 Billion",
+    },
+  });
+}
 
-  // Convert to dollars
-  return totalCents / 100;
+export async function getUserBalanceCents(userId: string): Promise<number> {
+  const agg = await prisma.ledgerEntry.aggregate({
+    where: {
+      userId,
+      kind: { in: [LedgerKind.REVENUE, LedgerKind.EXPENSE, LedgerKind.PAYMENT] },
+    },
+    _sum: { amountCents: true },
+  });
+
+  return agg._sum.amountCents ?? 0;
+}
+
+export async function getUserBalance(userId: string) {
+  const cents = await getUserBalanceCents(userId);
+  return cents / 100;
 }
